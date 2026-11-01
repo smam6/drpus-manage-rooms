@@ -1,0 +1,787 @@
+<?php
+
+namespace SyncBasalam\Services\Orders;
+
+use SyncBasalam\Admin\Settings\SettingsConfig;
+use SyncBasalam\Config\Endpoints;
+use SyncBasalam\Logger\Logger;
+use SyncBasalam\Utilities\GetProvincesData;
+use SyncBasalam\Utilities\ProductMetaKey;
+use SyncBasalam\Services\ApiServiceManager;
+
+defined('ABSPATH') || exit;
+
+class OrderManager
+{
+
+    private static function shouldBypassWccfOrderHooks()
+    {
+        return class_exists('WCCF_WC_Order') && !class_exists('RightPress_Product_Price_Shop');
+    }
+
+    private static function removeWccfOrderSaveHooks()
+    {
+        global $wp_filter;
+
+        $removedHooks = [];
+
+        if (!is_array($wp_filter) && !($wp_filter instanceof \ArrayAccess)) {
+            return $removedHooks;
+        }
+
+        foreach ($wp_filter as $hookName => $hook) {
+            if (!isset($hook->callbacks) || !is_array($hook->callbacks)) {
+                continue;
+            }
+
+            foreach ($hook->callbacks as $priority => $callbacks) {
+                foreach ($callbacks as $callbackConfig) {
+                    $callback = $callbackConfig['function'] ?? null;
+
+                    if (!is_array($callback) || !is_object($callback[0] ?? null) || !isset($callback[1])) {
+                        continue;
+                    }
+
+                    if (!($callback[0] instanceof \WCCF_WC_Order) || $callback[1] !== 'save_order_field_values') {
+                        continue;
+                    }
+
+                    if (remove_filter($hookName, $callback, $priority)) {
+                        $removedHooks[] = [
+                            'hook' => $hookName,
+                            'callback' => $callback,
+                            'priority' => $priority,
+                            'accepted_args' => $callbackConfig['accepted_args'] ?? 1,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $removedHooks;
+    }
+
+    private static function restoreWccfOrderSaveHooks(array $removedHooks)
+    {
+        foreach ($removedHooks as $hookConfig) {
+            add_filter(
+                $hookConfig['hook'],
+                $hookConfig['callback'],
+                $hookConfig['priority'],
+                $hookConfig['accepted_args']
+            );
+        }
+    }
+
+    private static function executeWithoutWccfOrderSaveHooks(callable $callback, $invoice_id, $contextLabel)
+    {
+        $removedWccfHooks = [];
+
+        if (self::shouldBypassWccfOrderHooks()) {
+            $removedWccfHooks = self::removeWccfOrderSaveHooks();
+        }
+
+        try {
+            return $callback();
+        } finally {
+            if (!empty($removedWccfHooks)) {
+                self::restoreWccfOrderSaveHooks($removedWccfHooks);
+            }
+        }
+    }
+
+    public static function createOrderWooFromRequest(\WP_REST_Request $request)
+    {
+        return self::createRestResponse(
+            self::createOrderWoo($request->get_params())
+        );
+    }
+
+    public static function orderManger(\WP_REST_Request $request, $checkSyncStatus = true)
+    {
+        $parsedParams = $request->get_params();
+
+        if ($checkSyncStatus && !syncBasalamSettings()->getSettings(SettingsConfig::SYNC_STATUS_ORDER)) {
+            return self::createRestResponse([
+                'success' => true,
+                'message' => 'Order sync is disabled.',
+                'status'  => 200,
+            ]);
+        }
+
+        Logger::debug("دریافت رویداد سفارش: " . json_encode($parsedParams));
+
+        if (isset($parsedParams['event_id']) && $parsedParams['event_id'] == 7) {
+            if ($parsedParams['type'] == 'shipped') {
+                return self::createRestResponse(self::shippedOrderWoo($parsedParams['invoice_id']));
+            } elseif ($parsedParams['type'] == 'cancelled') {
+                return self::createRestResponse(self::cancelOrderWoo($parsedParams['invoice_id']));
+            } elseif ($parsedParams['type'] == 'preparation') {
+                return self::createRestResponse(self::confirmOrderWoo($parsedParams['invoice_id']));
+            }
+        } elseif (isset($parsedParams['event_id']) && $parsedParams['event_id'] == 3) {
+            if ($parsedParams['status'] == '3195') {
+                return self::createRestResponse(self::completeOrderWoo($parsedParams['more_data']['invoice_id']));
+            } elseif ($parsedParams['status'] == '3067' || $parsedParams['status'] == '3233') {
+                return self::createRestResponse(self::cancelOrderWoo($parsedParams['more_data']['invoice_id']));
+            }
+        } else {
+            return self::createOrderWooFromRequest($request);
+        }
+
+        return self::createRestResponse([
+            'success' => false,
+            'message' => 'Unsupported order event.',
+            'error'   => 'The incoming event did not match any supported order action.',
+            'status'  => 400,
+        ]);
+    }
+
+    public static function createOrderWoo($params)
+    {
+        $payment_id = $params['payment_id'] ?? null;
+        $invoice_id = $params['invoice_id'] ?? null;
+        $user_id = $params['user_id'] ?? null;
+        $city_id = $params['city_id'] ?? null;
+        $province_id = $params['province_id'] ?? null;
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sync_basalam_payments';
+
+        if (empty($invoice_id)) {
+            return [
+                'success' => false,
+                'message' => 'Missing invoice_id.',
+                'error'   => 'invoice_id is required to create an order.',
+                'status'  => 400,
+            ];
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifier from $wpdb->prefix, not user input.
+        $existingOrderId = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT order_id FROM {$table_name} WHERE invoice_id = %d LIMIT 1",
+                $invoice_id
+            )
+        );
+
+        if ($existingOrderId) {
+            return [
+                'success'  => true,
+                'message'  => 'Order already exists.',
+                'order_id' => (int) $existingOrderId,
+                'status'   => 200,
+            ];
+        }
+
+        $lockName = 'sync_basalam_invoice_' . $invoice_id;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Named MySQL advisory lock; no object cache applicable.
+        $gotLock = $wpdb->get_var(
+            $wpdb->prepare("SELECT GET_LOCK(%s, 0)", $lockName)
+        );
+
+        if ($gotLock !== '1' && $gotLock !== 1) {
+            Logger::debug("ریکوئست تکراری webhook برای invoice_id {$invoice_id} ـ نادیده گرفته شد (در حال پردازش توسط ریکوئست دیگر).");
+            return [
+                'success' => true,
+                'message' => 'Order is already being processed by another request.',
+                'status'  => 200,
+            ];
+        }
+
+        try {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifier from $wpdb->prefix, not user input.
+            $existingOrderId = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT order_id FROM {$table_name} WHERE invoice_id = %d LIMIT 1",
+                    $invoice_id
+                )
+            );
+
+            if ($existingOrderId) {
+                return [
+                    'success'  => true,
+                    'message'  => 'Order already exists.',
+                    'order_id' => (int) $existingOrderId,
+                    'status'   => 200,
+                ];
+            }
+
+            return self::createOrderWooLocked($params, $invoice_id, $payment_id, $user_id, $city_id, $province_id, $table_name);
+        } finally {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Named MySQL advisory lock; no object cache applicable.
+            $wpdb->query(
+                $wpdb->prepare("SELECT RELEASE_LOCK(%s)", $lockName)
+            );
+        }
+    }
+
+    private static function createOrderWooLocked($params, $invoice_id, $payment_id, $user_id, $city_id, $province_id, $table_name)
+    {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
+        $wpdb->query('START TRANSACTION');
+        try {
+
+            $vendor_id = syncBasalamSettings()->getSettings(SettingsConfig::VENDOR_ID);
+
+            $api_url = sprintf(Endpoints::ORDER_DETAIL, $vendor_id, $invoice_id);
+
+            $apiServiceManager = syncBasalamContainer()->get(ApiServiceManager::class);
+
+            $response = $apiServiceManager->get($api_url);
+
+            if (isset($response['success']) && !$response['success']) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
+                $wpdb->query('ROLLBACK');
+                Logger::error("درخواست API ناموفق بود: " . ($response['error'] ?? 'خطای نامشخص'));
+
+                return [
+                    'success' => false,
+                    'message' => 'Failed to fetch invoice details.',
+                    'error'   => $response['error'] ?? 'Unknown error',
+                    'status'  => 500,
+                ];
+            }
+
+            $api_response = $response['body'] ?? '';
+            $data = json_decode($api_response, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
+                $wpdb->query('ROLLBACK');
+
+                return [
+                    'success' => false,
+                    'message' => 'Failed to parse API response.',
+                    'error'   => 'Invalid JSON response: ' . json_last_error_msg(),
+                    'status'  => 500,
+                ];
+            }
+
+            if (empty($data)) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
+                $wpdb->query('ROLLBACK');
+                Logger::error("پاسخ خالی از API برای فاکتور دریافت شد: $invoice_id");
+
+                return [
+                    'success' => false,
+                    'message' => 'Empty API response.',
+                    'error'   => 'No data received from API',
+                    'status'  => 500,
+                ];
+            }
+
+            $user_id = $user_id ?? ($data['customer_data']['user']['id'] ?? null);
+            $city_id = $city_id ?? ($data['customer_data']['city']['id'] ?? null);
+            $province_id = $province_id ?? ($data['customer_data']['city']['parent']['id'] ?? null);
+
+            $order = self::executeWithoutWccfOrderSaveHooks(function () {
+                return wc_create_order();
+            }, $invoice_id, 'wc_create_order');
+
+            if (is_wp_error($order)) {
+                throw new \RuntimeException('wc_create_order failed: ' . $order->get_error_message());
+            }
+
+            if (!$order instanceof \WC_Order) {
+                throw new \RuntimeException('wc_create_order did not return a valid WC_Order instance.');
+            }
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $sync_basalam_product_id = $item['product']['id'] ?? null;
+                    $quantity = $item['quantity'] ?? 1;
+                    $item_id = $item['id'] ?? null;
+
+                    if ($sync_basalam_product_id) {
+                        try {
+                            if (!empty($item['variation']['id'])) {
+                                $woo_product_id = self::getWooProductVariableId($item['variation']['id']);
+                            } else {
+                                $woo_product_id = self::getWooProductSimpleId($sync_basalam_product_id);
+                            }
+
+                            if ($woo_product_id) {
+                                $product = wc_get_product($woo_product_id);
+                                if ($product) {
+                                    $order_item_id = $order->add_product($product, $quantity);
+                                    if ($item_id && $order_item_id) {
+                                        $order->update_meta_data('_sync_basalam_item_id_' . $order_item_id, $item_id);
+                                    }
+
+                                    self::set_item_price_from_financial_report($order, $order_item_id, $item, $quantity);
+                                }
+                            } else {
+                                $placeholder_product_id = self::getPlaceholderProductId();
+                                if ($placeholder_product_id) {
+                                    $placeholder_product = wc_get_product($placeholder_product_id);
+                                    if ($placeholder_product) {
+                                        $order_item_id = $order->add_product($placeholder_product, $quantity);
+
+                                        if ($item_id && $order_item_id) {
+                                            $order->update_meta_data('_sync_basalam_item_id_' . $order_item_id, $item_id);
+                                        }
+
+                                        self::set_item_price_from_financial_report($order, $order_item_id, $item, $quantity);
+                                    }
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            Logger::error('خطا در ایجاد سفارش: ' . $e->getMessage());
+                        }
+                    }
+                }
+            }
+
+            if (isset($data['customer_data']['recipient']) && is_array($data['customer_data']['recipient'])) {
+                $recipient = $data['customer_data']['recipient'];
+                $province = $data['customer_data']['city']['parent']['title'] ?? '';
+                $city = $data['customer_data']['city']['title'] ?? '';
+
+                $full_name = $recipient['name'] ?? '';
+                $first_name = '';
+                $last_name = '';
+                if (!empty($full_name)) {
+                    $parts = explode(' ', trim($full_name));
+                    $parts = array_filter($parts);
+
+                    if (count($parts) === 1) {
+                        $first_name = $parts[0];
+                        $last_name = $parts[0];
+                    } else {
+                        $first_name = array_shift($parts);
+                        $last_name = implode(' ', $parts);
+                    }
+                }
+
+                $prefix = syncBasalamSettings()->getSettings(SettingsConfig::CUSTOMER_PREFIX_NAME);
+                $suffix = syncBasalamSettings()->getSettings(SettingsConfig::CUSTOMER_SUFFIX_NAME);
+
+                if (!empty($prefix)) $first_name = $prefix . ' ' . $first_name;
+                if (!empty($suffix)) $last_name = $last_name . ' ' . $suffix;
+
+                // Set basic billing info
+                $order->set_billing_first_name($first_name);
+                $order->set_billing_last_name($last_name);
+                $order->set_billing_address_1($recipient['postal_address'] ?? '');
+                $order->set_billing_postcode($recipient['postal_code'] ?? '');
+                $order->set_billing_country('IR');
+                $order->set_billing_phone($recipient['mobile'] ?? '');
+
+                // Set basic shipping info
+                $order->set_shipping_first_name($first_name);
+                $order->set_shipping_last_name($last_name);
+                $order->set_shipping_address_1($recipient['postal_address'] ?? '');
+                $order->set_shipping_postcode($recipient['postal_code'] ?? '');
+                $order->set_shipping_phone($recipient['mobile'] ?? '');
+                $order->set_shipping_country('IR');
+
+                // Set state and city with PWS compatibility
+                $addressData = [
+                        'province' => $province,
+                    'city'     => $city,
+                ];
+                GetProvincesData::setOrderAddress($order, $addressData, 'billing');
+                GetProvincesData::setOrderAddress($order, $addressData, 'shipping');
+
+                // Add shipping method based on settings
+                $shipping_method_setting = syncBasalamSettings()->getSettings(SettingsConfig::ORDER_SHIPPING_METHOD);
+
+                if (isset($data['financial_report']['shipping_submit']['total']['amount'])) {
+                    $shipping_cost = $data['financial_report']['shipping_submit']['total']['amount'];
+
+                    $currency = get_woocommerce_currency();
+                    if ($currency === 'IRT') {
+                        $shipping_cost = $shipping_cost / 10;
+                    } elseif ($currency === 'IRHT') {
+                        $shipping_cost = $shipping_cost / 10000;
+                    } elseif ($currency === 'IRHR') {
+                        $shipping_cost = $shipping_cost / 1000;
+                    }
+
+                    $shipping_item = new \WC_Order_Item_Shipping();
+
+                    if ($shipping_method_setting === 'basalam') {
+                        // Use Basalam shipping method title from API
+                        if (isset($data['parcel_detail']['shipping_method']['title'])) {
+                            $shipping_method_title = $data['parcel_detail']['shipping_method']['title'];
+                            $shipping_item->set_method_title($shipping_method_title);
+                        }
+                        $shipping_item->set_method_id('basalam_shipping');
+                    } elseif (strpos($shipping_method_setting, 'wc_') === 0) {
+                        // Use WooCommerce shipping method
+                        $wc_method_id = substr($shipping_method_setting, 3); // Remove 'wc_' prefix
+
+                        // Find the shipping method instance
+                        $method_instance_id = self::findShippingMethodInstanceId($wc_method_id);
+                        if ($method_instance_id) {
+                            $shipping_item->set_method_id($wc_method_id . ':' . $method_instance_id);
+
+                            // Get the method title from WooCommerce
+                            $method_title = self::getShippingMethodTitle($wc_method_id, $method_instance_id);
+                            if ($method_title) {
+                                $shipping_item->set_method_title($method_title);
+                            }
+                        } else {
+                            // Fallback to method id without instance
+                            $shipping_item->set_method_id($wc_method_id);
+                            $shipping_item->set_method_title($wc_method_id);
+                        }
+                    }
+
+                    $shipping_item->set_total(floatval($shipping_cost));
+                    $shipping_item->set_taxes([]);
+                    $order->add_item($shipping_item);
+                }
+            }
+
+            $order->calculate_totals();
+
+            $total_price = 0;
+            $products_total = 0;
+
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    if (isset($item['financial_report']['report_items']) && is_array($item['financial_report']['report_items'])) {
+                        foreach ($item['financial_report']['report_items'] as $report_item) {
+                            if (isset($report_item['title']) && $report_item['title'] === 'قیمت محصول' && isset($report_item['amount'])) {
+                                $products_total += (int) $report_item['amount'];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ($products_total > 0) {
+                $total_price = $products_total;
+            } else {
+                if (isset($data['financial_report']['product_cost']['report_items'][0]['amount'])) {
+                    $total_price += $data['financial_report']['product_cost']['report_items'][0]['amount'];
+                }
+            }
+
+            if (isset($data['financial_report']['shipping_cost']['total']['amount'])) {
+                $total_price += $data['financial_report']['shipping_cost']['total']['amount'];
+            }
+
+            if ($total_price > 0) {
+                $currency = get_woocommerce_currency();
+                if ($currency === 'IRT') {
+                    $total_price = $total_price / 10;
+                } elseif ($currency === 'IRHT') {
+                    $total_price = $total_price / 10000;
+                } elseif ($currency === 'IRHR') {
+                    $total_price = $total_price / 1000;
+                }
+                $order->set_total($total_price);
+            }
+
+            $order->set_payment_method('basalam payment method');
+            $order->set_payment_method_title('Basalam Payment');
+
+            $orderStatusType = syncBasalamSettings()->getSettings(SettingsConfig::ORDER_STATUES_TYPE);
+
+            $status_map = [
+                3067 => 'bslm-rejected',
+                3739 => 'bslm-wait-vendor',
+                3237 => 'bslm-preparation',
+                3238 => 'bslm-shipping',
+                3195 => 'bslm-completed',
+                3233 => 'bslm-rejected',
+            ];
+            $status_id = $data['status']['id'] ?? null;
+
+            if ($orderStatusType == 'woocommerce_statuses') {
+                $order->set_status('processing');
+            } else {
+                $order_status = $status_map[$status_id] ?? 'bslm-wait-vendor';
+                $order->set_status($order_status);
+            }
+
+            $purchase_count = $data['customer_data']['purchase_count'];
+            $fee_amount = $data['financial_report']['product_cost']['report_items'][2]['amount'] ?? 0;
+            $balance_amount = $data['financial_report']['product_cost']['total']['amount'] ?? 0;
+
+
+            $order->update_meta_data('_basalam_fee_amount', intval($fee_amount / 10));
+            $order->update_meta_data('_basalam_balance_amount', intval($balance_amount / 10));
+            $order->update_meta_data('_basalam_purchase_count', $purchase_count);
+
+            if (isset($data['hash_id'])) {
+                $order->update_meta_data('_sync_basalam_hash_id', $data['hash_id']);
+            }
+
+            self::executeWithoutWccfOrderSaveHooks(function () use ($order) {
+                $order->save();
+            }, $invoice_id, 'order->save()');
+
+            $order_id = $order->get_id();
+            if ($order_id) {
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table; no object cache for these operational queries.
+                $insert_result = $wpdb->insert(
+                    $table_name,
+                    [
+                        'payment_id'  => $payment_id,
+                        'invoice_id'  => $invoice_id,
+                        'user_id'     => $user_id,
+                        'city_id'     => $city_id,
+                        'province_id' => $province_id,
+                        'order_id'    => $order_id,
+                    ],
+                    ['%d', '%d', '%d', '%d', '%d', '%d']
+                );
+
+                if ($insert_result === false) {
+                    throw new \Exception("خطا در ذخیره اطلاعات سفارش در جدول sync_basalam_payments");
+                }
+
+                update_post_meta($order_id, '_is_sync_basalam_order', true);
+
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
+                $wpdb->query('COMMIT');
+
+                return [
+                    'success'  => true,
+                    'message'  => 'Order created successfully',
+                    'order_id' => $order_id,
+                    'status'   => 200,
+                ];
+            } else {
+                throw new \Exception("خطا در ایجاد سفارش با شناسه $invoice_id ، از گزینه بررسی سفارشات استفاده نمایید.");
+            }
+        } catch (\Exception $e) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control statement; no object cache applicable.
+            $wpdb->query('ROLLBACK');
+
+            Logger::error($e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Failed to create order.',
+                'error'   => $e->getMessage(),
+                'status'  => 500,
+            ];
+        }
+    }
+
+    public static function cancelOrderWoo($invoice_id)
+    {
+        return self::updateOrderStatus($invoice_id, 'bslm-rejected', 'bslm-rejected');
+    }
+
+    public static function completeOrderWoo($invoice_id)
+    {
+        return self::updateOrderStatus($invoice_id, 'bslm-completed', 'bslm-completed');
+    }
+
+    public static function confirmOrderWoo($invoice_id)
+    {
+        return self::updateOrderStatus($invoice_id, 'bslm-preparation', 'bslm-preparation');
+    }
+
+    public static function shippedOrderWoo($invoice_id)
+    {
+        return self::updateOrderStatus($invoice_id, 'bslm-shipping', 'bslm-shipping');
+    }
+
+    public static function updateOrderStatus($invoice_id, $status, $job = null)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sync_basalam_payments';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom plugin table; identifier from $wpdb->prefix, not user input.
+        $order_id = $wpdb->get_var(
+            $wpdb->prepare("SELECT order_id FROM {$table_name} WHERE invoice_id = %d", $invoice_id)
+        );
+
+        if (!$order_id) {
+            $create_result = self::createOrderWoo([
+                'invoice_id' => $invoice_id,
+            ]);
+
+            if (!empty($create_result['success']) && !empty($create_result['order_id'])) {
+                $order_id = $create_result['order_id'];
+            }
+        }
+
+        if (!$order_id) {
+            return [
+                'success'    => false,
+                'message'    => 'Order not found.',
+                'error'      => "No WooCommerce order found for invoice_id {$invoice_id}.",
+                'invoice_id' => $invoice_id,
+                'status'     => 404,
+            ];
+        }
+
+        $order = wc_get_order($order_id);
+
+        if ($order && $order instanceof \WC_Order) {
+            $order->update_status($status);
+            return [
+                'success'    => true,
+                'message'    => 'Order status updated successfully.',
+                'order_id'   => $order_id,
+                'invoice_id' => $invoice_id,
+                'job'        => $job,
+                'status_key' => $status,
+                'status'     => 200,
+            ];
+        }
+
+        self::logError("آبجکت سفارش ووکامرس برای order_id {$order_id} و invoice_id {$invoice_id} معتبر نیست");
+        return [
+            'success'    => false,
+            'message'    => 'Invalid WooCommerce order object.',
+            'error'      => "Invalid WooCommerce order object for order_id {$order_id} and invoice_id {$invoice_id}.",
+            'order_id'   => $order_id,
+            'invoice_id' => $invoice_id,
+            'status'     => 500,
+        ];
+    }
+
+    public static function getPlaceholderProductId()
+    {
+        $placeholder_name = 'این محصول در سایت شما تعریف نشده است ، برای مشاهده جزییات به باسلام مراجعه کنید';
+        $product_id = self::productExistsByTitle($placeholder_name);
+        if (!$product_id) {
+            $product = new \WC_Product_Simple();
+            $product->set_name($placeholder_name);
+            $product->set_status('draft');
+            $product->set_sku('placeholder-basalam-product');
+            $product->save();
+            $product_id = $product->get_id();
+        }
+
+        return $product_id;
+    }
+
+    public static function getWooProductSimpleId($sync_basalam_product_id)
+    {
+        $product = get_posts([
+            'post_type'      => 'product',
+            'meta_key'       => ProductMetaKey::basalamProductId(),
+            'meta_value'     => $sync_basalam_product_id,
+            'posts_per_page' => 1,
+        ]);
+
+        return !empty($product) ? $product[0]->ID : null;
+    }
+
+    public static function getWooProductVariableId($sync_basalam_product_variant_id)
+    {
+        $args = [
+            'post_type'      => 'product_variation',
+            'posts_per_page' => 1,
+            'meta_key'       => 'sync_basalam_variation_id',
+            'meta_value'     => $sync_basalam_product_variant_id,
+            'fields'         => 'ids',
+        ];
+
+        $variation = get_posts($args);
+
+        return !empty($variation) ? $variation[0] : null;
+    }
+
+    public static function productExistsByTitle($title)
+    {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct lookup on core posts table; no cache key available for this title match.
+        $product_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status != 'private' AND post_title = %s LIMIT 1",
+                $title
+            )
+        );
+
+        return $product_id ? $product_id : false;
+    }
+
+    private static function set_item_price_from_financial_report($order, $order_item_id, $item, $quantity)
+    {
+        $product_price = 0;
+        if (isset($item['financial_report']['report_items']) && is_array($item['financial_report']['report_items'])) {
+            foreach ($item['financial_report']['report_items'] as $report_item) {
+                if (isset($report_item['title']) && $report_item['title'] === 'قیمت محصول' && isset($report_item['amount'])) {
+                    $product_price = (int) $report_item['amount'];
+                    break;
+                }
+            }
+        }
+
+        if ($product_price > 0) {
+            $currency = get_woocommerce_currency();
+            if ($currency === 'IRT') {
+                $product_price = $product_price / 10;
+            } elseif ($currency === 'IRHT') {
+                $product_price = $product_price / 10000;
+            } elseif ($currency === 'IRHR') {
+                $product_price = $product_price / 1000;
+            }
+
+            $order_item = $order->get_item($order_item_id);
+            if ($order_item) {
+                $order_item->set_subtotal($product_price);
+                $order_item->set_total($product_price);
+                $order_item->save();
+            }
+        }
+    }
+
+    private static function findShippingMethodInstanceId($method_id)
+    {
+        if (!class_exists('WC_Shipping_Zones')) {
+            return null;
+        }
+
+        $shipping_zones = \WC_Shipping_Zones::get_zones();
+
+        foreach ($shipping_zones as $zone) {
+            $zone_id = $zone['id'] ?? 0;
+            $shipping_zone = new \WC_Shipping_Zone($zone_id);
+            $methods = $shipping_zone->get_shipping_methods(true);
+
+            foreach ($methods as $method) {
+                if ($method->id === $method_id) {
+                    return $method->instance_id;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function getShippingMethodTitle($method_id, $instance_id)
+    {
+        if (!class_exists('WC_Shipping_Zones')) {
+            return null;
+        }
+
+        $shipping_zones = \WC_Shipping_Zones::get_zones();
+
+        foreach ($shipping_zones as $zone) {
+            $zone_id = $zone['id'] ?? 0;
+            $shipping_zone = new \WC_Shipping_Zone($zone_id);
+            $methods = $shipping_zone->get_shipping_methods(true);
+
+            foreach ($methods as $method) {
+                if ($method->id === $method_id && $method->instance_id == $instance_id) {
+                    return $method->get_title() ?: $method->get_method_title();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function createRestResponse(array $result)
+    {
+        $status = (int) ($result['status'] ?? (!empty($result['success']) ? 200 : 500));
+        unset($result['status']);
+
+        return new \WP_REST_Response($result, $status);
+    }
+}

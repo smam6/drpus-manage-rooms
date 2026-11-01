@@ -1,0 +1,250 @@
+jQuery(document).ready(function ($) {
+  $(".confirm-order").click(function () {
+    if (confirm("آیا از تایید سفارش اطمینان دارید؟")) {
+      var orderId = $(this).data("order");
+      var nonce = $(this).data("nonce");
+
+      $.ajax({
+        url: ajaxurl,
+        method: "POST",
+        data: {
+          action: "confirm_basalam_order",
+          order_id: orderId,
+          _wpnonce: nonce,
+        },
+        success: function (data) {
+          if (data.success) {
+            window.BasalamToast.success(data.data?.message || "عملیات با موفقیت انجام شد.");
+          } else {
+            window.BasalamToast.error(data.data?.message || "خطایی رخ داده است.");
+          }
+          location.reload();
+        },
+        error: function () {
+          window.BasalamToast.error("خطایی در ارسال درخواست رخ داد.");
+          location.reload();
+        },
+      });
+    }
+  });
+
+  $(".cancel-order").click(function () {
+    var orderId = $(this).data("order");
+    var nonce = $(this).data("nonce");
+
+    $("#cancel-order-popup").show();
+  });
+
+  $("#cancel-cancel-order").click(function () {
+    $("#cancel-order-popup").hide();
+    $("#cancel-reason").val("");
+    $("#cancel-description").val("");
+  });
+
+  $("#submit-cancel-order").click(function () {
+    var orderId = $(this).data("order");
+    var nonce = $(this).data("nonce");
+    var reasonId = $("#cancel-reason").val();
+    var description = $("#cancel-description").val();
+
+    if (!reasonId) {
+      window.BasalamToast.warning("لطفاً دلیل لغو سفارش را انتخاب کنید.");
+      return;
+    }
+
+    if (!description.trim()) {
+      window.BasalamToast.warning("لطفاً توضیحات را وارد کنید.");
+      return;
+    }
+
+    $.ajax({
+      url: ajaxurl,
+      type: "POST",
+      data: {
+        action: "cancel_basalam_order",
+        order_id: orderId,
+        reason_id: reasonId,
+        description: description,
+        _wpnonce: nonce,
+      },
+      success: function (data) {
+        if (data.success) {
+          window.BasalamToast.success(data.data?.message || "عملیات با موفقیت انجام شد.");
+        } else {
+          window.BasalamToast.error(data.data?.message || "خطایی رخ داده است.");
+          console.error("Server error:", data);
+        }
+        location.reload();
+      },
+      error: function () {
+        window.BasalamToast.error("خطایی در ارسال درخواست رخ داد.");
+      },
+    });
+  });
+
+  $(".request-cancel-order").click(function () {
+    var orderId = $(this).data("order");
+    var nonce = $(this).data("nonce");
+
+    $("#request-cancel-order-popup").show();
+
+    $("#submit-request-cancel-order")
+      .data("order", orderId)
+      .data("nonce", nonce);
+  });
+
+  $("#cancel-request-cancel-order").click(function () {
+    $("#request-cancel-order-popup").hide();
+    $("#request-cancel-description").val("");
+  });
+
+  $("#submit-request-cancel-order").click(function () {
+    var orderId = $(this).data("order");
+    var nonce = $(this).data("nonce");
+    var description = $("#request-cancel-description").val();
+
+    if (!description.trim()) {
+      window.BasalamToast.warning("لطفاً توضیحات را وارد کنید.");
+      return;
+    }
+
+    $.ajax({
+      url: ajaxurl,
+      type: "POST",
+      data: {
+        action: "request_cancel_basalam_order",
+        order_id: orderId,
+        description: description,
+        _wpnonce: nonce,
+      },
+      success: function (response) {
+        if (response.success) {
+          window.BasalamToast.success(
+            response.data?.message || "درخواست لغو سفارش با موفقیت ارسال شد."
+          );
+          location.reload();
+        } else {
+          window.BasalamToast.error(response.data?.message || "خطایی رخ داده است");
+        }
+      },
+      error: function () {
+        window.BasalamToast.error("خطایی در ارسال درخواست رخ داد.");
+      },
+    });
+  });
+
+  $(".save-tracking-code").click(function () {
+    var orderId = $(this).data("order");
+    var trackingCode = $("#order_tracking_code").val();
+    var phoneNumber = $("#phone_number").val();
+
+    if (!trackingCode || !phoneNumber) {
+      window.BasalamToast.warning("لطفاً کد رهگیری و شماره تلفن را وارد کنید.");
+      return;
+    }
+
+    $("#shipping-method-popup").show();
+  });
+
+  $("#cancel-shipping-method").click(function () {
+    $("#shipping-method-popup").hide();
+  });
+
+  $("#submit-shipping-method").click(function (e) {
+    e.preventDefault();
+    var orderId = $(".save-tracking-code").data("order");
+    var trackingCode = $("#order_tracking_code").val();
+    var phoneNumber = $("#phone_number").val();
+    var shippingMethod = $("#shipping-method").val();
+    var nonce = $(this).data("nonce");
+
+    if (!shippingMethod) {
+      window.BasalamToast.warning("لطفاً روش ارسال را انتخاب کنید.");
+      return;
+    }
+
+    $.ajax({
+      url: ajaxurl,
+      method: "POST",
+      data: {
+        action: "tracking_code_basalam_order",
+        order_id: orderId,
+        tracking_code: trackingCode,
+        phone_number: phoneNumber,
+        shipping_method: shippingMethod,
+        _wpnonce: nonce,
+      },
+      success: function (data) {
+        if (data.success) {
+          window.BasalamToast.success(data.data?.message || "عملیات با موفقیت انجام شد.");
+        } else {
+          window.BasalamToast.error(data.data?.message || "خطایی رخ داده است.");
+          console.error("Server error:", data);
+        }
+        location.reload();
+      },
+      error: function (xhr) {
+        let errorMsg = "خطایی در ارسال درخواست رخ داد.";
+        try {
+          const json = JSON.parse(xhr.responseText);
+          errorMsg = json.data?.message || errorMsg;
+        } catch (e) {
+          console.error("JSON parse error:", e);
+        }
+        window.BasalamToast.error(errorMsg);
+        console.error("AJAX error:", xhr);
+        location.reload();
+      },
+    });
+  });
+
+  $(".request-delay").click(function () {
+    $("#delay-request-popup").show();
+  });
+
+  $("#cancel-delay-request").click(function () {
+    $("#delay-request-popup").hide();
+  });
+
+  $("#submit-delay-request").click(function () {
+    event.preventDefault();
+    var orderId = $(".request-delay").data("order");
+    var description = $("#delay-description").val();
+    var postponeDays = $("#postpone-days").val();
+    var nonce = $(this).data("nonce");
+
+    if (!description || !postponeDays) {
+      window.BasalamToast.warning("لطفاً توضیحات و تعداد روزهای تاخیر را وارد کنید.");
+      return;
+    }
+
+    $.ajax({
+      url: ajaxurl,
+      method: "POST",
+      data: {
+        action: "delay_req_basalam_order",
+        order_id: orderId,
+        description: description,
+        postpone_days: postponeDays,
+        _wpnonce: nonce,
+      },
+      success: function (data) {
+        if (data.success) {
+          window.BasalamToast.success(data.data?.message || "عملیات با موفقیت انجام شد.");
+        } else {
+          window.BasalamToast.error(data.data?.message || "خطایی رخ داده است.");
+        }
+        location.reload();
+      },
+      error: function (xhr) {
+        let errorMsg = "خطایی در ارسال درخواست رخ داد.";
+        try {
+          const json = JSON.parse(xhr.responseText);
+          errorMsg = json.data?.message || errorMsg;
+        } catch (e) {}
+        window.BasalamToast.error(errorMsg);
+        location.reload();
+      },
+    });
+  });
+});

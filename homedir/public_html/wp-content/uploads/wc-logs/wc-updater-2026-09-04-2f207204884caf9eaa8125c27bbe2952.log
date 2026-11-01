@@ -1,0 +1,14 @@
+2026-09-04T08:49:23+00:00 INFO Automatic database update triggered.
+2026-09-04T08:49:23+00:00 INFO Scheduling database updates (from 11.0.1)...
+2026-09-04T08:49:23+00:00 INFO   [11.1.0] Scheduled 'wc_update_1110_delete_dashboard_outofstock_count_transient'.
+2026-09-04T08:49:23+00:00 INFO   [11.1.0] Scheduled 'wc_update_1110_cleanup_block_email_posts'.
+2026-09-04T08:49:23+00:00 INFO   [11.1.0] Scheduled 'wc_update_1110_flush_product_count_cache'.
+2026-09-04T08:49:23+00:00 INFO   [11.1.0-1] Scheduled 'wc_update_11101_remove_deprecated_variation_gallery_option'.
+2026-09-04T08:49:23+00:00 INFO Database updates scheduled.
+2026-09-04T08:49:24+00:00 INFO Automatic database update triggered.
+2026-09-04T08:49:24+00:00 INFO Scheduling database updates (from 11.0.1)...
+2026-09-04T08:49:24+00:00 INFO   [11.1.0] Scheduled 'wc_update_1110_delete_dashboard_outofstock_count_transient'.
+2026-09-04T08:49:24+00:00 INFO   [11.1.0] Scheduled 'wc_update_1110_cleanup_block_email_posts'.
+2026-09-04T08:49:24+00:00 INFO   [11.1.0] Scheduled 'wc_update_1110_flush_product_count_cache'.
+2026-09-04T08:49:24+00:00 INFO   [11.1.0-1] Scheduled 'wc_update_11101_remove_deprecated_variation_gallery_option'.
+2026-09-04T08:49:24+00:00 INFO Database updates scheduled.

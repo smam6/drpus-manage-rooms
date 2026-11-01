@@ -1,0 +1,18 @@
+---
+documentroot: /home/aghazga1/public_html
+group: aghazga1
+hascgi: '0'
+homedir: /home/aghazga1
+ip: 88.135.68.17
+ipv6: ~
+owner: mizbanfa
+phpopenbasedirprotect: ~
+port: '443'
+secruleengineoff: ~
+serveradmin: webmaster@aghazgarclinic.ir
+serveralias: www.aghazgarclinic.ir mail.aghazgarclinic.ir
+servername: aghazgarclinic.ir
+ssl: '1'
+usecanonicalname: 'Off'
+user: aghazga1
+userdirprotect: ''

@@ -1,0 +1,385 @@
+AWSTATS DATA FILE 7.9 (build 20230108)
+# If you remove this file, all statistics for date 202504 will be lost/reset.
+# Last config file used to build this data file was /home/aghazga1/tmp/awstats/ssl/awstats.aghazgarclinic.ir.conf.
+
+# Position (offset in bytes) in this file for beginning of each section for
+# direct I/O access. If you made changes somewhere in this file, you should
+# also remove completely the MAP section (AWStats will rewrite it at next
+# update).
+BEGIN_MAP 28
+POS_GENERAL 2052                
+POS_TIME 2723                
+POS_VISITOR 7808                
+POS_DAY 8835                
+POS_DOMAIN 3373                
+POS_LOGIN 3658                
+POS_ROBOT 3813                
+POS_WORMS 3979                
+POS_EMAILSENDER 4110                
+POS_EMAILRECEIVER 4253                
+POS_SESSION 8997                
+POS_FILESIZE 14874               
+POS_SIDER 9172                
+POS_FILETYPES 4388                
+POS_DOWNLOADS 4686                
+POS_OS 4734                
+POS_BROWSER 4944                
+POS_SCREENSIZE 5356                
+POS_UNKNOWNREFERER 5430                
+POS_UNKNOWNREFERERBROWSER 5575                
+POS_ORIGIN 5715                
+POS_SEREFERRALS 5853                
+POS_PAGEREFS 5997                
+POS_SEARCHWORDS 6184                
+POS_KEYWORDS 6336                
+POS_MISC 2387                
+POS_ERRORS 6395                
+POS_CLUSTER 3514                
+POS_SIDER_404 6532                
+END_MAP
+
+# LastLine    = Date of last record processed - Last record line number in last log - Last record offset in last log - Last record signature value
+# FirstTime   = Date of first visit for history file
+# LastTime    = Date of last visit for history file
+# LastUpdate  = Date of last update - Nb of parsed records - Nb of parsed old records - Nb of parsed new records - Nb of parsed corrupted - Nb of parsed dropped
+# TotalVisits = Number of visits
+# TotalUnique = Number of unique visitors
+# MonthHostsKnown   = Number of hosts known
+# MonthHostsUnKnown = Number of hosts unknown
+BEGIN_GENERAL 8
+LastLine 20250612155634 1 0 6627428622866
+FirstTime 20250406162245
+LastTime 20250429125639
+LastUpdate 20250613154416 1 0 0 0 0
+TotalVisits 27                  
+TotalUnique 21                  
+MonthHostsKnown 0                   
+MonthHostsUnknown 24                  
+END_GENERAL
+
+# Misc ID - Pages - Hits - Bandwidth
+BEGIN_MISC 10
+PDFSupport 0 0 0
+JavaEnabled 0 0 0
+FlashSupport 0 0 0
+JavascriptDisabled 0 0 0
+DirectorSupport 0 0 0
+QuickTimeSupport 0 0 0
+TotalMisc 0 0 0
+WindowsMediaPlayerSupport 0 0 0
+AddToFavourites 0 0 0
+RealPlayerSupport 0 0 0
+END_MISC
+
+# Hour - Pages - Hits - Bandwidth - Not viewed Pages - Not viewed Hits - Not viewed Bandwidth
+BEGIN_TIME 24
+0 3 3 61481 2 2 6484
+1 25 269 5409882 2 17 357632
+2 1 1 20 1 1 3242
+3 1 1 20 1 1 3242
+4 1 1 20 1 1 3242
+5 1 1 20 1 1 3242
+6 3 3 60 3 4 43010
+7 1 1 20 1 1 3242
+8 1 1 20 1 1 3242
+9 1 1 20 1 1 3242
+10 5 5 100 4 4 30000
+11 5 5 122775 1 1 3242
+12 8 37 424545 4 4 28961
+13 6 6 184213 3 3 7500
+14 1 1 20 1 1 3242
+15 1 1 20 1 1 3242
+16 42 496 14134598 6 12 144691
+17 20 246 12079297 3 3 6504
+18 1 1 20 1 1 3242
+19 49 59 10617906 6 6 251356
+20 5 5 100 6 6 100465
+21 1 1 20 1 1 3242
+22 1 1 20 1 1 3242
+23 59 588 15604179 7 49 992810
+END_TIME
+
+# Domain - Pages - Hits - Bandwidth
+# The 25 first Pages must be first (order not required for others)
+BEGIN_DOMAIN 4
+us 158 778 39878138
+ir 60 676 15299654
+gb 16 157 2122471
+ru 8 123 1339113
+END_DOMAIN
+
+# Cluster ID - Pages - Hits - Bandwidth
+BEGIN_CLUSTER 0
+END_CLUSTER
+
+# Login - Pages - Hits - Bandwidth - Last visit
+# The 10 first Pages must be first (order not required for others)
+BEGIN_LOGIN 0
+END_LOGIN
+
+# Robot ID - Hits - Bandwidth - Last visit - Hits on robots.txt
+# The 25 first Hits must be first (order not required for others)
+BEGIN_ROBOT 1
+bingbot/ 2 36526 20250429061131 1
+END_ROBOT
+
+# Worm ID - Hits - Bandwidth - Last visit
+# The 5 first Hits must be first (order not required for others)
+BEGIN_WORMS 0
+END_WORMS
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first Hits must be first (order not required for others)
+BEGIN_EMAILSENDER 0
+END_EMAILSENDER
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first hits must be first (order not required for others)
+BEGIN_EMAILRECEIVER 0
+END_EMAILRECEIVER
+
+# Files type - Hits - Bandwidth - Bandwidth without compression - Bandwidth after compression
+BEGIN_FILETYPES 12
+jpg 107 23234822 0 0
+js 500 3232441 0 0
+jpeg 39 3936056 0 0
+png 72 8621905 0 0
+woff2 74 4153036 0 0
+ttf 5 173427 0 0
+css 602 1317836 0 0
+svg 172 927268 0 0
+Unknown 3 362110 0 0
+woff 12 746736 0 0
+php 65 2096 0 0
+html 83 11931643 0 0
+END_FILETYPES
+
+# Downloads - Hits - Bandwidth
+BEGIN_DOWNLOADS 0
+END_DOWNLOADS
+
+# OS ID - Hits
+BEGIN_OS ID - Hits - Pages 10
+macosx15 1 1
+android 141 12
+linux 380 27
+Unknown 68 68
+android10 451 41
+androidpie 6 6
+winxp 2 0
+win7 82 43
+win10 492 36
+androidjellybean 111 8
+END_OS
+
+# Browser ID - Hits - Pages
+BEGIN_BROWSER 16
+chrome125.0.0.0 141 13
+chrome135.0.0.0 153 12
+firefox11.0 2 0
+chrome116.0.0.0 2 2
+chrome56.0.2924.87 15 1
+chrome117.0.0.0 3 3
+chrome57.0.2987.108 111 8
+chrome85.0.4183.81 6 6
+safari5.0.4 52 42
+chrome134.0.0.0 404 33
+chrome134.0.6998.135 141 12
+chrome125.0.6422.60 363 24
+chrome117.0.5938.132 242 16
+Unknown 68 68
+chrome58.0.3029.110 1 1
+chrome83.0.4103.61 30 1
+END_BROWSER
+
+# Screen size - Hits
+BEGIN_SCREENSIZE 0
+END_SCREENSIZE
+
+# Unknown referer OS - Last visit date
+BEGIN_UNKNOWNREFERER 1
+WordPress/6.7.2;_https://aghazgarclinic.ir 20250429125639
+END_UNKNOWNREFERER
+
+# Unknown referer Browser - Last visit date
+BEGIN_UNKNOWNREFERERBROWSER 1
+WordPress/6.7.2;_https://aghazgarclinic.ir 20250429125639
+END_UNKNOWNREFERERBROWSER
+
+# Origin - Pages - Hits 
+BEGIN_ORIGIN 6
+From0 94 110
+From1 0 0
+From2 0 0
+From3 4 4
+From4 144 1620
+From5 0 0
+END_ORIGIN
+
+# Search engine referers ID - Pages - Hits
+BEGIN_SEREFERRALS 0
+END_SEREFERRALS
+
+# External page referers - Pages - Hits
+# The 25 first Pages must be first (order not required for others)
+BEGIN_PAGEREFS 1
+https://cip33.mizbanfadns.net:2087 4 4
+END_PAGEREFS
+
+# Search keyphrases - Number of search
+# The 10 first number of search must be first (order not required for others)
+BEGIN_SEARCHWORDS 0
+END_SEARCHWORDS
+
+# Search keywords - Number of search
+# The 25 first number of search must be first (order not required for others)
+BEGIN_KEYWORDS 0
+END_KEYWORDS
+
+# Errors - Hits - Bandwidth
+BEGIN_ERRORS 5
+500 30 97260
+503 3 3048
+409 1 1144
+301 16 260
+404 71 1873321
+END_ERRORS
+
+# URL with 404 errors - Hits - Last URL referrer
+BEGIN_SIDER_404 12
+/wp-content/uploads/2024/09/doctors-pic.jpg 5 https://aghazgarclinic.ir/doctors/
+/wordpress/wp-admin/setup-config.php 1 http://aghazgarclinic.ir/wordpress/wp-admin/setup-config.php
+/wp-content/uploads/2024/09/pic2.png 10 https://aghazgarclinic.ir/
+/wp-content/uploads/2024/09/support.png 6 https://aghazgarclinic.ir/appointment-reservation/
+/ 4 -
+/our-colleagues/ 1 https://aghazgarclinic.ir/
+/wp-content/uploads/2025/02/Aghazgar.logo-removebg.png 21 https://aghazgarclinic.ir/appointment-reservation/
+/wp-content/uploads/2024/09/main-pic.png 9 https://aghazgarclinic.ir/
+/wp-content/uploads/2024/09/pic1.png 10 https://aghazgarclinic.ir/
+/wp-content/uploads/2024/10/physiotherapist-pic.jpeg 2 https://aghazgarclinic.ir/appointment-reservation/
+/%7B%7B%7Bdata.link 1 https://aghazgarclinic.ir/
+/%D8%A8%D8%B1%D8%B1%D8%B3%DB%8C-%DA%AF%D9%88%D8%B4%DB%8C-%DA%AF%D9%84%DA%A9%D8%B3%DB%8C-a32-%D8%B3%D8%A7%D9%85%D8%B3%D9%88%D9%86%DA%AF-%D9%85%D8%AF%D9%84-4g-%D9%88-5g/ 1 -
+END_SIDER_404
+
+# Host - Pages - Hits - Bandwidth - Last visit date - [Start date of last visit] - [Last page of last visit]
+# [Start date of last visit] and [Last page of last visit] are saved only if session is not finished
+# The 25 first Hits must be first (order not required for others)
+BEGIN_VISITOR 24
+65.21.37.160 54 54 246760 20250429125901
+44.202.220.86 42 52 10496614 20250428193042
+5.217.194.221 25 282 4896386 20250406232940
+5.239.172.110 20 264 5409782 20250407011917
+51.38.112.204 16 157 2122471 20250406232950
+65.109.148.6 14 14 280 20250407011916
+94.101.134.94 9 124 4626867 20250406231224
+205.169.39.54 8 121 6039610 20250428171653
+34.72.176.129 8 121 4162866 20250428161211
+185.186.240.227 8 123 1339113 20250406162252
+104.197.69.115 8 121 4162858 20250428161243
+34.122.147.229 8 121 4162863 20250428161202
+205.169.39.2 8 121 6039607 20250428171706
+194.225.205.53 6 6 366619 20250429110457
+154.28.229.11 2 2 122723 20250428160835
+205.169.39.139 1 30 240234 20250429125631
+154.28.229.35 1 1 61357 20250428160826
+154.28.229.177 1 1 61362 20250428160817
+154.28.229.213 1 1 61356 20250428160826
+66.249.83.2 1 7 1924497 20250406232530
+44.200.60.207 1 1 61353 20250429120950
+66.249.81.199 0 2 100264 
+66.249.83.1 0 5 1182538 
+66.249.83.3 0 3 750996 
+END_VISITOR
+
+# Date - Pages - Hits - Bandwidth - Visits
+BEGIN_DAY 4
+20250406 71 715 17064524 9
+20250407 24 268 5409862 2
+20250428 115 690 35555869 12
+20250429 32 61 609121 4
+END_DAY
+
+# Session range - Number of visits
+BEGIN_SESSION 4
+2mn-5mn 4
+0s-30s 20
+15mn-30mn 1
+1h+ 2
+END_SESSION
+
+# URL - Pages - Bandwidth - Entry - Exit
+# The 25 first Pages must be first (order not required for others)
+BEGIN_SIDER 61
+/wp-cron.php 63 1260 6 6
+/ 34 2331357 21 10
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Regular.woff2 11 458964 0 0
+/wp-content/plugins/demo-modal/assets/fonts/vazir/Vazir-Meduim-FD.woff 11 645084 0 6
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-solid-900.woff2 11 860156 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-SemiBold.woff2 11 459228 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Medium.woff2 11 460460 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Bold.woff2 11 461428 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Light.woff2 11 454784 0 1
+/doctors/ 5 338635 0 0
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-brands-400.woff2 4 326448 0 0
+/contact-us/ 3 425251 0 0
+/appointment-reservation/ 3 238233 0 0
+/wp-content/plugins/elementor/assets/lib/eicons/fonts/eicons.woff2 2 198880 0 0
+/services/ 2 609734 0 0
+/doctors/%d8%b5%d8%af%db%8c%d9%82%d9%87-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%a7%d8%aa-%d8%b4%d8%ac%d8%a7%d8%b9%db%8c/ 2 58502 0 1
+/wp-json/oembed/1.0/embed 2 5260 0 0
+/wp-json/jet-engine/v2/appointment-refresh-date/ 2 866 0 1
+/%DA%86%DA%AF%D9%88%D9%86%D9%87-%D8%A8%D8%A7-%D9%85%D8%B1%DA%AF-%D8%B9%D8%B2%DB%8C%D8%B2%D8%A7%D9%86%D9%85%D9%88%D9%86-%DA%A9%D9%86%D8%A7%D8%B1-%D8%A8%DB%8C%D8%A7%DB%8C%DB%8C%D9%85/ 1 204641 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/ttf/PeydaFaNum-Regular.ttf 1 34631 0 0
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-solid-900.woff 1 101652 0 0
+/my-account/ 1 126430 0 0
+/doctors/%d8%af%da%a9%d8%aa%d8%b1-%d9%85%d8%b9%d8%b5%d9%88%d9%85%d9%87-%d8%a7%d8%b3%d9%85-%d8%ae%d8%a7%d9%86%db%8c/ 1 28984 0 0
+/services/%D8%AA%D8%B3%D8%AA-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%AE%D8%AA%DB%8C/ 1 180816 0 0
+/wp-json/ 1 2981372 0 0
+/doctors/%D9%87%D9%86%DA%AF%D8%A7%D9%85%D9%87-%D8%B4%DA%A9%D8%A7%D8%B1%DA%86%DB%8C/ 1 150077 0 0
+/doctors/%D9%85%D9%87%D8%AF%DB%8C-%D9%85%D8%AD%D9%85%D8%AF%DB%8C/ 1 141584 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D9%81%D8%B1%D8%AF%DB%8C/ 1 181720 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/ttf/PeydaFaNum-Bold.ttf 1 34860 0 0
+/doctors/%D8%AF%DA%A9%D8%AA%D8%B1-%D9%85%D8%B1%D8%AA%D8%B6%DB%8C-%D8%B1%D8%B6%D9%88%DB%8C/ 1 148340 0 0
+/services/%D8%B1%D9%88%D8%A7%D8%A8%D8%B7-%D8%A8%DB%8C%D9%86-%D9%81%D8%B1%D8%AF%DB%8C/ 1 185559 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/ttf/PeydaFaNum-Medium.ttf 1 34741 0 0
+/%D8%AA%D8%AE%D8%B5%D8%B5-%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AA%D8%AD%D8%B5%DB%8C%D9%84%DB%8C-%D9%88-%D8%B4%D8%BA%D9%84%DB%8C-%D9%88-%D9%85%D8%B9%D8%B1%D9%81%DB%8C-%D8%A8%D9%87%D8%AA%D8%B1/ 1 195503 0 0
+/services/%D8%B7%D8%B1%D8%AD%D9%88%D8%A7%D8%B1%D9%87-%D8%AF%D8%B1%D9%85%D8%A7%D9%86%DB%8C/ 1 183194 0 1
+/13%D8%B1%D8%A7%D9%87%DA%A9%D8%A7%D8%B1-%D8%A8%D8%B1%D8%A7%DB%8C-%D8%A8%D9%87%D8%A8%D9%88%D8%AF-%D8%B1%D9%88%D8%A7%D8%A8%D8%B7-%D8%A8%D8%A7-%D9%BE%D8%AF%D8%B1-%D9%88-%D9%85%D8%A7%D8%AF%D8%B1/ 1 195474 0 0
+/wp-content/plugins/woocommerce/assets/fonts/cardo_normal_400.woff2 1 146060 0 0
+/%D9%87%D9%85%D9%87-%DA%86%DB%8C%D8%B2-%D8%AF%D8%B1%D9%85%D9%88%D8%B1%D8%AF-%D8%A7%D8%AE%D8%AA%D9%84%D8%A7%D9%84-%D8%A7%D8%B6%D8%B7%D8%B1%D8%A7%D8%A8-%D9%88-%D8%B1%D8%A7%D9%87%DA%A9%D8%A7%D8%B1%D9%87/ 1 209218 0 0
+/%DB%B1%DB%B4-%D8%B1%D8%A7%D9%87-%D9%85%D8%AA%D9%88%D9%82%D9%81-%DA%A9%D8%B1%D8%AF%D9%86-%D8%A7%D9%81%DA%A9%D8%A7%D8%B1-%D9%85%D9%86%D9%81%DB%8C-%D8%B1%D9%87%D8%A7%DB%8C%DB%8C-%D8%A7%D8%B2-%D9%85%D9%86/ 1 213889 0 0
+/xmlrpc.php 1 816 0 0
+/doctors/%d9%85%d8%ad%d8%af%d8%ab%d9%87-%d8%b5%d8%a7%d9%84%d8%ad%db%8c/ 1 30044 0 1
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/ttf/PeydaFaNum-Light.ttf 1 34664 0 0
+/wp-json/wp/v2/pages/3768 1 356850 0 0
+/feed/ 1 148351 0 0
+/%D9%86%DA%A9%D8%A7%D8%AA%DB%8C-%DA%A9%D9%87-%D8%A8%D8%A7%DB%8C%D8%AF-%D9%BE%DB%8C%D8%B4-%D8%A7%D8%B2-%D8%A7%D8%B2%D8%AF%D9%88%D8%A7%D8%AC-%D8%A8%D8%AF%D8%A7%D9%86%DB%8C%D9%85/ 1 194232 0 0
+/services/%D8%B3%D9%84%D8%A7%D9%85%D8%AA-%D8%AC%D9%86%D8%B3%DB%8C/ 1 182708 0 0
+/doctors/%D9%85%DA%98%DA%AF%D8%A7%D9%86-%D8%A8%D8%A7%D8%A8%D8%A7%DB%8C%DB%8C/ 1 148787 0 0
+/about-us/ 1 209802 0 0
+/wp-content/plugins/woocommerce/assets/fonts/Inter-VariableFont_slnt,wght.woff2 1 326628 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AE%D8%A7%D9%86%D9%88%D8%A7%D8%AF%D9%87/ 1 182013 0 0
+/doctors/%d8%af%da%a9%d8%aa%d8%b1-%d9%85%d8%b1%db%8c%d9%85-%d8%b2%d8%a7%d8%b1%d8%b9%db%8c-%d9%86%da%98%d8%a7%d8%af/ 1 29561 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D9%BE%DB%8C%D8%B4-%D8%A7%D8%B2-%D8%A7%D8%B2%D8%AF%D9%88%D8%A7%D8%AC/ 1 181611 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%B4%D8%BA%D9%84%DB%8C-%D8%AA%D8%AD%D8%B5%DB%8C%D9%84%DB%8C-%D9%88-%D8%A7%D8%B3%D8%AA%D8%B9%D8%AF%D8%A7%D8%AF%DB%8C%D8%A7%D8%A8%DB%8C/ 1 182915 0 0
+/blog/ 1 260786 0 0
+/doctors/%D8%AF%DA%A9%D8%AA%D8%B1-%D9%85%D8%B9%D8%B5%D9%88%D9%85%D9%87-%D8%A7%D8%B3%D9%85-%D8%AE%D8%A7%D9%86%DB%8C/ 1 148757 0 0
+/services/%D8%A7%D8%AE%D8%AA%D9%84%D8%A7%D9%84%D8%A7%D8%AA-%D8%A8%D8%A7%D9%84%DB%8C%D9%86%DB%8C/ 1 180483 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%DA%A9%D9%88%D8%AF%DA%A9-%D9%88-%D9%86%D9%88%D8%AC%D9%88%D8%A7%D9%86/ 1 180579 0 0
+/doctors/%D8%B5%D8%AF%DB%8C%D9%82%D9%87-%D8%A7%D9%84%D8%B3%D8%A7%D8%AF%D8%A7%D8%AA-%D8%B4%D8%AC%D8%A7%D8%B9%DB%8C/ 1 157371 0 0
+/comments/feed/ 1 790 0 0
+/services/%D8%B2%D9%88%D8%AC%DB%8C%D9%86/ 1 183474 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/ttf/PeydaFaNum-SemiBold.ttf 1 34531 0 0
+/wp-admin/admin-ajax.php 1 20 0 0
+END_SIDER
+
+# Payload Range - Payload Frequency
+BEGIN_FILESIZE 7
+44-100 12
+100-500 195
+0-44 84
+500-1K 227
+1K-2K 317
+5K+ 718
+2K-5K 304
+END_FILESIZE

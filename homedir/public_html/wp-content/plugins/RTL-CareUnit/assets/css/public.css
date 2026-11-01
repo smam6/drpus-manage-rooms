@@ -1,0 +1,330 @@
+/*-------------------------------------------------------------------------------------------------------------- Fonts*/
+@font-face {
+    font-family: IRANSans;
+    font-style: normal;
+    font-weight: bold;
+    src: url('../fonts/IRANSansWeb/eot/IRANSansWeb_Bold.eot');
+    src: url('../fonts/IRANSansWeb/eot/IRANSansWeb_Bold.eot?#iefix') format('embedded-opentype'), /* IE6-8 */ url('../fonts/IRANSansWeb/woff2/IRANSansWeb_Bold.woff2') format('woff2'), /* FF39+,Chrome36+, Opera24+*/ url('../fonts/IRANSansWeb/woff/IRANSansWeb_Bold.woff') format('woff'), /* FF3.6+, IE9, Chrome6+, Saf5.1+*/ url('../fonts/IRANSansWeb/ttf/IRANSansWeb_Bold.ttf') format('truetype');
+}
+
+#plugin-information .section .rtltheme_content, #plugin-information .section .rtltheme_faqs, #plugin-information .section .rtltheme_screenshots {
+    /*font-family: 'IRANYekan';*/
+    direction: rtl;
+}
+
+#plugin-information .section .rtltheme_content img {
+    max-width: 100%;
+    margin: 15px 0;
+}
+
+#plugin-information .section .rtltheme_content a {
+    display: block;
+    margin: 10px auto;
+    text-decoration: none;
+    text-align: center;
+    background: #7acb52;
+    color: #fff;
+    padding: 5px 15px;
+    border-radius: 5px;
+}
+
+.plugins .plugin-update-tr .notice, .plugins .plugin-update-tr div[class=update-message] {
+    position: relative;
+    /*font-family: 'IRANYekan';*/
+}
+
+/* Dimmer */
+.RSM-Dimmer {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: #eeeeee;
+    position: fixed;
+    z-index: 2147483647;
+    background-color: rgba(0, 0, 0, .8);
+}
+
+.RSM-Dimmer .RSM-Dimmer-Content {
+    height: 100%;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: IRANSans, Tahoma, Arial, sans-serif !important;
+}
+
+/* Buttons */
+a.RSM-BTN,
+button.RSM-BTN {
+    color: #fff;
+    height: auto;
+    display: block;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 5px;
+    transition: .5s all;
+    background: #4fb545;
+    text-decoration: none;
+    padding: 6px 15px 6px 15px;
+}
+
+a.RSM-BTN:hover,
+button.RSM-BTN:hover {
+    background: #36772f;
+    transition: .5s all;
+}
+
+button.RSM-BTN {
+    border: none;
+}
+
+a.RSM-BTN.RSM-BTN-Red,
+button.RSM-BTN.RSM-BTN-Red {
+    background: #f46666;
+    margin-left: 1rem;
+}
+
+a.RSM-BTN.RSM-BTN-Red:hover,
+button.RSM-BTN.RSM-BTN-Red:hover {
+    background: #972121;
+}
+
+a.RSM-BTN.RSM-BTN-Blue,
+button.RSM-BTN.RSM-BTN-Blue {
+    background: #2271b1;
+}
+
+a.RSM-BTN.RSM-BTN-Blue:hover,
+button.RSM-BTN.RSM-BTN-Blue:hover {
+    background: #135e96;
+}
+
+/* Plugin Deactivation Area */
+.RSM-PDA-Wrapper {
+    padding: 20px;
+    color: #5a5a5a;
+    font-size: 15px;
+    background: #fff;
+    position: relative;
+    border-radius: 10px;
+}
+
+.RSM-PDA-Close {
+    top: 5px;
+    left: 5px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    position: absolute;
+    border-radius: 100%;
+}
+
+.RSM-PDA-Close span.dashicons {
+    width: 30px;
+    height: 30px;
+    color: #eaeaea;
+    font-size: 30px;
+}
+
+.RSM-PDA-Icon {
+    text-align: center;
+}
+
+.RSM-PDA-Icon img {
+    width: 90px;
+    height: auto;
+    margin-top: 10px;
+}
+
+.RSM-PDA-Close .dashicons:hover {
+    color: #999;
+}
+
+.RSM-PDA-Icon-Text {
+    display: block;
+    font-size: 20px;
+    margin-top: 15px;
+    font-weight: bold;
+    margin-bottom: 30px;
+}
+
+.RSM-PDA-Wrapper .RSM-PDA-Description {
+    padding: 20px 0;
+    text-align: right;
+    line-height: 35px;
+    margin: 15px 0 15px 0;
+}
+
+.RSM-PDA-Wrapper .RSM-PDA-BTN-Wrapper {
+    margin-top: 30px;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.RSM-PDA-Settings-Text {
+    color: #999;
+}
+
+.RSM-PDA-Wrapper .RSM-PDA-BTN-Wrapper > button:not(:last-of-type) {
+    margin-left: 20px;
+}
+
+#RSM-PDA-Settings {
+    color: #999;
+    position: relative;
+    text-decoration: none;
+}
+
+#RSM-PDA-Settings:after {
+    right: 0;
+    content: "";
+    height: 1px;
+    width: 100%;
+    bottom: -3px;
+    position: absolute;
+    border-bottom: 1px dashed #999;
+}
+
+.RSM-PDA-Actions {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+#RSM-PDA-Deactive {
+    margin-left: 10px;
+}
+
+.RSM-PDA-Settings-Link {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.RSM-PDA-Settings-Link:hover {
+    color: #515151;
+}
+
+.rsm-update-message {
+    border-color: #7acb52;
+    border-radius: 5px 0 0 5px;
+    color: #fff0ef;
+    position: relative;
+    padding: 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rsm-update-bg-black{
+    background-color: #2f3041 !important;
+}
+
+.rsm-update-bg-red{
+    background-color: #E88888EF !important;
+}
+.rsm-update-bg-green{
+    background-color: rgba(136, 232, 138, 0.94) !important;
+}
+.rsm-update-mute{
+    pointer-events: none;
+    cursor: none;
+}
+.rsm-update-message.notice-error {
+    background-color: #d81e1e;
+    border-color: #850404;
+    padding-right: 12px;
+}
+
+.rsm-update-message p {
+    color: #ffffff;
+    font-family: 'IRANSans', serif;
+}
+
+.rsm-update-message p:before {
+    display: none;
+}
+
+.rsm-update-message a {
+    color: #ffd053;
+}
+
+.rsm-notice-logo{
+    position: absolute;
+    right: 0.7rem;
+    top: 22%;
+}
+
+.rsm-loading {
+    display: block;
+
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    border-top-color: #7fc945;
+    animation: rsm-loading 1s linear infinite;
+}
+
+@keyframes rsm-loading {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.rsm-update-theme {
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    background: 0 0;
+    cursor: pointer;
+    text-align: right;
+    color: #ffd053;
+    text-decoration: underline;
+    transition-property: border, background, color;
+    transition-duration: .05s;
+    transition-timing-function: ease-in-out;
+}
+.rsm-update-theme:hover {
+    color: #f3b91e;
+}
+
+
+.details-btn {
+    text-decoration: none !important;
+    background-color: #4b4c68;
+    color: #FFF !important;
+    padding: 6px 18px;
+    border-radius: 5px;
+    font-family: 'IRANSans', serif;
+    margin-right: 10px;
+    transition: all .3s !important;
+}
+
+.details-btn:hover {
+    background-color: #3a3b51;
+}
+
+.buy-btn {
+    text-decoration: none !important;
+    background-color: #8ed556;
+    color: #FFF !important;
+    padding: 6px 18px;
+    border-radius: 5px;
+    font-family: 'IRANSans', serif;
+    margin-right: 10px;
+    transition: all .3s !important;
+}
+
+.buy-btn:hover {
+    background-color: #7fc945;
+}

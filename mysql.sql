@@ -1,0 +1,21 @@
+-- cPanel mysql backup
+GRANT USAGE ON *.* TO 'aghazga1'@'88.135.68.17' IDENTIFIED BY PASSWORD '*55D0BCCDAD12CE29BB5A2928111D76A6E91082E3';
+GRANT ALL PRIVILEGES ON `aghazga1\_bzaghazgarclinic`.* TO 'aghazga1'@'88.135.68.17';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1'@'88.135.68.17';
+GRANT USAGE ON *.* TO 'aghazga1'@'a2891.calalemedba.com' IDENTIFIED BY PASSWORD '*55D0BCCDAD12CE29BB5A2928111D76A6E91082E3';
+GRANT ALL PRIVILEGES ON `aghazga1\_bzaghazgarclinic`.* TO 'aghazga1'@'a2891.calalemedba.com';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1'@'a2891.calalemedba.com';
+GRANT USAGE ON *.* TO 'aghazga1'@'cip17.mizbanfadns.net' IDENTIFIED BY PASSWORD '*55D0BCCDAD12CE29BB5A2928111D76A6E91082E3';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1'@'cip17.mizbanfadns.net';
+GRANT ALL PRIVILEGES ON `aghazga1\_bzaghazgarclinic`.* TO 'aghazga1'@'cip17.mizbanfadns.net';
+GRANT USAGE ON *.* TO 'aghazga1'@'localhost' IDENTIFIED BY PASSWORD '*55D0BCCDAD12CE29BB5A2928111D76A6E91082E3';
+GRANT ALL PRIVILEGES ON `aghazga1\_bzaghazgarclinic`.* TO 'aghazga1'@'localhost';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1'@'localhost';
+GRANT USAGE ON *.* TO 'aghazga1_dBaSse1'@'88.135.68.17' IDENTIFIED BY PASSWORD '*209C252932E4BB1041CB13C631E554C9E0C58061';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1_dBaSse1'@'88.135.68.17';
+GRANT USAGE ON *.* TO 'aghazga1_dBaSse1'@'a2891.calalemedba.com' IDENTIFIED BY PASSWORD '*209C252932E4BB1041CB13C631E554C9E0C58061';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1_dBaSse1'@'a2891.calalemedba.com';
+GRANT USAGE ON *.* TO 'aghazga1_dBaSse1'@'cip17.mizbanfadns.net' IDENTIFIED BY PASSWORD '*209C252932E4BB1041CB13C631E554C9E0C58061';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1_dBaSse1'@'cip17.mizbanfadns.net';
+GRANT USAGE ON *.* TO 'aghazga1_dBaSse1'@'localhost' IDENTIFIED BY PASSWORD '*209C252932E4BB1041CB13C631E554C9E0C58061';
+GRANT ALL PRIVILEGES ON `aghazga1\_new`.* TO 'aghazga1_dBaSse1'@'localhost';

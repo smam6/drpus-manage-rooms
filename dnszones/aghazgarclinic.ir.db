@@ -1,0 +1,38 @@
+; cPanel first:124.0.23 (update_time):1789344950 Cpanel::ZoneFile::VERSION:1.3 hostname:cip17.mizbanfadns.net latest:136.0.40
+; Zone file for aghazgarclinic.ir
+$TTL 14400
+aghazgarclinic.ir.	86400	IN	SOA	dns4.mizbanfadns.net.	root.dns4.mizbanfadns.net.	(						2026091403						3600						1800						1209600						300	)
+aghazgarclinic.ir.	86400	IN	NS	dns2.mizbanfadns.net.
+aghazgarclinic.ir.	86400	IN	NS	dns3.mizbanfadns.net.
+aghazgarclinic.ir.	86400	IN	NS	dns4.mizbanfadns.net.
+aghazgarclinic.ir.	86400	IN	NS	dns1.mizbanfadns.net.
+mail	14400	IN	CNAME	aghazgarclinic.ir.
+aghazgarclinic.ir.	14400	IN	A	88.135.68.17
+aghazgarclinic.ir.	14400	IN	MX	0	mail.mizbanfalocal.com.
+www	14400	IN	CNAME	aghazgarclinic.ir.
+ftp	14400	IN	A	88.135.68.17
+aghazgarclinic.ir.	14400	IN	TXT	"v=spf1 a:mail.mizbanfalocal.com ip4:88.135.68.17 ip4:88.135.68.13 ip4:65.21.37.160 a mx include:relay.mailchannels.net a:mailgw.mizbanfalocal.com ~all"
+aghazgarclinic.ir.	14400	IN	TXT	"google-site-verification=Ar8b9tGuCuJPXAWGENrpTODepdpZ1PDxgkT4NyVCQjo"
+autodiscover	14400	IN	CNAME	mail.mizbanfalocal.com.
+_dmarc	14400	IN	TXT	"v=DMARC1\; p=reject\; rua=mailto:delivery\@mizbanfalocal.com\; ruf=mailto:delivery\@mizbanfalocal.com\; fo=1"
+mn8dd580dea2abaae._domainkey	14400	IN	TXT	"v=DKIM1\; k=rsa\; h=sha256\; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDYTzqISaPzkNgJE+09vnlr9mEsOSpqFDP0MXftaCW+0cN3BZgwrp0IpWaCzfKbl117qvczH4Fcuz2dTItW3DEMlZBL03hyTHpbRcLafCM8jelQSIAntOoD4cDOqVEgci1qOhow84UATU/zOqdSEbrP33ONgGMd2QK4mTCcO8VAyQIDAQAB"
+default._domainkey	14400	IN	TXT	"v=DKIM1\; k=rsa\; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1bXzpvDdB47ponADg4yN9s9SsnCxYp2/Ige0InthflEQuskH0TzkqdQP4n8KVD9PKhAyDxbp9genV4C9+NqaGIsppy51GPcmHO0PwyFObX8lu0cfh/1lfq7ihv950Lmd/Uq6Bhnkn/fvr4ZxfU29ThrPJTkEvIWWw37DGHg8KmVp+zp1RVnrIdQDSriCge9TS" "onv9IJmm2r39APVMLbBR59phYPi/DoMN9ouLlyhZXO4lRpjitUg660C9cae2olfu8JWhDq9RA9jTr9v39FIP3KJAXSsr3NUEF0ulLVvy5xTJk/r1Qkjp1FY7wjzOYal1xQPxVXQ0dYr42KjMc3HgQIDAQAB\;"
+_cpanel-dcv-test-record	14400	IN	TXT	"_cpanel-dcv-test-record=yQHL7T5SxKWxhZHJ6lfUa6VBRZdnIpKrp619_R94eS8iNVkX1cwQRJgU78HVh9br"
+_carddav._tcp	14400	IN	SRV	0	0	2079	aghazgarclinic.ir.
+_carddav._tcp	14400	IN	TXT	"path=/"
+_carddavs._tcp	14400	IN	SRV	0	0	2080	aghazgarclinic.ir.
+_carddavs._tcp	14400	IN	TXT	"path=/"
+whm	14400	IN	A	88.135.68.17
+cpanel	14400	IN	A	88.135.68.17
+webdisk	14400	IN	A	88.135.68.17
+webmail	14400	IN	A	88.135.68.17
+cpcontacts	14400	IN	A	88.135.68.17
+_autodiscover._tcp	14400	IN	SRV	0	0	443	cpanelemaildiscovery.cpanel.net.
+_caldavs._tcp	14400	IN	SRV	0	0	2080	aghazgarclinic.ir.
+_caldavs._tcp	14400	IN	TXT	"path=/"
+_caldav._tcp	14400	IN	SRV	0	0	2079	aghazgarclinic.ir.
+_caldav._tcp	14400	IN	TXT	"path=/"
+cpcalendars	14400	IN	A	88.135.68.17
+autoconfig	14400	IN	A	88.135.68.17
+_mailchannels	3600	IN	TXT	"v=mc1 auth=mizbanfahosting"
+

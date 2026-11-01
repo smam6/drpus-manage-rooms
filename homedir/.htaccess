@@ -1,0 +1,16 @@
+<IfModule mod_deflate.c>
+    SetOutputFilter DEFLATE
+    <IfModule mod_setenvif.c>
+        # Don't compress image/video/audio files.
+        SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|web[mp]|mp[g34]|m[o4]v|avi|ogg|wav|[af]lac|aac|ico|bmp|pdf)$ no-gzip dont-vary
+        SetEnvIfNoCase Request_URI \.(?:[acmns]rw|ra[fw]|cr[23]|sr[f2]|[mn]ef|gpr|rw[lz2]|dng|orf|r3d)$ no-gzip dont-vary
+
+        # Don't compress (potentially) compressed archives.
+        SetEnvIfNoCase Request_URI \.(?:exe|t?gz|zipx?|bz2|[ar]ar|7z|dmg|apk|jar|phar)$ no-gzip dont-vary
+    </IfModule>
+
+    <IfModule mod_headers.c>
+        # Make sure proxies don't deliver the wrong content
+        Header append Vary User-Agent env=!dont-vary
+    </IfModule>
+</IfModule>

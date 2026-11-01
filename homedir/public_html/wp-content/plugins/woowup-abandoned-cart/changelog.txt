@@ -1,0 +1,27 @@
+Version 1.1.6 - 2026-04-28
+- Fix: Add retry logic with exponential backoff for 429, 502 and 503 API responses
+
+Version 1.1.5 - 2026-04-27
+- Fix: SQL injection in cart recovery and send queries
+- Fix: SQL injection in existExternalIdToRestore recovery table query
+- Fix: Incorrect minute calculation in isValidToSend using DateInterval
+- Fix: Cart table grows indefinitely, added 48h cleanup and LIMIT 50 per cron run
+- Fix: Carts without email were sent to the API causing downstream errors
+- Fix: Cron interval was 2 minutes instead of the intended 10 minutes
+- Fix: ORDER BY createtime ASC added to cart SELECT so oldest carts are processed first
+- Fix: Operator precedence bug caused carts to be deleted even when API call failed
+- Fix: removeCart crashed with fatal error on orders created via WooCommerce REST API
+
+Version 1.0.0 - 2021-04-12
+- Initial Release
+Version 1.0.1 - 2021-08-27
+- Fix: Abandoned cart is not deleted if an error occurred when send to WoowUp 
+- Fix: It is verified that the client exists
+Version 1.1.1 - 2021-09-02
+- Feat: Tables are added in the settings section to see abandoned carts
+Version 1.1.2 - 2022-01-13
+- Fix: Abandoned cart does not map createtime anymore
+Version 1.1.3 - 2024-12-19
+- Fix: Resolve issue preventing abandoned carts from being uploaded correctly
+Version 1.1.4 - 2024-12-23
+- Fix: Minor changes in readme

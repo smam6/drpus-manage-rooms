@@ -1,0 +1,52 @@
+<?php
+
+use SyncBasalam\JobManager;
+use SyncBasalam\Services\VendorSyncPolicy;
+use SyncBasalam\Utilities\ProductMetaKey;
+
+defined('ABSPATH') || exit;
+
+global $wpdb;
+
+$vendorSyncState = syncBasalamContainer()->get(VendorSyncPolicy::class)->getFrontendState();
+$vendorSyncMode = $vendorSyncState['mode'];
+$vendorCanCreate = !empty($vendorSyncState['can_create']);
+$vendorCanUpdate = !empty($vendorSyncState['can_update']);
+$vendorUpdateIsLimited = $vendorSyncMode === VendorSyncPolicy::MODE_INACTIVE_LIMITED;
+
+$count_of_published_woocommerce_products = wp_count_posts('product')->publish;
+$productIdMetaKey = ProductMetaKey::basalamProductId();
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct count on core postmeta table; no object cache for this aggregate.
+$count_of_synced_basalam_products = intval($wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s", $productIdMetaKey)));
+
+$job_manager = new JobManager();
+
+$update_queue_status = $job_manager->getProductUpdateStatus();
+
+$create_products_job = $job_manager->getJob(['job_type' => 'sync_basalam_create_all_products', 'status' => 'pending']);
+$create_products_processing_job = $job_manager->getJob(['job_type' => 'sync_basalam_create_all_products', 'status' => 'processing']);
+
+$single_create_count = $job_manager->getCountJobs(['job_type' => 'sync_basalam_create_single_product', 'status' => ['pending', 'processing']]);
+
+$has_active_create_jobs = ($create_products_job || $create_products_processing_job || $single_create_count > 0);
+
+$auto_connect_page_job = $job_manager->getJob(['job_type' => 'sync_basalam_auto_connect_products', 'status' => 'pending']) ?: $job_manager->getJob(['job_type' => 'sync_basalam_auto_connect_products', 'status' => 'processing']);
+
+$auto_connect_product_job_exist = $auto_connect_page_job ? 'not-allowed' : '';
+?>
+
+<div class="basalam-dashboard">
+    <?php
+    require_once(syncBasalamPlugin()->templatePath("products/Popups/AddProduct.php"));
+    require_once(syncBasalamPlugin()->templatePath("products/Popups/EditProduct.php"));
+    require_once(syncBasalamPlugin()->templatePath("products/Popups/AutoConnect.php"));
+    require_once(syncBasalamPlugin()->templatePath("products/sections/Status.php"));
+    ?>
+    <div class="basalam-action-cards">
+        <?php
+        require_once(syncBasalamPlugin()->templatePath("products/sections/ProductList.php"));
+        require_once(syncBasalamPlugin()->templatePath("orders/sections/OrderManagement.php"));
+        require_once(syncBasalamPlugin()->templatePath("products/sections/Settings.php"));
+        ?>
+    </div>
+</div>

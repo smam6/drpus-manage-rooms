@@ -1,0 +1,822 @@
+# Changelog
+
+<details>
+
+<summary>1.10.25 - 2026-09-30</summary>
+
+### Changed / Improved
+- Revoke the stored Basalam vendor authorization on upgrade so every store reconnects and grants the currently required scopes
+
+### Note
+- Existing connections must reauthenticate after updating to this version
+
+</details>
+
+<details>
+
+<summary>1.10.24 - 2026-09-30</summary>
+
+### Added
+- Request the `vendor.product.read` scope when connecting to Basalam
+
+### Note
+- Existing connections must reauthenticate to grant the new product read scope
+
+</details>
+
+<details>
+
+<summary>1.10.23 - 2026-09-28</summary>
+
+### Added
+- Request the `vendor.financial.read` and `vendor.financial.write` scopes when connecting to Basalam
+
+### Changed / Improved
+- Blur and lock the financial management page when a financial API request returns HTTP 403, with a direct button to reconnect to Basalam
+
+### Note
+- Existing connections must reauthenticate to grant the new financial scopes
+
+</details>
+
+<details>
+
+<summary>1.10.22 - 2026-09-27</summary>
+
+### Added
+- Added an optional recurring full product update every 24 or 48 hours, configured beside the product sync control; new and existing stores default to 48 hours and can turn the schedule off
+
+### Changed / Improved
+- Automatic product connection now searches for safe title matches among Basalam products after scanning the vendor catalog
+- Aligned the dashboard controls and advanced settings on narrow screens, and centered the add and update product dialogs at matching mobile sizes
+
+### Fixed
+- The product update dialog now reads live queue status when opened and while visible, clearing completed-job messages without a page reload
+- Empty-queue probes no longer hold the async dispatch lease, so newly created jobs can start promptly while shutdown dispatch continues to repair the database connection
+
+</details>
+
+<details>
+
+<summary>1.10.21 - 2026-09-17</summary>
+
+### Fixed
+- "All fields" and "price & stock" update modes always send one complete product request with the variants array (without Basalam variation ids), matching earlier major versions; the dedicated variation endpoint is only used in "custom" mode with the variation price/stock fields enabled
+- Product updates now recover automatically when WooCommerce contains stale Basalam variation IDs, rebuilding and saving the current variation mapping instead of repeatedly failing with HTTP 404
+- Commission lookup now uses Basalam's product-specific commission API for products already connected to Basalam; new or unconnected products continue to use category-based commission lookup, with product commission responses cached during the sync request
+
+</details>
+
+<details>
+
+<summary>1.10.20 - 2026-09-17</summary>
+
+### Fixed
+- Basalam authorization callbacks no longer fail when Redis or Memcached drops the temporary OAuth marker; the single-use authorization proof is now carried in a signed, time-limited HttpOnly cookie
+
+</details>
+
+<details>
+
+<summary>1.10.19 - 2026-09-17</summary>
+
+### Changed / Improved
+- Single-product update jobs now run before bulk and full-update coordinator jobs
+
+</details>
+
+<details>
+
+<summary>1.10.18 - 2026-09-12</summary>
+
+### Fixed
+- Public plugin metadata, help, terms, and privacy links now use the live canonical Hamsalam and Basalam URLs instead of the retired `wp.hamsalam.ir` host
+- Product create and update requests now retry once without product or variation SKUs when Basalam rejects a duplicate SKU
+
+</details>
+
+<details>
+
+<summary>1.10.17 - 2026-09-09</summary>
+
+### Fixed
+- Async job dispatch runs during shutdown again, keeping queue probes and loopback requests out of the storefront response path
+- The dispatch lease is reserved before checking the queue, preventing concurrent requests from launching duplicate async runners
+
+</details>
+
+<details>
+
+<summary>1.10.16 - 2026-09-08</summary>
+
+### Fixed
+- Installing a newer plugin package now clears the previous version's force-update gate, allowing migrations, hooks, and the background jobs runner to start normally
+- Hotfix builds newer than the latest published package are no longer disabled when the version API has not registered them yet
+
+</details>
+
+<details>
+
+<summary>1.10.15 - 2026-09-08</summary>
+
+### Fixed
+- Large product queues no longer spawn overlapping AJAX runners from normal site traffic; one runner now owns the entire processing batch and duplicate workers exit immediately
+- Async runner dispatches are leased for 25 seconds instead of one second, preventing PHP worker exhaustion and storefront 503/504 errors during full or quick product updates
+- Installing a newer plugin package now clears the previous version's force-update gate, allowing migrations, hooks, and the background jobs runner to start normally
+- Hotfix builds newer than the latest published package are no longer disabled when the version API has not registered them yet
+
+</details>
+
+<details>
+
+<summary>1.10.14 - 2026-09-08</summary>
+
+### Added
+- Product SKUs are now sent to Basalam when creating or updating products, and variation SKUs are sent with variant payloads and per-variation updates; a new "کد محصول (SKU)" option controls the field in custom update mode (enabled by default)
+
+### Fixed
+- The async job runner now dispatches from init instead of shutdown, avoiding database "commands out of sync" errors caused by unread result sets left by other shutdown callbacks
+
+</details>
+
+<details>
+
+<summary>1.10.13 - 2026-09-01</summary>
+
+### Added
+- Added a manual vendor-status recheck button to inactive-vendor notices so store owners can immediately restore synchronization after reactivating their Basalam booth
+
+### Changed / Improved
+- Local environments now bypass vendor-status checks and inactive-vendor restrictions; the daily vendor-status cron is also unscheduled locally
+- The category detection endpoint now uses API v2.0 while preserving the existing response consumer contract
+
+</details>
+
+<details>
+
+<summary>1.10.12 - 2026-08-29</summary>
+
+### Fixed
+- Restored the AJAX click handlers for product update, archive, restore, and disconnect actions on the WooCommerce product editor
+
+### Changed / Improved
+- The authenticated Woosalam chat widget now loads on every WordPress admin screen while other Woosalam assets remain scoped to their relevant pages
+
+</details>
+
+<details>
+
+<summary>1.10.11 - 2026-08-26</summary>
+
+### Fixed
+- Product media MIME types are now detected from the actual file contents before checking the filename extension
+- Non-standard image MIME aliases such as `image/jpg`, `image/pjpeg`, and vendor-specific PNG/BMP values are normalized to the canonical values accepted by Basalam Uploadio
+- The media upload request and multipart file transfer now use the same canonical MIME type, preventing valid JPEG images from failing with a `422` unsupported-MIME response
+
+</details>
+
+<details>
+
+<summary>1.10.10 - 2026-08-25</summary>
+
+### Added
+- Added a daily vendor-status check with persistent inactive-duration tracking and automatic recovery when the vendor becomes active again
+- Added state-specific admin notices, dashboard badges, disabled controls, and explanatory UI for limited and suspended synchronization modes
+
+### Changed / Improved
+- Vendors inactive for less than 21 days can no longer create products; manual, bulk, queued, and automatic updates are restricted to price and stock
+- Vendors inactive for 21 days or longer can no longer create, update, archive, restore, or discount products until the vendor becomes active again
+- Product jobs revalidate the vendor policy at execution time so queued work cannot bypass a later status change
+- Improved background job dispatch and limited admin assets and notices to relevant Woosalam, product, and order screens
+- Aligned the connection-status header, card, and inner synchronization panel across active and inactive states
+
+</details>
+
+<details>
+
+<summary>1.10.9 - 2026-08-16</summary>
+
+### Fixed
+- The ticket reply access form is now shown only after site access is rejected; it stays hidden while access is pending, after approval, and when the status is missing or unknown
+
+</details>
+
+<details>
+
+<summary>1.10.8 - 2026-08-15</summary>
+
+### Added
+- Added independent settings for updating variation prices and variation stock
+
+### Changed / Improved
+- Connected variations are now updated individually through Core v4
+- Price-only variation updates send only `primary_price`, while stock-only updates send only `stock`
+- Variation price updates work independently from the product price setting
+- Custom update mode now requires at least one selected field and shows the plugin error toast without refreshing the page when none is selected
+- Full, quick, selected, and automatic updates no longer create jobs or API requests when the custom field selection is empty
+- Product admin JavaScript now uses a file-aware cache version so the latest validation behavior is loaded immediately after deployment
+
+</details>
+
+<details>
+
+<summary>1.10.7 - 2026-08-11</summary>
+
+### Fixed
+- Ticket validation and API failures are now shown as admin toasts instead of WordPress `admin-post.php` error pages
+- New-ticket submissions now use AJAX, preserving entered text, credentials, and uploaded-image previews when a request fails; if the ticket was created before access storage failed, retrying updates only the access data and does not create a duplicate ticket
+- Ticket JavaScript now uses a file-aware cache version so updated validation and submission behavior is loaded immediately after deployment
+
+</details>
+
+<details>
+
+<summary>1.10.6 - 2026-08-11</summary>
+
+### Fixed
+- Product images in AVIF or another image format unsupported by Basalam are now converted to JPEG before the upload request, preventing the `422` unsupported-MIME error
+- Temporary downloaded and converted product-image files are removed after both successful and failed uploads; when the server cannot decode the source format, the plugin now returns an actionable error instead of sending an invalid MIME type to Basalam
+- A copied product no longer inherits *any* Woosalam data from the product it was copied from — not the Basalam connection, and not the per-product settings (video, custom price change, gold/mobile fields, product type and value, wholesale, discount flag). Every `sync_basalam_*` / `_sync_basalam_*` meta on the duplicate and its variations is stripped before WooCommerce saves the duplicate (`woocommerce_duplicate_product_exclude_meta`), cleaned again after duplication, and also cleaned for copies made by third-party duplicate plugins (`dp_duplicate_post`, `dp_duplicate_page`, `duplicate_post_post_copy`). Individual keys can be kept via the `sync_basalam_duplicate_purge_meta_keys` filter
+- Disconnecting a product now removes the connection meta of every vendor id (previously only the currently configured vendor's keys were removed, so a stale, hard to find key could stay in the database) and clears `sync_basalam_variation_id` from all variations, not only from products currently typed as variable
+- No product data, status change, or discount is sent to Basalam while two or more WooCommerce products share one Basalam product id. The operation is stopped with a clear message instead of overwriting the wrong Basalam product (this is what made old prices and old stock reappear on Basalam)
+- Products with an empty Basalam product id no longer produce a malformed update request
+
+### Added
+- A one-time repair on update that finds WooCommerce products sharing a Basalam product id, keeps the connection on the oldest (original) product, disconnects the copies, and reports the result in an admin notice and the plugin log
+
+</details>
+
+<details>
+
+<summary>1.10.5 - 2026-08-05</summary>
+
+### Changed / Improved
+- Limited bulk product update API requests to a maximum of five per minute without reducing the execution rate of other background jobs
+
+</details>
+
+<details>
+
+<summary>1.10.4 - 2026-08-04</summary>
+
+### Fixed
+- Preserved complete URLs in new ticket messages, ticket replies, and optional access-information fields, including percent-encoded URL segments that WordPress text sanitization previously removed
+- Updated ticket media uploads to send `type=ticket_item` and `collection=IMAGE` as multipart form fields to the `/media` endpoint, and fixed the upload service to return the API response
+
+</details>
+
+<details>
+
+<summary>1.10.3 - 2026-07-22</summary>
+
+### Changed / Improved
+- "Price increase" became "price change" everywhere (code, markup, CSS classes): negative values are supported, so e.g. `-10` lowers the final Basalam price by 10% (percentages are capped at 35% increase and 35% decrease; values outside the -100..100 range are fixed Toman amounts)
+- The global setting key was renamed from `increase_price_value` to `price_change_value`, and the per-product meta from `_sync_basalam_increase_price_value` to `_sync_basalam_price_change_value`. Old values are not migrated — re-enter the price change in the settings
+- The category-commission mode is now stored as `commission` instead of `-1`, so it no longer collides with a real negative percentage
+
+### Added
+- A "custom price change" field in the Basalam product settings tab and in the products list bulk edit, so a single product or a selection of products can override the global value (or switch to category commission)
+
+</details>
+
+<details>
+
+<summary>1.10.2 - 2026-07-19</summary>
+
+### Changed / Improved
+- Migrated product photo and video uploads from the legacy direct upload endpoint to Uploadio's presigned media flow
+- Added SHA-256 metadata, direct staging upload, completion handling, and status polling so product payloads receive the final Basalam media ID and URL
+- Ensured temporary remote media files are removed after both successful and failed uploads
+- Streamed remote media downloads and multipart uploads with size-aware limits and timeouts to support large product videos without buffering the entire file in PHP memory
+
+</details>
+
+<details>
+
+<summary>1.10.1 - 2026-07-13</summary>
+
+### Fixed
+- When Basalam rejects a product create/update with `422` because the description contains forbidden content (social-network names, page/channel mentions, etc.), the plugin now extracts the flagged phrases — highlighted inside `<em>...</em>` in the response `snippet` — strips them from the description, and automatically retries (up to 3 times). Previously the sanitizer looked for a non-existent `value` field, so nothing was removed and the retry never helped
+
+</details>
+
+<details>
+
+<summary>1.10.0 - 2026-07-11</summary>
+
+### Added
+- Merged the "Woosalam Plus" add-on into the core plugin as a built-in "Financial Management" section: view store balance, active settlement requests, settlement history, and submit settlement requests to wallet or bank account
+- Added the `customer.identity.read` scope to the Basalam OAuth connection request (required to fetch the user's bank account list in the settlement flow)
+
+### Note
+- Users who connected to Basalam before this release must reconnect ("Connect to Basalam") once so the new scope is granted before the bank-account settlement feature works
+
+</details>
+
+<details>
+
+<summary>1.9.2 - 2026-07-08</summary>
+
+### Security
+- Fixed a CSRF vulnerability in the Basalam OAuth callback (`basalam-save-token`) that could let a forged request overwrite the stored connection credentials; the callback now requires a single-use, time-limited authorization that the admin actively started, and the "connect to Basalam" links go through a nonce-protected request
+- Hardened output escaping across admin pages, templates and exception messages (esc_html/esc_attr)
+- Switched internal redirects to wp_safe_redirect and documented direct custom-table queries
+
+### Changed / Improved
+- Tested up to WordPress 7.0
+
+</details>
+
+<details>
+
+<summary>1.9.1 - 2026-06-30</summary>
+
+### Fixed
+- show check-orders button and vertically center its content on mobile/tablet
+
+</details>
+
+<details>
+
+<summary>1.9.0 - 2026-06-21</summary>
+
+### Added
+- add gold product type with purity and weight attributes
+- add preparation days management for product categories
+
+### Fixed
+- decrease min pkg weight
+
+</details>
+
+<details>
+
+<summary>1.8.8 - 2026-05-18</summary>
+
+### Fixed
+- fix City/state mapping with persian shiping woo
+- increase count of photo limit
+
+
+</details>
+
+<details>
+
+<summary>1.8.7 - 2026-05-16</summary>
+
+### Added
+- Product video upload support (VideoService, VideoField, VideoSourceResolver)
+- Circuit breaker alert notifications
+- replace toast with alert()
+- Limit on increase precent(max 35%)
+- Migration 1.8.7
+
+### Fixed
+- Improved file upload, lock manager, and API response handling
+
+</details>
+
+<details>
+
+<summary>1.8.5,1.8.6 - 2026-05-10</summary>
+
+### Fixed
+- deduplictaion orders
+- fix stuck-processing
+
+</details>
+
+<details>
+
+
+<details>
+
+<summary>1.8.4 - 2026-05-03</summary>
+
+### Fixed
+- Circuit Breaker mechanism
+
+</details>
+
+<details>
+
+<summary>1.8.3 - 2026-05-03</summary>
+
+### Added
+- Added bulk edit support for wholesale settings, product type, and custom price increase
+- Added per-product custom price increase support
+- Added an information API endpoint to improve AI agent support in `admin.hamsalam.ir`
+
+### Changed / Improved
+- Added automatic order creation in status change events when the order does not already exist
+- Clear saved token on `401 Unauthorized` responses from `*.basalam.com` requests
+- Show an error when required Woosalam domains are blocked
+- Prevent task execution when required Woosalam domains are blocked
+
+### Fixed
+- Fixed user-reported issues
+
+</details>
+
+<details>
+
+<summary>1.8.2 - 2026-04-04</summary>
+
+### Added
+- Photo and weight validator for products
+- Filter hook for contact-us section visibility
+- Prefix and suffix to product title for category detection
+
+### Fixed
+- Fetch current vendor info without cache
+</details>
+
+<details>
+
+<details>
+
+<summary>1.8.1 - 2026-03-07</summary>
+
+### Added
+- basalam Chat widget
+
+</details>
+
+<details>
+
+<summary>1.8.0 - 2026-03-05</summary>
+
+### Changed / Improved
+- Introduced an internal DI container (`ContainerInterface`, `Container`, `ServiceProviderInterface`) and centralized service provider wiring.
+- Added `syncBasalamContainer()` and migrated `syncBasalamPlugin()` / `syncBasalamSettings()` to container-backed access.
+- Migrated core hotspots from direct instantiation to container resolution:
+  - `ApiServiceManager`
+  - `ProductOperations`
+  - `JobManager`
+  - class-level settings access
+- Refactored job subsystem wiring for constructor-based dependencies (`AbstractJobType`, job types, `JobRegistry`, `JobsRunner`, `DiscountTaskScheduler`).
+- Updated action and registrar edges to resolve handlers/listeners via container.
+- Removed legacy singleton-style accessors in core services and standardized on container-first resolution.
+- add unInstall
+- Added dashboard data retrieval in tickets
+- Added `vendor_id` suffix to product `postmeta`
+- Added selectable stock priority for variable products
+- Added a Circuit Breaker mechanism
+
+
+
+### Added
+- Container-backed settings access via `SettingsContainer`.
+
+</details>
+
+<details>
+
+<summary>1.7.9 - 2026-02-25</summary>
+
+### Changed / Improved
+- Added plugin version to all admin CSS/JS enqueue calls for proper cache busting
+
+</details>
+
+
+<details>
+
+<summary>1.7.8 - 2026-02-21</summary>
+
+### Added
+- retry system for jobs
+- Added announcements section
+- Added file upload capability in tickets
+- Added discount reduction percentage setting
+- Added ability to fetch and sync Basalam orders up to the last 30 days
+- Added customer name prefix/suffix settings for Basalam orders
+- Added onboarding section to Woosalam
+
+### Changed / Improved
+
+- Remove Product Operation type
+- change fetch unsync orders structure
+- Switched product list fetching from paginate-based API to cursor-based API
+- Skip webhook creation when the site domain is localhost
+- Made Woosalam addonable/extensible
+- Categorized plugin settings
+
+### Fix
+- Fixed ticket links issues
+- Fixed duplicated products issue
+- Fixed null value being sent to Basalam on duplicated product disconnect/update flow
+
+</details>
+
+<details>
+
+<summary>1.7.7 - 2026-02-07</summary>
+
+### Changed / Improved
+
+- Enhanced Performance and Security in Ticket Logics
+- Don't send null value in update product at basalam
+
+</details>
+
+
+<details>
+
+<summary>1.7.6 - 2026-02-01</summary>
+
+### Fix
+
+- Remove Unused Migration
+
+</details>
+
+<details>
+
+<summary>1.7.5 - 2026-01-26</summary>
+
+### Added
+
+- Added Ticketing feature
+
+</details>
+
+<details>
+
+<summary>1.7.4 - 2026-01-6</summary>
+
+### Fixed
+
+- Fix Bugs
+
+</details>
+
+<details>
+
+<summary>1.7.3 - 2025-12-27</summary>
+
+### Fixed
+
+- Fix Bugs
+
+</details>
+
+<details>
+
+<summary>1.7.2 - 2025-12-24</summary>
+
+### Fixed
+
+- Compatibity beetwin HPOS and Legay System
+- Fix webhook handling and authorization in WebhookService
+
+</details>
+
+<details>
+
+<summary>1.7.1 - 2025-12-23</summary>
+
+### Fixed
+
+- Add Missed Files
+
+</details>
+
+
+<details>
+
+<summary>1.7.0 - 2025-12-20</summary>
+
+### Added
+
+- Added PSR-4 autoloading structure for better code organization
+
+### Changed / Improved
+
+- Enhanced plugin code structure and performance optimizations
+- Added detailed order information display on orders page
+- Improved category ID retrieval with reverse order output
+
+### Fixed
+
+- Fixed commission calculation issues
+- Fixed order fetching problems
+- Fixed Persian WooCommerce Shipping plugin compatibility issues
+
+</details>
+
+<details>
+<summary>1.6.1 - 2025-12-6</summary>
+
+### Changed / Improved
+- Handle cursor for get order lists
+
+### Fixed
+- don't send request to core.basalam.com
+- add reduce/increase stock action for woosalam order statuses
+
+</details>
+
+<details>
+<summary>1.6.0 - 2025-12-1</summary>
+### Changed / Improved
+- Added automatic shipping method detection and auto-saving of the shipping name and cost in WooCommerce orders
+
+</details>
+
+<details>
+<summary>1.5.9 - 2025-11-27</summary>
+
+### Fixed
+
+- Add missing default settings to database and return default for single missing setting
+- Handle customer names without spaces
+- Correct Persian WooCommerce path
+
+### Refactored
+
+- Simplify check if Persian WooCommerce Shipping plugin is active
+
+</details>
+
+<details>
+<summary>1.5.8 - 2025-11-18</summary>
+
+### Changed / Improved
+
+- Improved batch product update functionality
+- Enhanced complete product update process
+
+</details>
+
+<details>
+<summary>1.5.7 - 2025-11-17</summary>
+
+### Added
+
+- Added compatibility with Tappin
+- Added support for currency units irht and irhr
+
+### Changed / Improved
+
+- Implemented automatic price rounding for Basalam compatibility
+- Changed product enqueue structure from offset-based to ID-based
+- Made WooCommerce order creation process atomic
+
+### Fixed
+
+- Fixed job manager functionality and proper task execution
+
+</details>
+
+<details>
+<summary>1.5.5 - 2025-11-15</summary>
+
+### Changed / Improved
+
+- Optimized fetch creatable products query using direct SQL for better performance
+- Improved API service manager to properly decode JSON responses
+- Enhanced update job detection logic to avoid false positive job status checks
+
+### Fixed
+
+- Fixed API response handling by properly decoding JSON data
+- Removed commented-out legacy code from plugin initialization
+- Fixed quick update job status detection in admin dashboard
+- Resolved duplicate job checking that was causing incorrect "in progress" states
+
+</details>
+
+<details>
+<summary>1.5.4 - 2025-11-6</summary>
+
+### Added
+
+- Migration system for version 1.5.4
+
+### Changed / Improved
+
+- Enhanced onboarding styles and UI improvements
+- Improved category fetching process with better error handling
+- Enhanced file uploader service functionality
+- Optimized product update process
+
+### Fixed
+
+- Fixed error handling in product update service
+- Removed deprecated photo ban status service
+- Fixed category mapping page display and functionality
+- Improved product meta box data handling
+- Fixed issues in get product data service
+
+</details>
+
+<details>
+<summary>1.5.3 - 2025-10-25</summary>
+
+### Fixed
+
+- Fixed some bugs
+
+</details>
+
+<details>
+<summary>1.5.0 - 2025-10-04</summary>
+
+### Added
+
+- Key-value storage system for plugin settings
+- Option to select sale price display style (strikethrough or sale price only)
+- Automatic log file cleanup (weekly)
+- Manual and automatic task execution rate control (tasks per minute)
+
+### Changed / Improved
+
+- Removed WP Cron dependency for better performance
+- Enhanced task scheduling system
+
+### Fixed
+
+- Removed invalid variations from product data
+- Fixed category attributes synchronization issue
+- Fixed sale price validation before applying
+- Resolved migration 1.4.0 issues
+
+</details>
+
+<details>
+<summary>1.4.0 - 2025-09-12</summary>
+
+### Added
+
+- Manual product category mapping
+- Strikethrough pricing for products
+- Add products from Digikala (Pro version)
+- Create a free store (Pro version)
+
+### Changed / Improved
+
+- Plugin structure optimization
+
+### Fixed
+
+- Fixed reported issues
+
+</details>
+
+<details>
+<summary>1.3.0 - 2025-07-23</summary>
+
+### Added
+
+- Option to choose operation execution method (AJAX and Queue)
+- Manual order fetching
+- Cancel orders
+- Fetch order changes from Basalam and apply them to WooCommerce orders
+
+### Fixed
+
+- Fixed reported issues
+
+</details>
+
+<details>
+<summary>1.2.0 - 2025-06-27</summary>
+
+### Added
+
+- Bulk product addition
+- Bulk product update
+- Auto order confirmation
+
+### Fixed
+
+- Fixed issues reported in previous version
+
+</details>
+
+<details>
+<summary>1.1.0 - 2025-02-13</summary>
+
+### Added
+
+- Automatic fetching and creation of Basalam orders in WooCommerce
+- Manage orders from WooCommerce (confirm order, request delay, ship order)
+- Advanced settings for easier use
+
+### Fixed
+
+- Fixed some issues from previous versions
+
+</details>
+
+<details>
+<summary>1.0.0 - 2024-12-31</summary>
+
+### Added
+
+- Add and update products individually and in bulk
+- Automatic product synchronization
+- Settings and logs page
+
+</details>

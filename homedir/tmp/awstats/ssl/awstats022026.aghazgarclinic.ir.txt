@@ -1,0 +1,1095 @@
+AWSTATS DATA FILE 8.0 (build 20240604)
+# If you remove this file, all statistics for date 202602 will be lost/reset.
+# Last config file used to build this data file was /home/aghazga1/tmp/awstats/ssl/awstats.aghazgarclinic.ir.conf.
+
+# Position (offset in bytes) in this file for beginning of each section for
+# direct I/O access. If you made changes somewhere in this file, you should
+# also remove completely the MAP section (AWStats will rewrite it at next
+# update).
+BEGIN_MAP 28
+POS_GENERAL 2089                
+POS_TIME 2768                
+POS_VISITOR 16418               
+POS_DAY 29070               
+POS_DOMAIN 3685                
+POS_LOGIN 4356                
+POS_ROBOT 4511                
+POS_WORMS 5031                
+POS_EMAILSENDER 5162                
+POS_EMAILRECEIVER 5305                
+POS_SESSION 29480               
+POS_FILESIZE 49212               
+POS_REQUESTTIME 49366               
+POS_SIDER 29693               
+POS_FILETYPES 5440                
+POS_DOWNLOADS 5869                
+POS_OS 5917                
+POS_BROWSER 6194                
+POS_SCREENSIZE 7899                
+POS_UNKNOWNREFERER 7973                
+POS_UNKNOWNREFERERBROWSER 8508                
+POS_ORIGIN 8852                
+POS_SEREFERRALS 9000                
+POS_PAGEREFS 9182                
+POS_SEARCHWORDS 9510                
+POS_KEYWORDS 9662                
+POS_MISC 2431                
+POS_ERRORS 9721                
+POS_CLUSTER 4212                
+POS_SIDER_404 9904                
+END_MAP
+
+# LastLine    = Date of last record processed - Last record line number in last log - Last record offset in last log - Last record signature value
+# FirstTime   = Date of first visit for history file
+# LastTime    = Date of last visit for history file
+# LastUpdate  = Date of last update - Nb of parsed records - Nb of parsed old records - Nb of parsed new records - Nb of parsed corrupted - Nb of parsed dropped
+# TotalVisits = Number of visits
+# TotalUnique = Number of unique visitors
+# MonthHostsKnown   = Number of hosts known
+# MonthHostsUnKnown = Number of hosts unknown
+BEGIN_GENERAL 8
+LastLine 20260301055856 94 28921 6550220266251
+FirstTime 20260217111239
+LastTime 20260228161210
+LastUpdate 20260301155440 94 0 93 0 0
+TotalVisits 423                 
+TotalUnique 259                 
+MonthHostsKnown 0                   
+MonthHostsUnknown 340                 
+END_GENERAL
+
+# Misc ID - Pages - Hits - Bandwidth
+BEGIN_MISC 10
+DirectorSupport 0 0 0
+RealPlayerSupport 0 0 0
+JavascriptDisabled 0 0 0
+FlashSupport 0 0 0
+AddToFavourites 0 10 0
+TotalMisc 0 0 0
+PDFSupport 0 0 0
+JavaEnabled 0 0 0
+WindowsMediaPlayerSupport 0 0 0
+QuickTimeSupport 0 0 0
+END_MISC
+
+# Hour - Pages - Hits - Bandwidth - Not viewed Pages - Not viewed Hits - Not viewed Bandwidth
+BEGIN_TIME 24
+0 117 782 35919037 42 167 4939332
+1 112 761 23616370 128 146 231367
+2 61 354 6470339 19 24 86281
+3 36 120 1856567 23 63 521945
+4 105 742 29792042 34 157 21914557
+5 27 141 4014212 27 59 3014816
+6 13 15 1186770 16 19 38457
+7 64 407 20458390 15 34 1192795
+8 80 400 10675472 43 164 3276132
+9 61 502 15289879 35 55 98432
+10 26 155 3025996 12 17 1014409
+11 102 705 41564974 45 140 2164150
+12 85 490 21339539 26 37 3574031
+13 194 1393 57799888 33 101 523040
+14 302 1203 41450423 24 44 1735389
+15 191 1109 26541850 29 93 13654924
+16 100 848 25912676 15 90 1767107
+17 101 537 14875400 28 162 1790841
+18 89 323 23201661 27 56 1202992
+19 67 417 16453640 59 189 1630677
+20 61 531 23212463 11 74 114533
+21 68 387 7434590 27 113 1549673
+22 86 696 20399970 164 167 689621
+23 83 617 20099629 59 70 5300494
+END_TIME
+
+# Domain - Pages - Hits - Bandwidth
+# The 25 first Pages must be first (order not required for others)
+BEGIN_DOMAIN 29
+ir 781 8204 279694043
+ru 739 1087 21664532
+us 529 2704 122506189
+fr 27 334 19995313
+ie 21 347 12412851
+de 21 230 8501506
+pl 20 117 1490670
+gb 19 131 4222551
+be 17 123 3484095
+se 10 18 1985436
+hr 9 118 4793186
+dk 7 143 7323915
+nl 6 11 1275241
+it 5 19 1063250
+ro 4 26 833578
+ua 2 2 34749
+ca 2 2 255141
+au 2 5 281866
+in 2 2 75216
+eu 1 1 12524
+cn 1 1 62698
+pt 1 2 166359
+gr 1 1 12520
+pk 1 1 33742
+eg 1 1 62703
+cw 0 1 99679
+at 0 2 156642
+jp 1 1 62671
+cl 1 1 28911
+END_DOMAIN
+
+# Cluster ID - Pages - Hits - Bandwidth
+BEGIN_CLUSTER 0
+END_CLUSTER
+
+# Login - Pages - Hits - Bandwidth - Last visit
+# The 10 first Pages must be first (order not required for others)
+BEGIN_LOGIN 0
+END_LOGIN
+
+# Robot ID - Hits - Bandwidth - Last visit - Hits on robots.txt
+# The 25 first Hits must be first (order not required for others)
+BEGIN_ROBOT 10
+Googlebot/ 565 3736690 20260228055800 11
+bingbot/ 326 3687696 20260228033620 11
+facebookexternalhit/ 214 53068421 20260228012336 40
+bot[\s_+:,\.\;\/\\-] 109 4402277 20260227195244 3
+Googlebot\-Image/ 21 70350 20260221015854 0
+unknown 10 1512 20260226080140 10
+no_user_agent 3 0 20260225092402 0
+checker 1 23595 20260221175219 0
+Applebot/ 1 140 20260225034533 1
+curl 1 0 20260218131447 0
+END_ROBOT
+
+# Worm ID - Hits - Bandwidth - Last visit
+# The 5 first Hits must be first (order not required for others)
+BEGIN_WORMS 0
+END_WORMS
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first Hits must be first (order not required for others)
+BEGIN_EMAILSENDER 0
+END_EMAILSENDER
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first hits must be first (order not required for others)
+BEGIN_EMAILRECEIVER 0
+END_EMAILRECEIVER
+
+# Files type - Hits - Bandwidth - Bandwidth without compression - Bandwidth after compression
+BEGIN_FILETYPES 22
+jpeg 167 15062806 0 0
+woff 2 134292 0 0
+png 911 175970639 0 0
+js 4352 29759841 0 0
+4 17 0 0 0
+svg 463 570883 0 0
+1 6 0 0 0
+13 2 0 0 0
+gif 3 26430 0 0
+css 4823 11824509 0 0
+jpg 685 175221084 0 0
+ir 2 0 0 0
+Unknown 55 811213 0 0
+php 702 710641 0 0
+5 4 0 0 0
+xml 1 1451 0 0
+3 14 0 0 0
+html 794 51330153 0 0
+ttf 1 34531 0 0
+2 10 0 0 0
+woff2 617 31133304 0 0
+7 2 0 0 0
+END_FILETYPES
+
+# Downloads - Hits - Bandwidth
+BEGIN_DOWNLOADS 0
+END_DOWNLOADS
+
+# OS ID - Hits
+BEGIN_OS ID - Hits - Pages 14
+android 1873 136
+macosx15 315 36
+linux 713 152
+android13 161 27
+win7 113 108
+linuxubuntu 52 30
+macosx 23 8
+ios_iphone 311 32
+android11 88 7
+win11 2 0
+win8.1 1 1
+android10 6672 627
+Unknown 957 734
+win10 2354 333
+END_OS
+
+# Browser ID - Hits - Pages
+BEGIN_BROWSER 80
+chrome110.0.0.0 1 1
+chrome143.0.0.0 419 36
+netscape5.0 5 5
+chrome139.0.0.0 243 19
+chrome114.0.5735.196 124 10
+chrome91.0.4472.114 1 1
+chrome87.0.4280.141 87 7
+ibrowse 8 0
+chrome83.0.4103.101 94 6
+chrome117.0.0.0 149 149
+chrome133.0.0.0 1 1
+safari16.4 106 9
+chrome116.0.0.0 2 2
+chrome107.0.0.0 1 1
+chrome129.0.0.0 3 1
+safari17.6 2 0
+safari26.2 1 1
+chrome104.0.0.0 1 1
+chrome125.0.0.0 1 1
+safari 1 1
+chrome81.0.4044.122 1 1
+firefox141.0 1 1
+chrome112.0.0.0 1 1
+firefox139.0 3 3
+chrome58.0.3029.110 1 1
+chrome145.0.0.0 4891 512
+chrome145.0.7632.49 135 10
+chrome80.0.3987.149 1 1
+chrome64.0.3282.186 1 1
+safari18.6 93 6
+firefox115 3 3
+firefox147.0 444 108
+safari5.0.4 109 104
+chrome135.0.0.0 1 1
+android 713 42
+chrome109.0.0.0 2 0
+chrome100.0.4896.60 1 1
+safari26.1 109 16
+mozilla 248 28
+chrome127.0.0.0 119 7
+Unknown 708 705
+opera117.0.0.0 2 0
+firefox142.0 4 4
+chrome78.0.3904.108 3 3
+chrome119.0.0.0 1 1
+chrome131.0.0.0 20 4
+chrome130.0.0.0 1 1
+chrome144.0.7559.132 1 0
+firefox130.0 1 1
+firefox55.0 1 1
+samsung 122 7
+firefox131.0 1 0
+chrome145.0.7632.103 535 36
+chrome121.0.0.0 86 5
+chrome136.0.0.0 174 16
+chrome141.0.0.0 119 16
+opera116.0.0.0 2 0
+chrome138.0.0.0 542 44
+chrome137.0.0.0 111 15
+chrome80.0.3987.162 1 1
+chrome145.0.7632.79 1 0
+chrome140.0.0.0 1 1
+chrome84.0.4147.89 7 7
+chrome135.0.7049.79 118 16
+chrome134.0.0.0 424 31
+chrome144.0.7559.87 123 11
+chrome101.0.4951.67 1 1
+firefox59.0 116 7
+chrome132.0.0.0 1 1
+safari18.1 2 0
+chrome115.0.0.0 1 1
+chrome122.0.0.0 2 2
+opera95.0.0.0 97 9
+chrome144.0.0.0 1858 149
+chrome46.0.2490.80 1 1
+chrome139.0.7258.5 108 7
+chrome105.0.0.0 3 2
+chrome142.0.0.0 94 15
+chrome138.0.7204.23 111 7
+firefox126.0 4 4
+END_BROWSER
+
+# Screen size - Hits
+BEGIN_SCREENSIZE 0
+END_SCREENSIZE
+
+# Unknown referer OS - Last visit date
+BEGIN_UNKNOWNREFERER 8
+okhttp/5.3.0 20260217134332
+WordPress/6.8.3;_https://aghazgarclinic.ir 20260228161208
+WordPress/6.8.1;_https://aghazgarclinic.ir/testcode 20260225092137
+WordPress/6.8.3;_https://aghazgarclinic.ir/testcode 20260228075341
+Mozilla/5.0_(compatible;_Dataprovider.com) 20260221115601
+Mozilla/5.0_(compatible;_InternetMeasurement/1.0;__https://internet-measurement.com/) 20260226223913
+Mozilla/5.0 20260219100715
+Python/3.11_aiohttp/3.13.3 20260221043751
+END_UNKNOWNREFERER
+
+# Unknown referer Browser - Last visit date
+BEGIN_UNKNOWNREFERERBROWSER 5
+okhttp/5.3.0 20260217134332
+WordPress/6.8.1;_https://aghazgarclinic.ir/testcode 20260225092137
+WordPress/6.8.3;_https://aghazgarclinic.ir/testcode 20260228075341
+WordPress/6.8.3;_https://aghazgarclinic.ir 20260228161208
+Python/3.11_aiohttp/3.13.3 20260221043751
+END_UNKNOWNREFERERBROWSER
+
+# Origin - Pages - Hits 
+BEGIN_ORIGIN 6
+From0 1083 1502
+From1 8 8
+From2 115 125
+From3 56 57
+From4 969 11943
+From5 0 0
+END_ORIGIN
+
+# Search engine referers ID - Pages - Hits
+BEGIN_SEREFERRALS 2
+www_google_com 115 123
+google_com 0 2
+END_SEREFERRALS
+
+# External page referers - Pages - Hits
+# The 25 first Pages must be first (order not required for others)
+BEGIN_PAGEREFS 6
+https://webmail.aghazgarclinic.ir 33 34
+https://l.instagram.com 10 10
+http://m.facebook.com 7 7
+https://zarebin.ir 2 2
+https://trustseal.enamad.ir 2 2
+https://www.facebook.com 2 2
+END_PAGEREFS
+
+# Search keyphrases - Number of search
+# The 10 first number of search must be first (order not required for others)
+BEGIN_SEARCHWORDS 0
+END_SEARCHWORDS
+
+# Search keywords - Number of search
+# The 25 first number of search must be first (order not required for others)
+BEGIN_KEYWORDS 0
+END_KEYWORDS
+
+# Errors - Hits - Bandwidth
+BEGIN_ERRORS 8
+206 14 2079339
+403 92 59812
+500 62 199045
+503 17 16060
+302 7 74
+301 88 3975
+401 365 393910
+404 309 4244682
+END_ERRORS
+
+# URL with 404 errors - Hits - Last URL referrer
+BEGIN_SIDER_404 133
+//wp/wp-includes/wlwmanifest.xml 1 -
+/wp-content/uploads/2024/09/bg-cover.jpg 1 https://aghazgarclinic.ir/wp-content/uploads/elementor/css/post-3768.css
+//wordpress/wp-includes/wlwmanifest.xml 1 -
+/security.txt 1 -
+/wp-content/uploads/2025/03/cropped-Screenshot-37-32x32.png/app-ads.txt 1 -
+/https%3A/aghazgarclinic.ir/wp-json/oembed/1.0/embed%3Furl%3Dhttps%3A/aghazgarclinic.ir/%26format%3Dxml 1 -
+/%3Flocale%3Dvi 1 -
+/favicon.png 1 -
+/%3Flocale%3Dsv 1 -
+/%3Flocale%3Dms 1 -
+/wp_admin 1 -
+/%3Flocale%3Dru 1 -
+/doctors/%D9%85%DA%98%DA%AF%D8%A7%D9%86-%D8%A8%D8%A7%D8%A8%D8%A7%DB%8C%DB%8C/ 1 -
+/.well-known/openid-configuration 2 -
+/%3Flocale%3Dro 1 -
+/old/ 8 -
+/%3Flocale%3Dzh_tw 1 -
+/_ignition/execute-solution 2 -
+/wp-content/plugins/jet-search/assets/lib/chosen/chosen.jquery.min.js 2 -
+/wp-content/uploads/2024/05/license.png 6 -
+/%3Flocale%3Dar 1 -
+//wp2/wp-includes/wlwmanifest.xml 1 -
+/wp-content/uploads/2025/03/cropped-Screenshot-37-32x32.png/sellers.json 1 -
+/.well-known/dnt-policy.txt 1 -
+/wp-includes/js/wp-util.min.js 2 -
+/.well-known/security.txt 3 -
+//wp-includes/wlwmanifest.xml 1 -
+/ads.txt 2 -
+/wp-includes/js/jquery/jquery-migrate.min.js 2 -
+/%3Flocale%3Did 1 -
+/%3Flocale%3Dpt 1 -
+/%3Flocale%3Dko 1 -
+/%7B%7B%7Bdata.link 2 https://aghazgarclinic.ir/
+/wp-content/plugins/elementor/assets/js/frontend.min.js 2 -
+/wp-content/plugins/jet-search/assets/lib/jet-plugins/jet-plugins.js 2 -
+/%3Flocale%3Dnb 1 -
+/https%3A/go.cpanel.net/ie11deprecation 1 -
+/wp-content/uploads/2025/03/cropped-Screenshot-37-192x192.png/ads.txt 2 -
+/resetpass%3Fstart%3D1 1 -
+/%3Flocale%3Des_419 1 -
+/%3Flocale%3Dpt_br 1 -
+/feed.xml 2 -
+/old/home 1 -
+/wp-includes/js/jquery/jquery.min.js 2 -
+/%3Flocale%3Duk 1 -
+/%3Flocale%3Dfil 1 -
+/.well-known/traffic-advice 36 -
+//cms/wp-includes/wlwmanifest.xml 1 -
+/403.shtml 1 -
+/productcat-sitemap.xml 2 -
+/wp-content/uploads/2024/09/doctors-pic.jpg 7 https://aghazgarclinic.ir/doctors/
+/wp-content/plugins/elementor-pro/assets/js/frontend.min.js 2 -
+/wp-cron.php 4 -
+/404.shtml 1 -
+/%3Flocale%3Del 1 -
+/wp-content/uploads/2025/03/IMG_20250303_170320_659-scaled.jpg 4 -
+/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js 2 -
+/.env 4 -
+/%3Flocale%3Dth 1 -
+/https%3A/go.cpanel.net/privacy 1 -
+/wp-content/uploads/2025/03/IMG_20250303_170329_612-scaled.jpg 2 -
+/%3Flocale%3Dfi 1 -
+/https%3A/go.cpanel.net/data%3Aimage/x-icon%3Bbase64%2CAAABAAEAICAAAAEAIADSAgAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAgAAAAIAgGAAAAc3p69AAAAplJREFUWIXt1j2IHGUYB/DfOzdnjIKFkECIVWIKvUFsIkRExa9KJCLaWAgWJx4DilZWgpDDiI0wiViIoGATP1CCEDYHSeCwUBBkgiiKURQJFiLo4d0eOxYzC8nsO 1 -
+/.well-known/gpc.json 1 -
+/wp-content/plugins/elementor/assets/js/frontend-modules.min.js 2 -
+/wp-content/themes/hello-elementor/assets/js/hello-frontend.min.js 2 -
+/wp-content/uploads/2025/03/Screenshot-37.png 2 -
+/wp-content/plugins/woocommerce/assets/js/frontend/order-attribution.min.js 2 -
+/wp-content/uploads/2025/03/IMG_20250303_170320_778-scaled.jpg 4 -
+/wp-content/plugins/woocommerce/assets/js/jquery-blockui/jquery.blockUI.min.js 2 -
+/wp-content/plugins/woocommerce/assets/js/frontend/add-to-cart.min.js 2 -
+/%3Flocale%3Dja 1 -
+/wp-content/plugins/jet-search/assets/js/jet-search.js 2 -
+/%3Flocale%3Dfr 1 -
+/services/ 2 https://aghazgarclinic.ir/old/
+/wp-content/uploads/elementor/css/post-12254.css 8 https://aghazgarclinic.ir/old/
+/.well-known/trust.txt 1 -
+/%3Flocale%3Dtr 1 -
+/%3Flocale%3Dda 1 -
+/atom.xml 1 -
+/wp-content/uploads/2025/03/cropped-Screenshot-37-192x192.png/sellers.json 2 -
+/.well-known/ai-plugin.json 1 -
+/wp-login.php 5 -
+/wp-content/plugins/elementor/assets/js/webpack.runtime.min.js 2 -
+/wp-includes/js/dist/i18n.min.js 2 -
+/wp-admin/admin-ajax.php 2 -
+/javascript%3Avoid%280%29 1 -
+//blog/wp-includes/wlwmanifest.xml 1 -
+/wp-includes/js/jquery/ui/core.min.js 2 -
+/wp-content/uploads/2025/03/cropped-Screenshot-37-192x192.png/app-ads.txt 2 -
+/llms.txt 1 -
+/%3Flocale%3Des_es 1 -
+/wp-content/uploads/2025/03/cropped-Screenshot-37-2.png 2 -
+/%3Flocale%3Dpl 1 -
+/wp-content/plugins/woocommerce/assets/js/sourcebuster/sourcebuster.min.js 2 -
+/.well-known/assetlinks.json 1 -
+/ 20 -
+/%3Flocale%3Des 1 -
+/wp-content/uploads/2024/09/about-us-pic1.jpg 2 https://aghazgarclinic.ir/about-us/
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/conditionals/e-swiper.min.css%3Fver%3D3.35.4 1 -
+/%3Flocale%3Dhu 1 -
+/%3Flocale%3Dhe 1 -
+/wp-content/plugins/elementor-pro/assets/js/elements-handlers.min.js 2 -
+/data%3Aimage/x-icon%3Bbase64%2CAAABAAEAICAAAAEAIADSAgAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAgAAAAIAgGAAAAc3p69AAAAplJREFUWIXt1j2IHGUYB/DfOzdnjIKFkECIVWIKvUFsIkRExa9KJCLaWAgWJx4DilZWgpDDiI0wiViIoGATP1CCEDYHSeCwUBBkgiiKURQJFiLo4d0eOxYzC8nsO9m9XcXC%2B8MW%2B3z%2B9/ 4 -
+/wp-content/uploads/2024/09/about-us-pic2.jpg 2 https://aghazgarclinic.ir/about-us/
+/wp-includes/js/imagesloaded.min.js 2 -
+/%3Flocale%3Dcs 1 -
+/wp-includes/css/dist/block-library/style-rtl.min.css 8 https://aghazgarclinic.ir/old/
+/https%3A/go.cpanel.net/https%3A/go.cpanel.net/privacy 1 -
+/wp-content/uploads/2025/03/IMG_20250303_170320_995-scaled.jpg 2 -
+/http%3A/wikipedia.org/wiki/Case_sensitivity 1 -
+/https%3A/go.cpanel.net/http%3A/wikipedia.org/wiki/Case_sensitivity 1 -
+/javascript%3Ahistory.back%28%29 1 -
+/%3Flocale%3Dnl 1 -
+/https%3A/go.cpanel.net/javascript%3Ahistory.back%28%29 1 -
+/%3Flocale%3Dde 1 -
+/wp-content/plugins/elementor-pro/assets/js/webpack-pro.runtime.min.js 2 -
+/doctors/%D8%AF%DA%A9%D8%AA%D8%B1-%D9%85%D8%B1%D8%AA%D8%B6%DB%8C-%D8%B1%D8%B6%D9%88%DB%8C/ 1 -
+//shop/wp-includes/wlwmanifest.xml 1 -
+/%3Flocale%3Dit 1 -
+/wp-includes/js/dist/hooks.min.js 2 -
+/wp-dmin 1 -
+/wp-content/uploads/2025/03/IMG_20250303_170329_127-scaled.jpg 2 -
+//test/wp-includes/wlwmanifest.xml 1 -
+/humans.txt 1 -
+//2018/wp-includes/wlwmanifest.xml 1 -
+/wp-content/uploads/2025/03/IMG_20250303_170320_652-scaled.jpg 2 -
+/wp-content/uploads/2025/03/cropped-Screenshot-37-32x32.png/ads.txt 1 -
+/wp-includes/js/underscore.min.js 2 -
+/wp-content/plugins/elementor-pro/assets/lib/smartmenus/jquery.smartmenus.min.js 2 -
+/wp-content/plugins/woocommerce/assets/js/js-cookie/js.cookie.min.js 2 -
+/%3Flocale%3Dzh 1 -
+/wp-content/uploads/2024/09/support.png 26 https://aghazgarclinic.ir/appointment-reservation/
+END_SIDER_404
+
+# Host - Pages - Hits - Bandwidth - Last visit date - [Start date of last visit] - [Last page of last visit]
+# [Start date of last visit] and [Last page of last visit] are saved only if session is not finished
+# The 25 first Hits must be first (order not required for others)
+BEGIN_VISITOR 340
+88.135.68.13 702 702 3769319 20260228161208
+217.218.215.83 91 604 15674863 20260224154727
+107.172.195.228 74 74 107248 20260217145219
+107.172.195.226 73 73 53621 20260217145627
+5.202.54.255 53 660 39400683 20260226130323
+3.92.6.157 34 35 1275387 20260221135717
+3.219.242.53 34 36 9187165 20260220184014
+13.218.119.164 34 36 9188279 20260219045756
+5.239.173.199 23 214 3580106 20260226171439
+89.198.97.137 21 168 9467746 20260223002725
+62.210.198.207 21 327 19118395 20260218131508
+5.127.115.241 21 122 2407356 20260225140853
+5.113.245.153 20 198 9423462 20260228014224
+5.215.254.200 18 165 6270309 20260222233814
+46.224.185.203 17 237 15276456 20260228002819
+146.103.102.82 17 122 3483621 20260224012927
+5.116.6.138 16 35 3550421 20260224171115
+37.137.31.234 16 109 2050381 20260224220333
+5.117.37.145 16 140 5589704 20260218172246
+5.117.11.95 16 173 6752127 20260226023347
+5.239.173.52 15 125 2658068 20260222133225
+5.117.93.11 14 122 1679677 20260222191648
+141.95.18.253 13 117 2168745 20260226212504
+151.238.119.157 13 49 3184663 20260228111403
+5.212.5.139 13 116 5114116 20260227143708
+212.112.19.85 1 1 173959 20260219105749
+212.112.19.73 0 2 648448 
+44.255.24.224 0 1 1644 
+38.213.27.59 8 104 1303263 20260222211850
+79.230.106.134 0 1 5065 
+37.202.130.158 0 1 640368 
+149.34.243.68 0 1 128722 
+5.239.173.141 6 94 1797567 20260221235233
+192.36.109.89 1 1 39039 20260226025710
+31.13.115.6 0 1 2090 
+155.2.216.7 7 108 5444555 20260227182850
+173.252.82.22 0 14 225767 
+84.24.86.15 1 1 192836 20260222124539
+5.215.50.240 7 87 1595357 20260221143308
+5.117.85.154 9 105 1334609 20260224162905
+5.127.192.105 0 1 913247 
+5.196.78.131 0 1 474030 
+173.252.127.19 0 3 11229 
+107.172.195.124 2 2 25049 20260217152016
+23.20.50.244 2 2 125391 20260224154356
+5.217.134.164 6 96 1722716 20260222022653
+66.249.83.101 0 6 15428 
+66.249.83.100 0 7 12142 
+46.223.162.216 1 1 168272 20260219084024
+37.129.63.223 10 124 2149241 20260222154443
+5.212.19.127 12 148 6507625 20260222161214
+44.205.33.186 2 2 125387 20260224122716
+166.0.180.102 1 1 34535 20260224010322
+82.102.27.91 1 1 37928 20260220072359
+5.123.95.23 7 119 5807109 20260225132647
+89.167.33.99 9 106 1143568 20260225132154
+23.234.71.204 1 1 53629 20260225130410
+5.239.172.237 11 127 4841367 20260225200909
+5.217.123.103 5 91 1713571 20260225181524
+68.167.132.190 1 1 53621 20260224140134
+144.217.135.252 7 116 8613779 20260221115549
+89.47.149.149 0 1 913247 
+80.40.52.234 0 2 783841 
+46.62.228.4 1 1 38281 20260219081033
+159.203.46.253 1 1 12523 20260222073652
+35.92.144.132 1 1 62712 20260225080533
+3.214.10.111 1 1 62691 20260226203608
+5.62.231.6 7 143 8788762 20260217112533
+45.148.10.62 1 1 62690 20260218203208
+104.28.246.14 1 3 374552 20260220032032
+37.98.9.206 9 95 2757937 20260226081231
+52.86.43.170 2 2 125397 20260225003701
+5.239.173.247 10 106 1376236 20260224135154
+87.151.163.128 0 1 2238 
+142.147.177.121 1 1 28911 20260226154437
+5.212.186.208 6 96 1722710 20260228005108
+85.198.61.193 10 139 12494684 20260220134049
+151.238.16.40 0 1 74189 
+89.198.121.39 6 92 1712558 20260223022541
+209.97.139.180 1 1 12519 20260221041527
+5.134.139.117 0 5 0 
+46.232.251.3 0 1 1189 
+66.249.93.37 3 45 275184 20260228014018
+217.182.196.81 0 1 526596 
+5.117.101.27 0 1 490794 
+5.116.100.122 10 105 1074063 20260221201520
+5.215.173.85 6 91 1581638 20260224152541
+16.147.96.229 0 1 4809 
+46.246.8.146 1 1 224380 20260219092323
+5.62.221.88 9 105 1342344 20260222121320
+80.210.30.54 6 142 7118827 20260221190454
+162.120.187.31 3 3 91924 20260225181453
+193.186.4.15 1 1 29150 20260221133749
+5.215.93.191 6 86 1058605 20260226153800
+5.116.94.108 0 1 490794 
+34.250.104.81 10 141 12395351 20260222074521
+5.250.70.232 6 94 1654096 20260217132140
+5.217.160.39 0 23 3168620 
+192.36.109.115 1 1 39040 20260226025709
+69.9.131.124 1 2 96330 20260221041751
+138.68.69.51 1 1 62708 20260225070005
+5.127.166.23 1 1 29294 20260225140539
+194.36.25.42 1 1 53623 20260217132450
+213.201.171.133 1 1 34531 20260224010140
+34.34.225.58 7 103 5051895 20260227145326
+52.34.51.99 0 4 9930 
+217.138.193.162 1 1 62702 20260222072026
+66.102.8.100 2 20 178881 20260224171059
+47.160.171.155 1 1 62696 20260224123609
+198.54.134.252 3 8 638171 20260221004909
+95.217.133.12 1 1 34749 20260228015817
+198.44.157.34 0 1 1426 
+159.195.56.133 1 1 205088 20260218215318
+178.128.229.173 1 1 12520 20260219060550
+5.116.247.74 8 104 999205 20260220221641
+162.155.156.106 1 2 493248 20260219194649
+68.80.80.233 1 3 48077 20260220091716
+93.110.8.170 0 1 1266597 
+57.128.173.88 0 1 474 
+54.82.229.81 2 2 125391 20260218002539
+185.247.137.111 0 1 35991 
+202.61.249.193 0 1 32787 
+39.42.192.23 1 1 33742 20260220122207
+23.28.125.215 0 3 487812 
+18.246.210.108 0 1 759 
+151.238.118.153 9 125 4635166 20260224165914
+217.219.233.110 4 87 1438844 20260228093637
+162.120.187.156 1 1 29155 20260227155452
+44.196.121.158 1 1 62696 20260225180923
+212.112.19.13 0 1 170197 
+107.22.248.10 2 2 25035 20260226001835
+5.212.149.190 10 105 1058458 20260226092544
+104.28.156.59 0 1 10220 
+91.90.122.37 1 1 12517 20260222050822
+173.252.127.25 6 105 3201205 20260222044424
+109.193.36.174 0 1 41247 
+185.115.78.203 7 96 2044966 20260224221829
+37.98.30.95 6 85 704633 20260223110020
+66.249.88.36 0 22 122857 
+104.28.237.97 0 1 700927 
+162.120.187.158 1 1 28250 20260226212938
+34.200.73.58 3 3 188092 20260225222849
+31.13.115.4 6 114 3226982 20260219051528
+104.28.246.16 2 4 221489 20260221041002
+181.214.187.101 1 1 28911 20260226141254
+72.14.201.41 1 1 29096 20260221185900
+173.252.82.25 7 97 2735279 20260222044417
+188.245.116.50 0 3 315276 
+35.86.82.209 0 2 16708 
+213.206.182.125 1 1 12517 20260219100715
+54.185.34.68 0 2 22894 
+35.153.36.16 1 1 62684 20260227184116
+31.57.147.16 4 4 155708 20260222032640
+66.249.88.38 1 19 143241 20260228014126
+66.102.8.101 4 12 220561 20260224171059
+104.28.214.15 0 1 137946 
+159.138.101.24 1 1 29149 20260221115012
+178.131.168.114 10 17 36189 20260221140547
+34.34.225.80 7 103 5051896 20260227145353
+66.220.149.16 7 130 6381001 20260222044410
+87.151.172.220 0 1 6798 
+66.249.83.134 1 8 68183 20260228014128
+192.36.109.84 1 1 62684 20260226080144
+104.28.246.18 1 1 434001 20260218190349
+149.102.239.183 2 2 76936 20260220134412
+5.239.173.9 12 129 6048329 20260224163519
+35.170.131.91 1 1 62693 20260224225229
+82.102.26.197 0 1 128431 
+149.50.218.15 1 1 12520 20260222070854
+66.102.8.102 2 12 106216 20260224171100
+66.249.83.133 1 9 102984 20260228014128
+104.28.214.21 1 1 37928 20260220082724
+87.151.172.120 0 1 29121 
+45.148.10.67 1 1 12526 20260222001148
+66.249.83.102 2 8 99727 20260228014128
+193.186.4.43 7 7 229771 20260227151227
+190.2.150.91 0 1 99679 
+54.190.4.99 0 1 3667 
+162.120.187.159 3 3 117531 20260225135437
+31.13.115.8 7 115 5847180 20260218232954
+72.14.201.42 1 1 28234 20260221213259
+2.147.132.179 7 116 6572434 20260218011229
+18.209.230.26 1 1 433995 20260220013728
+34.214.84.65 0 4 43453 
+152.53.195.75 1 2 190577 20260227101712
+5.212.17.102 6 97 1523929 20260223101249
+185.253.97.245 0 1 2749 
+54.236.168.139 3 3 87723 20260227220313
+81.17.97.152 8 120 5984621 20260225202256
+107.172.195.123 2 2 25044 20260221233312
+5.215.146.199 9 105 1331863 20260222075643
+185.253.162.19 4 4 250656 20260227173810
+89.198.235.16 9 109 2086675 20260227170102
+45.41.146.9 1 1 62693 20260224123603
+46.246.8.149 1 1 38120 20260220153954
+83.123.88.66 0 2 148378 
+206.189.206.191 1 1 15153 20260218101832
+185.247.137.165 1 1 12523 20260226223913
+91.99.116.225 2 3 604806 20260219235023
+2.147.40.188 1 1 0 20260220171316
+51.161.193.200 0 1 4422 
+5.115.241.206 8 90 1885201 20260227233843
+68.183.71.207 2 39 219560 20260228013849
+104.248.54.74 6 85 1777370 20260228094407
+104.28.214.17 0 1 10900 
+188.165.208.215 6 6 402888 20260221053617
+173.252.127.16 1 1 53760 20260222044400
+66.249.81.74 1 1 33695 20260224171053
+162.120.187.28 1 1 28248 20260226213957
+162.120.187.29 3 3 87214 20260226211746
+220.158.199.131 1 1 62671 20260221145702
+116.255.54.19 0 1 212608 
+13.220.0.30 1 1 433965 20260221005502
+79.233.201.165 0 1 1332 
+5.116.197.98 6 90 1608705 20260226160948
+104.28.237.101 1 2 39579 20260219050035
+173.244.56.110 1 1 62679 20260221150436
+195.78.54.127 0 2 156642 
+79.233.192.50 0 1 1720 
+3.148.167.123 5 86 397167 20260219040711
+13.220.182.196 8 115 5647976 20260217134421
+142.250.33.38 1 21 133325 20260224171055
+193.186.4.42 2 2 58377 20260228093632
+107.140.222.105 1 1 38357 20260224010226
+5.116.20.134 10 114 2100665 20260225220957
+156.246.173.235 1 1 62703 20260218183613
+2.144.5.174 1 95 5531367 20260225090800
+85.12.4.195 0 3 499614 
+65.21.136.254 1 1 193671 20260221074805
+23.93.166.254 0 2 48209 
+188.239.15.239 1 1 0 20260222181853
+5.116.61.85 8 103 1364040 20260227025235
+152.53.34.109 0 1 13340 
+5.215.87.6 9 104 1024007 20260218150345
+104.28.165.242 2 2 205196 20260221032609
+66.249.88.37 1 31 122197 20260228014040
+104.28.214.24 0 1 14733 
+5.215.247.173 6 90 1405682 20260224123133
+13.222.195.193 1 1 433965 20260227200703
+192.36.109.98 1 1 62682 20260226025706
+51.89.216.206 0 2 50606 
+84.239.14.144 0 1 2090 
+5.215.244.70 6 84 990324 20260223142434
+188.34.177.214 1 1 33836 20260224162859
+37.137.8.150 9 91 1259186 20260228161210
+142.147.197.137 1 1 32476 20260226072306
+104.28.159.14 1 81 3919274 20260223090744
+142.250.33.36 0 20 101750 
+185.197.30.174 3 4 869142 20260220081434
+99.81.216.206 1 1 53631 20260218074010
+46.229.253.5 9 118 4793186 20260228005151
+66.220.149.38 0 1 2090 
+66.207.180.52 5 10 217369 20260224154942
+122.199.8.232 1 2 36471 20260225204951
+185.247.137.52 0 1 63385 
+91.107.246.98 1 1 29047 20260222132537
+66.220.149.22 7 115 5847177 20260218155253
+16.147.252.97 0 2 21120 
+16.144.51.162 0 1 2852 
+104.28.214.14 4 12 1631801 20260219162017
+89.198.45.46 7 106 4553658 20260223131812
+95.162.235.85 0 10 0 
+193.70.81.186 3 10 448621 20260221160230
+188.126.94.200 1 1 15153 20260218183334
+107.21.11.47 1 1 62678 20260221080602
+146.70.22.36 0 1 5065 
+5.134.134.140 1 1 53609 20260223193806
+146.70.22.73 0 1 50503 
+89.198.197.23 1 3 905283 20260224185823
+104.28.214.16 0 2 169927 
+146.70.22.74 3 3 453746 20260220174145
+149.56.160.157 7 116 8613780 20260221115608
+194.26.192.57 3 3 509821 20260221160810
+89.198.194.30 9 121 6085561 20260218073938
+96.44.188.9 1 1 0 20260220210514
+54.213.228.101 0 2 20559 
+157.173.122.176 1 1 62702 20260219083156
+31.13.115.7 1 2 55857 20260219051514
+5.62.232.187 4 26 4391776 20260223124937
+162.120.188.159 4 4 99065 20260227180628
+173.252.95.33 7 115 3280751 20260225083844
+5.239.173.102 1 21 71325 20260227154010
+66.249.93.36 5 33 339316 20260228014040
+5.133.192.88 1 2 64788 20260224092501
+104.28.214.19 2 2 76138 20260219050403
+212.112.19.84 1 4 391852 20260224072335
+162.120.188.100 1 1 53603 20260227141343
+193.186.4.40 1 1 29804 20260224113901
+193.70.81.189 2 9 614629 20260220205447
+199.244.88.230 1 1 62694 20260227022517
+5.219.134.195 8 104 1002052 20260219234443
+66.249.83.132 2 6 98877 20260228014128
+54.244.110.62 0 1 4865 
+104.28.251.141 0 2 4162 
+5.115.126.10 0 1 644869 
+130.61.113.92 1 1 39423 20260221045124
+209.236.83.141 1 2 58345 20260221000102
+195.240.107.201 0 2 35113 
+5.116.251.91 0 1 591645 
+89.32.105.219 9 50 5072611 20260222180538
+54.214.56.218 0 3 4861 
+138.197.96.134 1 1 62680 20260220113909
+18.193.223.174 2 2 125353 20260221043751
+198.44.133.117 2 6 1274094 20260226001042
+66.249.93.38 4 37 278699 20260228014039
+167.99.180.251 1 1 433965 20260220095018
+77.174.92.245 1 1 3326 20260220141356
+5.116.49.15 11 130 9117088 20260218235614
+217.255.46.74 3 4 275816 20260221022731
+134.209.65.251 1 1 12521 20260220042828
+76.66.199.36 1 1 192445 20260219040356
+173.252.127.26 0 3 3877 
+5.239.173.153 6 86 1058586 20260228034843
+162.120.188.158 6 6 228222 20260226081200
+198.44.134.4 3 3 318326 20260227025659
+107.174.5.104 1 1 53624 20260225221017
+5.116.152.219 1 1 53623 20260224172209
+83.121.174.0 6 93 1746977 20260222212934
+144.217.135.156 13 13 3162663 20260221115535
+185.247.137.208 1 1 62683 20260226014941
+157.180.75.42 0 1 55094 
+124.243.173.179 1 1 0 20260224150935
+156.146.60.88 1 1 62696 20260222061519
+5.217.65.47 8 103 3351648 20260224155710
+66.220.149.33 7 115 3280745 20260222044422
+87.151.164.154 2 2 77404 20260222005850
+31.13.115.2 7 115 3280742 20260222044410
+5.217.126.236 8 104 1124470 20260226083518
+5.116.244.205 9 106 2740146 20260225010205
+104.131.49.243 1 1 12526 20260224191454
+204.76.203.25 4 4 151736 20260225215447
+124.77.235.215 1 1 62698 20260218025948
+34.217.177.64 0 2 17969 
+149.88.22.162 1 1 53627 20260225130358
+5.115.165.11 2 12 69784 20260228111252
+94.24.23.93 3 23 178603 20260225155817
+138.199.59.46 1 1 12524 20260222060833
+142.250.33.37 0 24 91824 
+5.117.7.10 12 124 6116667 20260224221512
+173.252.127.34 0 3 10671 
+END_VISITOR
+
+# Date - Pages - Hits - Bandwidth - Visits
+BEGIN_DAY 12
+20260217 235 929 35903290 17
+20260218 164 1294 62054791 26
+20260219 129 442 22719800 39
+20260220 127 360 27586887 42
+20260221 204 983 44392952 51
+20260222 243 2072 67453332 43
+20260223 101 802 29656566 23
+20260224 385 2160 70295078 53
+20260225 219 1479 47811821 37
+20260226 155 928 15127800 36
+20260227 123 823 27601237 28
+20260228 146 1363 41988223 28
+END_DAY
+
+# Session range - Number of visits
+BEGIN_SESSION 7
+15mn-30mn 20
+1h+ 35
+5mn-15mn 15
+2mn-5mn 14
+0s-30s 299
+30mn-1h 18
+30s-2mn 22
+END_SESSION
+
+# URL - Pages - Bandwidth - Entry - Exit
+# The 25 first Pages must be first (order not required for others)
+BEGIN_SIDER 185
+/wp-cron.php 600 0 91 92
+/ 331 21001841 187 143
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Regular.woff2 100 4088952 5 4
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Bold.woff2 100 4110904 0 9
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-SemiBold.woff2 100 4091304 3 8
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Medium.woff2 100 4102280 2 8
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-solid-900.woff2 98 7663208 3 8
+/wp-json/jet-engine/v2/appointment-refresh-date/ 64 22633 0 23
+/wp-admin/admin-ajax.php 54 26061 1 4
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Light.woff2 53 2108544 0 11
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-brands-400.woff2 39 3182868 0 2
+/appointment-reservation/ 25 1048545 2 0
+/doctors/ 21 1279440 5 6
+/testcode/wp-cron.php 19 0 0 0
+/services/ 16 2016470 4 3
+/contact-us/ 16 1457214 0 6
+/doctors/%D9%84%DB%8C%D9%84%D8%A7-%DA%A9%D9%88%DA%86%DA%A9-%D8%B2%D8%A7%D8%AF%D9%87-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D9%82%D9%85/ 15 437412 13 8
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Black.woff2 13 541684 0 1
+/doctors/%D9%85%D8%B9%D8%B5%D9%88%D9%85%D9%87-%D8%A7%D8%B3%D9%85%D8%AE%D8%A7%D9%86%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D9%82%D9%85/ 13 929707 9 7
+/doctors/%D8%B5%D8%AF%DB%8C%D9%82%D9%87-%D8%B4%D8%AC%D8%A7%D8%B9%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D9%82%D9%85/ 11 756664 8 4
+/wp-json/jet-engine/v2/appointment-date-slots/ 11 3773 0 4
+/wp-login.php 11 33988 0 0
+/wp-content/plugins/elementor/assets/lib/eicons/fonts/eicons.woff2 11 1156892 0 3
+/doctors/%d8%b5%d8%af%db%8c%d9%82%d9%87-%d8%b4%d8%ac%d8%a7%d8%b9%db%8c-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d9%85%d8%b4%d8%a7%d9%88%d8%b1-%d9%82%d9%85/ 10 288844 0 0
+/about-us/ 10 1049819 3 1
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D9%81%D8%B1%D8%AF%DB%8C/ 2 381264 0 0
+/services/%d9%85%d8%b4%d8%a7%d9%88%d8%b1%d9%87-%d8%ad%d9%82%d9%88%d9%82%db%8c-%d9%82%d9%85/ 2 226640 0 1
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-4850.css%3Fver%3D1771314929 2 0 0 0
+/https%3A/aghazgarclinic.ir/doctors/ 2 0 0 0
+/doctors/%d9%85%d8%ad%d9%85%d8%af%d8%b1%d8%b6%d8%a7-%d8%b9%d9%84%db%8c%d9%be%d9%88%d8%b1-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%da%a9%d9%88%d8%af%da%a9-%d9%86%d9%88%d8%ac%d9%88%d8%a7%d9%86-%d9%82/ 1 29427 0 0
+/https%3A/aghazgarclinic.ir/doctors/%D9%85%D8%B1%DB%8C%D9%85-%D8%B2%D8%A7%D8%B1%D8%B9%DB%8C-%D9%86%DA%98%D8%A7%D8%AF-%D9%86%D9%88%D8%B1%D9%88%D8%AA%D8%B1%D8%A7%D9%BE%DB%8C%D8%B3%D8%AA-%D9%82%D9%85/ 2 0 0 0
+/testcode/ 5 8999 0 1
+/doctors/%D9%85%D8%AD%D9%85%D8%AF%D8%B1%D8%B6%D8%A7-%D8%B9%D9%84%DB%8C%D9%BE%D9%88%D8%B1-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%DA%A9%D9%88%D8%AF%DA%A9-%D9%86%D9%88%D8%AC%D9%88%D8%A7%D9%86-%D9%82/ 4 88306 4 2
+/wp-admin/load-scripts.php 2 36243 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/lib/swiper/v8/css/swiper.min.css%3Fver%3D8.4.5 2 0 0 0
+/testcode/wp-admin/upgrade.php 1 21 0 0
+/wp-admin/user-edit.php 1 71354 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/lib/font-awesome/css/solid.min.css%3Fver%3D5.15.3 2 0 0 0
+/doctors/%D9%85%D8%B1%D8%AA%D8%B6%DB%8C-%D8%B1%D8%B6%D9%88%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D8%B2%D9%88%D8%AC-%D8%AF%D8%B1%D9%85%D8%A7%D9%86%DB%8C-%D9%82%D9%85/ 3 504786 1 1
+/sitemap_index.xml 1 1451 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor-pro/assets/css/widget-mega-menu-rtl.min.css%3Fver%3D3.31.2 2 0 0 0
+/doctors/%D9%87%D9%86%DA%AF%D8%A7%D9%85%D9%87-%D8%B4%DA%A9%D8%A7%D8%B1%DA%86%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D8%A8%D8%A7%D9%84%DB%8C%D9%86%DB%8C-%D9%82%D9%85/ 2 58587 2 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor-pro/abzarwp/fonts/all/css/fonts.css%3Fver%3D123456 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-4845.css%3Fver%3D1771314929 2 0 0 0
+/doctors/%D9%85%D9%87%D8%AF%DB%8C-%D9%85%D8%AD%D9%85%D8%AF%DB%8C-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D8%AD%D9%82%D9%88%D9%82%DB%8C-%D9%82%D9%85/ 7 451131 5 2
+/https%3A/aghazgarclinic.ir/contact-us 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/woocommerce/assets/client/blocks/wc-blocks-rtl.css%3Fver%3Dwc-10.1.3 2 0 0 0
+/https%3A/aghazgarclinic.ir 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/lib/animations/styles/fadeInRight.min.css%3Fver%3D3.35.4 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/widget-heading-rtl.min.css%3Fver%3D3.35.4 2 0 0 0
+/doctors/%D8%AD%D8%A7%D9%85%D8%AF-%D9%85%D8%AD%D9%85%D8%AF%DB%8C-%D8%AB%D8%A7%D8%A8%D8%AA-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D8%A8%D8%A7%D9%84%DB%8C%D9%86%DB%8C-%D9%82%D9%85/ 1 29096 1 1
+/https%3A/aghazgarclinic.ir/wp-json/ 2 0 0 0
+/doctors/%D9%86%DB%8C%D8%B1%D9%87-%D8%A7%DB%8C%D9%84%DB%8C%D8%A7%D8%AA-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%DA%A9%D9%88%D8%AF%DA%A9-%D9%86%D9%88%D8%AC%D9%88%D8%A7%D9%86-%D9%82%D9%85/ 2 58977 2 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-5.css%3Fver%3D1771314928 2 0 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-Thin.woff2 1 39296 1 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/woocommerce/assets/css/woocommerce-smallscreen-rtl.css%3Fver%3D10.1.3 2 0 0 0
+/doctors/%D9%85%D8%B1%DB%8C%D9%85-%D9%BE%D8%B1%D8%AE%D8%A7%D8%B4%D8%AC%D9%88-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D8%A8%D8%A7%D9%84%DB%8C%D9%86%DB%8C-%D9%86%D9%88%D8%AC%D9%88%D8%A7%D9%86-%D9%85/ 4 222357 4 3
+/wp-admin/ 1 87757 0 0
+/https%3A/aghazgarclinic.ir/services 2 0 0 0
+/%DA%86%DA%AF%D9%88%D9%86%D9%87-%D8%A8%D8%A7-%D9%85%D8%B1%DA%AF-%D8%B9%D8%B2%DB%8C%D8%B2%D8%A7%D9%86%D9%85%D9%88%D9%86-%DA%A9%D9%86%D8%A7%D8%B1-%D8%A8%DB%8C%D8%A7%DB%8C%DB%8C%D9%85/ 3 647481 1 1
+/https%3A/aghazgarclinic.ir/xmlrpc.php%3Frsd 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/widget-icon-list-rtl.min.css%3Fver%3D3.35.4 2 0 0 0
+/doctors/page/2/ 1 224728 1 1
+/services/%d8%b7%d8%b1%d8%ad%d9%88%d8%a7%d8%b1%d9%87-%d8%af%d8%b1%d9%85%d8%a7%d9%86%db%8c/ 5 326111 0 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor-pro/assets/css/widget-nav-menu-rtl.min.css%3Fver%3D3.31.2 2 0 0 1
+/blog/ 4 582506 0 1
+/%23content 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-8975.css%3Fver%3D1771314929 2 0 0 0
+/%D9%86%DA%A9%D8%A7%D8%AA%DB%8C-%DA%A9%D9%87-%D8%A8%D8%A7%DB%8C%D8%AF-%D9%BE%DB%8C%D8%B4-%D8%A7%D8%B2-%D8%A7%D8%B2%D8%AF%D9%88%D8%A7%D8%AC-%D8%A8%D8%AF%D8%A7%D9%86%DB%8C%D9%85/ 4 820243 2 2
+/https%3A/aghazgarclinic.ir/wp-content/plugins/jet-search/assets/lib/chosen/chosen.min.css%3Fver%3D1.8.7 2 0 0 0
+/services/%d8%a8%db%8c%d8%b4-%d9%81%d8%b9%d8%a7%d9%84%db%8c-%d9%82%d9%85/ 1 34228 0 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/jet-appointments-booking/assets/css/public/jet-appointments-booking.css%3Fver%3D2.1.2 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-7951.css%3Fver%3D1771314929 2 0 0 0
+/https%3A/aghazgarclinic.ir/%D8%AA%D8%AE%D8%B5%D8%B5-%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AA%D8%AD%D8%B5%DB%8C%D9%84%DB%8C-%D9%88-%D8%B4%D8%BA%D9%84%DB%8C-%D9%88-%D9%85%D8%B9%D8%B1%D9%81%DB%8C-%D8%A8%D9%87%D8%AA%D8%B1/ 2 0 0 0
+/services/%d8%aa%d8%b3%d8%aa-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%ae%d8%aa%db%8c-%d9%82%d9%85/ 4 294069 0 0
+/https%3A/aghazgarclinic.ir/wp-json/wp/v2/pages/3768 2 0 0 0
+/wp-json/wp/v2/services/12812 1 34749 1 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/frontend.min.css%3Fver%3D3.35.4 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/jet-search/assets/css/jet-search.css%3Fver%3D3.5.13 2 0 0 0
+/doctors/%D8%B9%D9%84%DB%8C-%DB%8C%D8%B2%D8%AF%D8%A7%D9%86%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D9%BE%D8%B2%D8%B4%DA%A9-%D9%82%D9%85/ 2 317446 0 0
+/https%3A/aghazgarclinic.ir/doctors/%D9%85%D8%B9%D8%B5%D9%88%D9%85%D9%87-%D8%A7%D8%B3%D9%85%D8%AE%D8%A7%D9%86%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D9%82%D9%85/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-8672.css%3Fver%3D1771314929 2 0 0 0
+/services/%D8%AA%D8%B3%D8%AA-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%AE%D8%AA%DB%8C-%D9%82%D9%85/ 2 383736 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor-pro/assets/css/conditionals/popup.min.css%3Fver%3D3.31.2 2 0 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AA%D9%88%D8%B3%D8%B9%D9%87-%D9%81%D8%B1%D8%AF%DB%8C-%D9%82%D9%85/ 4 612776 2 1
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AE%D8%A7%D9%86%D9%88%D8%A7%D8%AF%D9%87-%D9%82%D9%85/ 1 193671 1 1
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-solid-900.woff 1 101652 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/widget-icon-box-rtl.min.css%3Fver%3D3.35.4 2 0 0 0
+/doctors/%d9%85%da%98%da%af%d8%a7%d9%86-%d8%a2%d9%82%d8%a7%d8%a8%d8%a7%d8%a8%d8%a7%db%8c%db%8c-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d8%a8%d8%a7%d9%84%db%8c%d9%86%db%8c-%d9%82%d9%85/ 1 28231 0 0
+/doctors/%d9%85%d8%b1%db%8c%d9%85-%d8%b2%d8%a7%d8%b1%d8%b9%db%8c-%d9%86%da%98%d8%a7%d8%af-%d9%86%d9%88%d8%b1%d9%88%d8%aa%d8%b1%d8%a7%d9%be%db%8c%d8%b3%d8%aa-%d9%82%d9%85/ 3 86761 0 0
+/wp-json/wp/v2/ 1 19393 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/jet-engine/assets/css/frontend.css%3Fver%3D3.7.5 2 0 0 0
+/doctors/%D9%81%D8%A7%D8%B7%D9%85%D9%87-%D8%AD%D8%A8%DB%8C%D8%A8%DB%8C-%D8%B2%D8%A7%D8%AF%D9%87-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D9%82%D9%85/ 5 149019 5 5
+/doctors/%D9%85%DA%98%DA%AF%D8%A7%D9%86-%D8%A2%D9%82%D8%A7%D8%A8%D8%A7%D8%A8%D8%A7%DB%8C%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D8%A8%D8%A7%D9%84%DB%8C%D9%86%DB%8C-%D9%82%D9%85/ 8 225917 8 5
+/https%3A/aghazgarclinic.ir/wp-content/plugins/woocommerce/assets/css/woocommerce-rtl.css%3Fver%3D10.1.3 2 0 0 0
+/%D8%AA%D8%AE%D8%B5%D8%B5-%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AA%D8%AD%D8%B5%DB%8C%D9%84%DB%8C-%D9%88-%D8%B4%D8%BA%D9%84%DB%8C-%D9%88-%D9%85%D8%B9%D8%B1%D9%81%DB%8C-%D8%A8%D9%87%D8%AA%D8%B1/ 2 412588 0 0
+/services/%D8%B1%D9%88%D8%A7%D9%86%D9%BE%D8%B2%D8%B4%DA%A9-%D9%82%D9%85/ 1 33742 1 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/widget-rating-rtl.min.css%3Fver%3D3.35.4 2 0 0 0
+/https%3A/aghazgarclinic.ir/comments/feed/ 2 0 0 0
+/services/%d9%85%d8%b4%d8%a7%d9%88%d8%b1%d9%87-%d8%ae%d8%a7%d9%86%d9%88%d8%a7%d8%af%d9%87-%d9%82%d9%85/ 1 34439 0 1
+/https%3A/aghazgarclinic.ir/doctors/%D8%B9%D9%84%DB%8C-%DB%8C%D8%B2%D8%AF%D8%A7%D9%86%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D9%BE%D8%B2%D8%B4%DA%A9-%D9%82%D9%85/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-json/oembed/1.0/embed%3Furl%3Dhttps%3A/aghazgarclinic.ir/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/13%D8%B1%D8%A7%D9%87%DA%A9%D8%A7%D8%B1-%D8%A8%D8%B1%D8%A7%DB%8C-%D8%A8%D9%87%D8%A8%D9%88%D8%AF-%D8%B1%D9%88%D8%A7%D8%A8%D8%B7-%D8%A8%D8%A7-%D9%BE%D8%AF%D8%B1-%D9%88-%D9%85%D8%A7%D8%AF%D8%B1/ 2 0 0 0
+/doctors/%d9%84%db%8c%d9%84%d8%a7-%da%a9%d9%88%da%86%da%a9-%d8%b2%d8%a7%d8%af%d9%87-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d9%85%d8%b4%d8%a7%d9%88%d8%b1-%d9%82%d9%85/ 1 29144 0 0
+/my-account/ 7 376467 0 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/widget-image-rtl.min.css%3Fver%3D3.35.4 2 0 0 0
+/https%3A/aghazgarclinic.ir/my-account/ 2 0 0 1
+/https%3A/aghazgarclinic.ir/wp-content/themes/hello-elementor/style.min.css%3Fver%3D3.1.1 2 0 0 0
+/doctors/%d9%85%d8%b9%d8%b5%d9%88%d9%85%d9%87-%d8%a7%d8%b3%d9%85%d8%ae%d8%a7%d9%86%db%8c-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d9%85%d8%b4%d8%a7%d9%88%d8%b1-%d9%82%d9%85/ 2 58046 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%A8%D8%A7%D9%84%DB%8C%D9%86%DB%8C-%D9%86%D9%88%D8%AC%D9%88%D8%A7%D9%86%D8%A7%D9%86-%D9%82%D9%85/ 1 34286 1 0
+/services/%d9%86%d9%88%d8%b1%d9%88%d8%aa%d8%b1%d8%a7%d9%be%db%8c/ 3 260867 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css%3Fver%3D5.47.0 2 0 0 0
+/wp-json/wp/v2/pages/3768 2 726543 0 0
+/cpanel 1 12872 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AD%D9%82%D9%88%D9%82%DB%8C-%D9%82%D9%85/ 6 680039 4 1
+/https%3A/aghazgarclinic.ir/services/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/doctors/%D8%B5%D8%AF%DB%8C%D9%82%D9%87-%D8%B4%D8%AC%D8%A7%D8%B9%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D9%82%D9%85/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-8158.css%3Fver%3D1771314929 2 0 0 0
+/wp-content/plugins/woocommerce/assets/fonts/WooCommerce.woff2 1 6488 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/woocommerce/assets/css/brands.css%3Fver%3D10.1.3 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-8035.css%3Fver%3D1771314929 2 0 0 0
+/https%3A/aghazgarclinic.ir/feed/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/woocommerce/assets/css/woocommerce-layout-rtl.css%3Fver%3D10.1.3 2 0 0 0
+/doctors/%d8%ad%d8%a7%d9%85%d8%af-%d9%85%d8%ad%d9%85%d8%af%db%8c-%d8%ab%d8%a7%d8%a8%d8%aa-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d8%a8%d8%a7%d9%84%db%8c%d9%86%db%8c-%d9%82%d9%85/ 1 29088 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/conditionals/e-swiper.min.css%3Fver%3D3.35.4 1 0 0 0
+/doctors/%d9%87%d9%86%da%af%d8%a7%d9%85%d9%87-%d8%b4%da%a9%d8%a7%d8%b1%da%86%db%8c-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d8%a8%d8%a7%d9%84%db%8c%d9%86%db%8c-%d9%82%d9%85/ 1 29275 0 0
+/wp-admin/users.php 3 188519 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff/IRANYekanWebRegular.woff 1 32640 0 0
+/services/%D9%85%D9%87%D8%A7%D8%B1%D8%AA-%D8%B2%D9%86%D8%AF%DA%AF%DB%8C-%D9%82%D9%85/ 5 170566 2 1
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/ttf/PeydaFaNum-SemiBold.ttf 1 34531 0 0
+/services/%d9%85%d8%b4%d8%a7%d9%88%d8%b1%d9%87-%d9%81%d8%b1%d8%af%db%8c/ 3 258741 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%DA%A9%D9%88%D8%AF%DA%A9-%D9%86%D9%88%D8%AC%D9%88%D8%A7%D9%86/ 2 67404 1 1
+/xmlrpc.php 2 1634 0 0
+/feed/ 3 296169 1 1
+/https%3A/aghazgarclinic.ir/blog/ 2 0 0 0
+/13%D8%B1%D8%A7%D9%87%DA%A9%D8%A7%D8%B1-%D8%A8%D8%B1%D8%A7%DB%8C-%D8%A8%D9%87%D8%A8%D9%88%D8%AF-%D8%B1%D9%88%D8%A7%D8%A8%D8%B7-%D8%A8%D8%A7-%D9%BE%D8%AF%D8%B1-%D9%88-%D9%85%D8%A7%D8%AF%D8%B1/ 2 412882 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/css/widget-image-box-rtl.min.css%3Fver%3D3.35.4 2 0 0 0
+/wp-admin/user-new.php 1 60798 0 0
+/testcode/wp-admin/admin-ajax.php 5 0 1 0
+/services/%d9%85%d8%b4%d8%a7%d9%88%d8%b1%d9%87-%d8%aa%d9%88%d8%b3%d8%b9%d9%87-%d9%81%d8%b1%d8%af%db%8c-%d9%82%d9%85/ 4 295860 0 0
+/https%3A/aghazgarclinic.ir/wp-json/oembed/1.0/embed%3Furl%3Dhttps%3A/aghazgarclinic.ir/%26format%3Dxml 1 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-9045.css%3Fver%3D1771314929 2 0 0 0
+/services/%D9%86%D9%88%D8%B1%D9%88%D8%AA%D8%B1%D8%A7%D9%BE%DB%8C/ 8 590864 5 1
+/https%3A/aghazgarclinic.ir/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor/assets/lib/font-awesome/css/fontawesome.min.css%3Fver%3D5.15.3 2 0 0 0
+/doctors/%d9%85%d8%b1%d8%aa%d8%b6%db%8c-%d8%b1%d8%b6%d9%88%db%8c-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d8%b2%d9%88%d8%ac-%d8%af%d8%b1%d9%85%d8%a7%d9%86%db%8c-%d9%82%d9%85/ 4 114173 0 0
+/wp-json/oembed/1.0/embed 7 29956 3 3
+/doctors/%D9%85%D8%B1%DB%8C%D9%85-%D8%B2%D8%A7%D8%B1%D8%B9%DB%8C-%D9%86%DA%98%D8%A7%D8%AF-%D9%86%D9%88%D8%B1%D9%88%D8%AA%D8%B1%D8%A7%D9%BE%DB%8C%D8%B3%D8%AA-%D9%82%D9%85/ 8 651322 6 2
+/old/ 1 0 0 0
+/%d8%aa%d8%ae%d8%b5%d8%b5-%d9%85%d8%b4%d8%a7%d9%88%d8%b1%d9%87-%d8%aa%d8%ad%d8%b5%db%8c%d9%84%db%8c-%d9%88-%d8%b4%d8%ba%d9%84%db%8c-%d9%88-%d9%85%d8%b9%d8%b1%d9%81%db%8c-%d8%a8%d9%87%d8%aa%d8%b1/ 3 113067 2 3
+/services/%D8%A7%D8%B3%D8%AA%D8%B9%D8%AF%D8%A7%D8%AF%DB%8C%D8%A7%D8%A8%DB%8C-%D9%82%D9%85/ 3 67670 2 1
+/services/%d8%b2%d9%88%d8%ac%db%8c%d9%86_%d9%82%d9%85/ 3 67351 0 0
+/https%3A/aghazgarclinic.ir/wp-content/themes/hello-elementor/header-footer.min.css%3Fver%3D3.1.1 2 0 0 0
+/https%3A/gmpg.org/xfn/11 2 0 0 0
+/doctors/%d9%85%d9%87%d8%af%db%8c-%d9%85%d8%ad%d9%85%d8%af%db%8c-%d9%85%d8%b4%d8%a7%d9%88%d8%b1-%d8%ad%d9%82%d9%88%d9%82%db%8c-%d9%82%d9%85/ 6 167971 0 0
+/https%3A/aghazgarclinic.ir/about-us/ 2 0 0 0
+/doctors/%d8%b4%d9%87%d8%b1%d8%b2%d8%a7%d8%af-%d8%b9%d8%a8%d8%a7%d8%b3%db%8c-%d8%b1%d9%88%d8%a7%d9%86%d8%b4%d9%86%d8%a7%d8%b3-%d9%82%d9%85/ 1 29247 0 0
+/wp-content/plugins/elementor-pro/abzarwp/fonts/all/fonts/woff2/PeydaWebFaNum-ExtraLight.woff2 1 40884 0 1
+/services/%D8%B7%D8%B1%D8%AD%D9%88%D8%A7%D8%B1%D9%87-%D8%AF%D8%B1%D9%85%D8%A7%D9%86%DB%8C/ 9 740926 5 4
+/doctors/%d8%b9%d9%84%db%8c-%db%8c%d8%b2%d8%af%d8%a7%d9%86%db%8c-%d8%b1%d9%88%d8%a7%d9%86%d9%be%d8%b2%d8%b4%da%a9-%d9%82%d9%85/ 5 144494 1 0
+/resetpass 2 6684 1 2
+/comments/feed/ 2 1614 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-3768.css%3Fver%3D1771314928 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-8120.css%3Fver%3D1771314929 2 0 0 0
+/https%3A/aghazgarclinic.ir/contact-us/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/doctors/%D9%85%D8%B1%D8%AA%D8%B6%DB%8C-%D8%B1%D8%B6%D9%88%DB%8C-%D8%B1%D9%88%D8%A7%D9%86%D8%B4%D9%86%D8%A7%D8%B3-%D8%B2%D9%88%D8%AC-%D8%AF%D8%B1%D9%85%D8%A7%D9%86%DB%8C-%D9%82%D9%85/ 2 0 0 0
+/services/%d8%b1%d9%88%d8%a7%d8%a8%d8%b7-%d8%a8%db%8c%d9%86-%d9%81%d8%b1%d8%af%db%8c-%d9%82%d9%85/ 1 33714 0 0
+/wp-json/ 2 6215874 0 0
+/wp-json/jet-engine/v2/appointment-service-providers/ 7 1603 0 0
+/https%3A/aghazgarclinic.ir/wp-content/themes/hello-elementor/theme.min.css%3Fver%3D3.1.1 2 0 0 0
+/https%3A/aghazgarclinic.ir/doctors/%D9%85%D9%87%D8%AF%DB%8C-%D9%85%D8%AD%D9%85%D8%AF%DB%8C-%D9%85%D8%B4%D8%A7%D9%88%D8%B1-%D8%AD%D9%82%D9%88%D9%82%DB%8C-%D9%82%D9%85/ 2 0 0 0
+/services/%d8%af%d8%b1%d9%85%d8%a7%d9%86-%d8%a7%d8%b9%d8%aa%db%8c%d8%a7%d8%af/ 3 101650 0 1
+/services/%D8%AA%D8%B3%D8%AA-%D9%87%D9%88%D8%B4-%DA%A9%D8%B3%D9%84%D8%B1-%D9%82%D9%85/ 6 211089 6 3
+/wp-json/yoast/v1/statistics 1 409 0 0
+/services/%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%B7%D9%84%D8%A7%D9%82-%D9%82%D9%85/ 1 193870 1 1
+/https%3A/aghazgarclinic.ir/appointment-reservation/ 2 0 0 0
+/https%3A/aghazgarclinic.ir/wp-content/uploads/elementor/css/post-4694.css%3Fver%3D1771314930 2 0 0 0
+/services/%d9%85%d8%b4%d8%a7%d9%88%d8%b1%d9%87-%d8%a7%da%af%d8%b2%db%8c%d8%b3%d8%aa%d8%a7%d9%86%d8%b3%db%8c%d8%a7%d9%84-%d9%82%d9%85/ 1 34169 0 1
+/https%3A/aghazgarclinic.ir/wp-content/plugins/elementor-pro/assets/css/woocommerce-notices.min.css%3Fver%3D3.31.2 2 0 0 0
+/wp-admin/load-styles.php 3 292023 0 0
+/%DA%A9%D8%A7%D9%87%D8%B4-%D8%A7%D8%B3%D8%AA%D8%B1%D8%B3-%D9%88-%D8%A7%D8%B6%D8%B7%D8%B1%D8%A7%D8%A8/ 4 793500 2 2
+/https%3A/aghazgarclinic.ir/%D9%86%DA%A9%D8%A7%D8%AA%DB%8C-%DA%A9%D9%87-%D8%A8%D8%A7%DB%8C%D8%AF-%D9%BE%DB%8C%D8%B4-%D8%A7%D8%B2-%D8%A7%D8%B2%D8%AF%D9%88%D8%A7%D8%AC-%D8%A8%D8%AF%D8%A7%D9%86%DB%8C%D9%85/ 2 0 0 0
+/%23elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6IjQ2OTQiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D 2 0 0 0
+/services/%D8%B3%D9%84%D8%A7%D9%85%D8%AA-%D8%AC%D9%86%D8%B3%DB%8C_%D9%82%D9%85/ 1 190377 1 1
+/https%3A/aghazgarclinic.ir/%DA%A9%D8%A7%D9%87%D8%B4-%D8%A7%D8%B3%D8%AA%D8%B1%D8%B3-%D9%88-%D8%A7%D8%B6%D8%B7%D8%B1%D8%A7%D8%A8/ 2 0 0 0
+END_SIDER
+
+# Payload Range - Payload Frequency
+BEGIN_FILESIZE 7
+1K-2K 2484
+0-44 1484
+2K-5K 2467
+44-100 182
+100-500 1763
+500-1K 1877
+5K+ 5619
+END_FILESIZE
+
+# Request Time Range - Request Time Frequency
+BEGIN_REQUESTTIME 0
+END_REQUESTTIME

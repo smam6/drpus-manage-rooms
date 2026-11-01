@@ -1,0 +1,54 @@
+<?php
+
+namespace SyncBasalam\Migrations;
+
+use SyncBasalam\Migrations\Versions\Migration_1_3_0;
+use SyncBasalam\Migrations\Versions\Migration_1_3_2;
+use SyncBasalam\Migrations\Versions\Migration_1_3_8;
+use SyncBasalam\Migrations\Versions\Migration_1_4_0;
+use SyncBasalam\Migrations\Versions\Migration_1_4_1;
+use SyncBasalam\Migrations\Versions\Migration_1_6_2;
+use SyncBasalam\Migrations\Versions\Migration_1_7_8;
+use SyncBasalam\Migrations\Versions\Migration_1_8_0;
+use SyncBasalam\Migrations\Versions\Migration_1_8_1;
+use SyncBasalam\Migrations\Versions\Migration_1_8_5;
+use SyncBasalam\Migrations\Versions\Migration_1_8_7;
+use SyncBasalam\Migrations\Versions\Migration_1_10_6;
+use SyncBasalam\Migrations\Versions\Migration_1_10_8;
+use SyncBasalam\Migrations\Versions\Migration_1_10_25;
+
+defined('ABSPATH') || exit;
+
+class MigrationManager
+{
+    private $migrations = [];
+
+    public function __construct()
+    {
+        $this->migrations = [
+            '1.3.0' => new Migration_1_3_0(),
+            '1.3.2' => new Migration_1_3_2(),
+            '1.3.8' => new Migration_1_3_8(),
+            '1.4.0' => new Migration_1_4_0(),
+            '1.4.1' => new Migration_1_4_1(),
+            '1.6.2' => new Migration_1_6_2(),
+            '1.7.8' => new Migration_1_7_8(),
+            '1.8.0' => new Migration_1_8_0(),
+            '1.8.1' => new Migration_1_8_1(),
+            '1.8.5' => new Migration_1_8_5(),
+            '1.8.7' => new Migration_1_8_7(),
+            '1.10.6' => new Migration_1_10_6(),
+            '1.10.8' => new Migration_1_10_8(),
+            '1.10.25' => new Migration_1_10_25(),
+        ];
+    }
+
+    public function runMigrations($currentVersion, $newVersion)
+    {
+        foreach ($this->migrations as $version => $migration) {
+            if (version_compare($currentVersion, $version, '<')) $migration->up();
+        }
+
+        update_option('sync_basalam_version', $newVersion);
+    }
+}

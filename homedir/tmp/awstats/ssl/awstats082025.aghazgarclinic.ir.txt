@@ -1,0 +1,361 @@
+AWSTATS DATA FILE 8.0 (build 20240604)
+# If you remove this file, all statistics for date 202508 will be lost/reset.
+# Last config file used to build this data file was /home/aghazga1/tmp/awstats/ssl/awstats.aghazgarclinic.ir.conf.
+
+# Position (offset in bytes) in this file for beginning of each section for
+# direct I/O access. If you made changes somewhere in this file, you should
+# also remove completely the MAP section (AWStats will rewrite it at next
+# update).
+BEGIN_MAP 28
+POS_GENERAL 2089                
+POS_TIME 2760                
+POS_VISITOR 6593                
+POS_DAY 7800                
+POS_DOMAIN 3386                
+POS_LOGIN 3711                
+POS_ROBOT 3866                
+POS_WORMS 4179                
+POS_EMAILSENDER 4310                
+POS_EMAILRECEIVER 4453                
+POS_SESSION 7910                
+POS_FILESIZE 11948               
+POS_REQUESTTIME 12087               
+POS_SIDER 8094                
+POS_FILETYPES 4588                
+POS_DOWNLOADS 4709                
+POS_OS 4757                
+POS_BROWSER 4888                
+POS_SCREENSIZE 5118                
+POS_UNKNOWNREFERER 5192                
+POS_UNKNOWNREFERERBROWSER 5354                
+POS_ORIGIN 5511                
+POS_SEREFERRALS 5647                
+POS_PAGEREFS 5791                
+POS_SEARCHWORDS 5939                
+POS_KEYWORDS 6091                
+POS_MISC 2424                
+POS_ERRORS 6150                
+POS_CLUSTER 3567                
+POS_SIDER_404 6284                
+END_MAP
+
+# LastLine    = Date of last record processed - Last record line number in last log - Last record offset in last log - Last record signature value
+# FirstTime   = Date of first visit for history file
+# LastTime    = Date of last visit for history file
+# LastUpdate  = Date of last update - Nb of parsed records - Nb of parsed old records - Nb of parsed new records - Nb of parsed corrupted - Nb of parsed dropped
+# TotalVisits = Number of visits
+# TotalUnique = Number of unique visitors
+# MonthHostsKnown   = Number of hosts known
+# MonthHostsUnKnown = Number of hosts unknown
+BEGIN_GENERAL 8
+LastLine 20260217111228 1 0 9414046305391
+FirstTime 20250812161147
+LastTime 20250813152119
+LastUpdate 20260217161007 1 0 0 0 0
+TotalVisits 40                  
+TotalUnique 28                  
+MonthHostsKnown 0                   
+MonthHostsUnknown 28                  
+END_GENERAL
+
+# Misc ID - Pages - Hits - Bandwidth
+BEGIN_MISC 10
+FlashSupport 0 0 0
+WindowsMediaPlayerSupport 0 0 0
+QuickTimeSupport 0 0 0
+RealPlayerSupport 0 0 0
+JavaEnabled 0 0 0
+DirectorSupport 0 0 0
+AddToFavourites 0 7 0
+TotalMisc 0 0 0
+PDFSupport 0 0 0
+JavascriptDisabled 0 0 0
+END_MISC
+
+# Hour - Pages - Hits - Bandwidth - Not viewed Pages - Not viewed Hits - Not viewed Bandwidth
+BEGIN_TIME 24
+0 25 25 909221 12 12 3462
+1 3 3 61017 5 5 7822
+2 2 2 40 2 2 3650
+3 1 1 20 1 1 60904
+4 1 1 20 2 2 28015
+5 1 1 20 1 1 3242
+6 2 2 12439 1 1 3242
+7 1 1 20 1 1 3242
+8 6 6 243619 1 1 3242
+9 5 5 121852 1 2 3634
+10 2 2 40 2 2 35435
+11 1 1 20 1 1 3242
+12 1 1 20 3 3 860
+13 3 3 61019 8 8 51820
+14 1 1 20 1 1 3242
+15 1 1 20 1 1 3242
+16 62 62 1158221 25 32 4415
+17 2 2 12442 2 3 47654
+18 1 1 20 1 1 3242
+19 3 3 12460 2 3 64338
+20 0 0 0 0 0 0
+21 51 51 862302 11 12 3726
+22 1 1 20 2 3 3348
+23 4 4 73368 2 4 15770
+END_TIME
+
+# Domain - Pages - Hits - Bandwidth
+# The 25 first Pages must be first (order not required for others)
+BEGIN_DOMAIN 8
+us 146 146 2249965
+ro 24 24 921600
+in 3 3 85740
+ru 2 2 60889
+ir 2 2 121792
+cl 1 1 14937
+cz 1 1 60890
+se 1 1 12427
+END_DOMAIN
+
+# Cluster ID - Pages - Hits - Bandwidth
+BEGIN_CLUSTER 0
+END_CLUSTER
+
+# Login - Pages - Hits - Bandwidth - Last visit
+# The 10 first Pages must be first (order not required for others)
+BEGIN_LOGIN 0
+END_LOGIN
+
+# Robot ID - Hits - Bandwidth - Last visit - Hits on robots.txt
+# The 25 first Hits must be first (order not required for others)
+BEGIN_ROBOT 4
+bingbot/ 6 182148 20250813135449 0
+bot[\s_+:,\.\;\/\\-] 3 61122 20250812195539 2
+(firefox/)([0-9]\.|[0-1][0]\.) 1 12420 20250813130548 0
+facebookexternalhit/ 1 392 20250813093832 1
+END_ROBOT
+
+# Worm ID - Hits - Bandwidth - Last visit
+# The 5 first Hits must be first (order not required for others)
+BEGIN_WORMS 0
+END_WORMS
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first Hits must be first (order not required for others)
+BEGIN_EMAILSENDER 0
+END_EMAILSENDER
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first hits must be first (order not required for others)
+BEGIN_EMAILRECEIVER 0
+END_EMAILRECEIVER
+
+# Files type - Hits - Bandwidth - Bandwidth without compression - Bandwidth after compression
+BEGIN_FILETYPES 3
+Unknown 72 894371 0 0
+php 43 860 0 0
+html 65 2633009 0 0
+END_FILETYPES
+
+# Downloads - Hits - Bandwidth
+BEGIN_DOWNLOADS 0
+END_DOWNLOADS
+
+# OS ID - Hits
+BEGIN_OS ID - Hits - Pages 5
+macosx15 9 9
+linux 12 12
+win10 85 85
+Unknown 72 72
+androidpie 2 2
+END_OS
+
+# Browser ID - Hits - Pages
+BEGIN_BROWSER 9
+chrome92.0.4515.107 1 1
+Unknown 72 72
+chrome108.0.0.0 2 2
+chrome139.0.0.0 1 1
+chrome116.0.0.0 91 91
+chrome117.0.0.0 5 5
+chrome137.0.0.0 5 5
+firefox139.0 1 1
+chrome85.0.4183.81 2 2
+END_BROWSER
+
+# Screen size - Hits
+BEGIN_SCREENSIZE 0
+END_SCREENSIZE
+
+# Unknown referer OS - Last visit date
+BEGIN_UNKNOWNREFERER 2
+\ 20250813004018
+WordPress/6.8.2;_https://aghazgarclinic.ir 20250813152119
+END_UNKNOWNREFERER
+
+# Unknown referer Browser - Last visit date
+BEGIN_UNKNOWNREFERERBROWSER 2
+\ 20250813004018
+WordPress/6.8.2;_https://aghazgarclinic.ir 20250813152119
+END_UNKNOWNREFERERBROWSER
+
+# Origin - Pages - Hits 
+BEGIN_ORIGIN 6
+From0 168 168
+From1 0 0
+From2 0 0
+From3 0 0
+From4 12 12
+From5 0 0
+END_ORIGIN
+
+# Search engine referers ID - Pages - Hits
+BEGIN_SEREFERRALS 0
+END_SEREFERRALS
+
+# External page referers - Pages - Hits
+# The 25 first Pages must be first (order not required for others)
+BEGIN_PAGEREFS 0
+END_PAGEREFS
+
+# Search keyphrases - Number of search
+# The 10 first number of search must be first (order not required for others)
+BEGIN_SEARCHWORDS 0
+END_SEARCHWORDS
+
+# Search keywords - Number of search
+# The 25 first number of search must be first (order not required for others)
+BEGIN_KEYWORDS 0
+END_KEYWORDS
+
+# Errors - Hits - Bandwidth
+BEGIN_ERRORS 5
+401 30 1484
+403 2 1574
+503 7 8015
+500 21 68082
+301 22 440
+END_ERRORS
+
+# URL with 404 errors - Hits - Last URL referrer
+BEGIN_SIDER_404 0
+END_SIDER_404
+
+# Host - Pages - Hits - Bandwidth - Last visit date - [Start date of last visit] - [Last page of last visit]
+# [Start date of last visit] and [Last page of last visit] are saved only if session is not finished
+# The 25 first Hits must be first (order not required for others)
+BEGIN_VISITOR 28
+65.21.37.160 49 49 366395 20250813152119
+104.164.126.179 38 38 471966 20250812215528
+107.172.195.98 37 37 459670 20250812165203
+77.36.125.234 23 23 909181 20250813004019
+104.252.191.223 2 2 121799 20250812215449
+107.172.195.242 2 2 121793 20250812161528
+103.196.9.255 2 2 24843 20250812161517
+104.164.126.216 2 2 121796 20250812215512
+154.28.229.189 2 2 121796 20250812165125
+104.252.191.94 2 2 24849 20250812161543
+107.172.195.171 2 2 24847 20250812215505
+194.225.50.88 2 2 121792 20250813092140
+104.252.191.79 2 2 121793 20250812161555
+195.211.77.140 1 1 0 20250812161149
+23.234.110.37 1 1 12422 20250812170210
+104.248.247.243 1 1 12420 20250812195503
+195.211.77.142 1 1 60889 20250812161214
+104.252.191.191 1 1 60894 20250812165119
+193.138.218.224 1 1 12427 20250812233425
+154.28.229.235 1 1 60897 20250812215439
+79.127.217.38 1 1 60890 20250812161525
+34.44.194.30 1 1 60901 20250812231629
+91.90.124.136 1 1 12419 20250812162602
+181.214.218.224 1 1 14937 20250812162558
+104.164.173.229 1 1 60889 20250812165144
+103.4.250.243 1 1 60897 20250812215446
+104.164.126.254 1 1 12419 20250812161509
+167.99.133.102 1 1 12419 20250813065128
+END_VISITOR
+
+# Date - Pages - Hits - Bandwidth - Visits
+BEGIN_DAY 2
+20250812 124 124 2118833 28
+20250813 56 56 1409407 12
+END_DAY
+
+# Session range - Number of visits
+BEGIN_SESSION 5
+5mn-15mn 1
+2mn-5mn 2
+1h+ 5
+0s-30s 31
+30s-2mn 1
+END_SESSION
+
+# URL - Pages - Bandwidth - Entry - Exit
+# The 25 first Pages must be first (order not required for others)
+BEGIN_SIDER 54
+/ 43 1784731 27 24
+/wp-cron.php 42 840 13 13
+/%3Flocale%3Dfil 2 24845 0 0
+/%3Flocale%3Duk 2 24840 0 1
+/%3Flocale%3Dit 2 24836 0 1
+/%3Flocale%3Dnl 2 24846 0 0
+/https%3A/go.cpanel.net/privacy 2 24844 0 0
+/%3Flocale%3Des_es 2 24849 0 0
+/%3Flocale%3Dzh_tw 2 24840 0 0
+/%3Flocale%3Des 2 24847 0 0
+/%3Flocale%3Dko 2 24850 0 0
+/%3Flocale%3Dvi 2 24846 0 0
+/%3Flocale%3Dms 2 24846 0 0
+/%3Flocale%3Did 2 24845 0 0
+/%3Flocale%3Des_419 2 24847 0 0
+/%3Flocale%3Dar 2 24844 0 0
+/%3Flocale%3Dzh 2 24845 0 0
+/%3Flocale%3Dro 2 24838 0 0
+/https%3A/go.cpanel.net/ie11deprecation 2 24839 0 0
+/about-us/ 2 74008 0 1
+/services/ 2 109902 0 0
+/%3Flocale%3Dtr 2 24836 0 0
+/%3Flocale%3Dja 2 24843 0 0
+/%3Flocale%3Dcs 2 24854 0 0
+/%3Flocale%3Dpl 2 24844 0 0
+/%D9%86%DA%A9%D8%A7%D8%AA%DB%8C-%DA%A9%D9%87-%D8%A8%D8%A7%DB%8C%D8%AF-%D9%BE%DB%8C%D8%B4-%D8%A7%D8%B2-%D8%A7%D8%B2%D8%AF%D9%88%D8%A7%D8%AC-%D8%A8%D8%AF%D8%A7%D9%86%DB%8C%D9%85/ 1 37793 0 0
+/13%d8%b1%d8%a7%d9%87%da%a9%d8%a7%d8%b1-%d8%a8%d8%b1%d8%a7%db%8c-%d8%a8%d9%87%d8%a8%d9%88%d8%af-%d8%b1%d9%88%d8%a7%d8%a8%d8%b7-%d8%a8%d8%a7-%d9%be%d8%af%d8%b1-%d9%88-%d9%85%d8%a7%d8%af%d8%b1/ 1 38216 0 0
+/%da%a9%d8%a7%d9%87%d8%b4-%d8%a7%d8%b3%d8%aa%d8%b1%d8%b3-%d9%88-%d8%a7%d8%b6%d8%b7%d8%b1%d8%a7%d8%a8/ 1 36532 0 0
+/%d9%86%da%a9%d8%a7%d8%aa%db%8c-%da%a9%d9%87-%d8%a8%d8%a7%db%8c%d8%af-%d9%be%db%8c%d8%b4-%d8%a7%d8%b2-%d8%a7%d8%b2%d8%af%d9%88%d8%a7%d8%ac-%d8%a8%d8%af%d8%a7%d9%86%db%8c%d9%85/ 1 37694 0 0
+/%3Flocale%3Dda 2 24843 0 0
+/%3Flocale%3Dfr 2 24840 0 0
+/blog/ 2 77790 0 0
+/%D8%AA%D8%AE%D8%B5%D8%B5-%D9%85%D8%B4%D8%A7%D9%88%D8%B1%D9%87-%D8%AA%D8%AD%D8%B5%DB%8C%D9%84%DB%8C-%D9%88-%D8%B4%D8%BA%D9%84%DB%8C-%D9%88-%D9%85%D8%B9%D8%B1%D9%81%DB%8C-%D8%A8%D9%87%D8%AA%D8%B1/ 1 38324 0 0
+/%3Flocale%3Del 2 24847 0 0
+/13%D8%B1%D8%A7%D9%87%DA%A9%D8%A7%D8%B1-%D8%A8%D8%B1%D8%A7%DB%8C-%D8%A8%D9%87%D8%A8%D9%88%D8%AF-%D8%B1%D9%88%D8%A7%D8%A8%D8%B7-%D8%A8%D8%A7-%D9%BE%D8%AF%D8%B1-%D9%88-%D9%85%D8%A7%D8%AF%D8%B1/ 1 38323 0 0
+/%DA%A9%D8%A7%D9%87%D8%B4-%D8%A7%D8%B3%D8%AA%D8%B1%D8%B3-%D9%88-%D8%A7%D8%B6%D8%B7%D8%B1%D8%A7%D8%A8/ 1 36595 0 0
+/javascript%3Avoid%280%29 2 24842 0 0
+/%3Flocale%3Dsv 2 24848 0 0
+/%3Flocale%3Dhe 2 24845 0 0
+/contact-us/ 2 91604 0 0
+/%3Flocale%3Dhu 2 24845 0 0
+/%3Flocale%3Dpt 2 24843 0 0
+/%3Flocale%3Dth 2 24843 0 0
+/%d8%aa%d8%ae%d8%b5%d8%b5-%d9%85%d8%b4%d8%a7%d9%88%d8%b1%d9%87-%d8%aa%d8%ad%d8%b5%db%8c%d9%84%db%8c-%d9%88-%d8%b4%d8%ba%d9%84%db%8c-%d9%88-%d9%85%d8%b9%d8%b1%d9%81%db%8c-%d8%a8%d9%87%d8%aa%d8%b1/ 1 38212 0 0
+/appointment-reservation/ 2 71833 0 0
+/data%3Aimage/x-icon%3Bbase64%2CAAABAAEAICAAAAEAIADSAgAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAgAAAAIAgGAAAAc3p69AAAAplJREFUWIXt1j2IHGUYB/DfOzdnjIKFkECIVWIKvUFsIkRExa9KJCLaWAgWJx4DilZWgpDDiI0wiViIoGATP1CCEDYHSeCwUBBkgiiKURQJFiLo4d0eOxYzC8nsO9m9XcXC%2B8MW%2B3z%2B9/l6l2383xH%2BiSBpElyTdoda26xsDqp/h0CVZ3vwKm7tMBngAs7h7eRYebG6hMtMBHbMBX89vfARHprQ5U8cwdFQlIOZCVR5di1%2Bw/wWXT/EY6EoN5NZCODuKZLDwzgSMCuBe2fwfX6QZwtpWzqfBBtLC3txF/ZhxKbBGx0EfsTJS77vwmGjlZrD4mUzUOXZjVjGI65cnTXchB8iupdDUb7QinsQZ7GzZftdQj2JVZ49iC/w6JjksIo7OnS9tiA5Vn6GtyK2%2B1MY5NkhfGDygVrBAxH5WkPuMjR7/3UsUFLl2Q68s4XkA3ws3v9zoSjX28Kr5wL1xrTxa6ou%2Bf6OZGvqPg9v1wZeaUjcELE/DVfNhWFSvy/enOIZ9eq1sTokEMNLWI79oirP8g6fXpVnh7GEvY1sV/OJ4f0UhyKKk6EoX4x5pEkgXv6L6OM99YqNw/c4kXSwG5nkIfpLCynuiahW1GWeJHkfT4aiXO9atz1XcD6I6yLyHu6bIPk6Hg9FeYZ63y9EjBarPDvQ8VJ1nd9V3D4m%2BRncForyxFCQ4hSeahlej88Hefauurdwaufr5z/F/ZHAX6nL%2BmZE18e36IWiHLkFocqzW9QXcNz1%2BwUHxJ/f10JRPjvGP4pk/vj5L3F8AtufdD%2B/p6dJDknzX%2B05fDLGtife/766t9MRgFCUffWTudwE3AqBlVCUf0xLYGTQqzzbhydwJ3Y34g318J1tmX%2BDPBTlz9MS2MY2/nP8DTGaqeTDf30rAAAAAElFTkSuQmCC 2 24839 0 0
+/%3Flocale%3Dru 2 24842 0 0
+/%3Flocale%3Dfi 2 24842 0 0
+/%3Flocale%3Dde 2 24841 0 0
+/%3Flocale%3Dnb 2 24853 0 0
+/my-account/ 2 49544 0 0
+/wp-admin/admin-ajax.php 1 20 0 0
+/%3Flocale%3Dpt_br 2 24834 0 0
+/doctors/ 2 71908 0 0
+END_SIDER
+
+# Payload Range - Payload Frequency
+BEGIN_FILESIZE 7
+44-100 33
+100-500 3
+2K-5K 21
+5K+ 145
+500-1K 4
+1K-2K 7
+0-44 69
+END_FILESIZE
+
+# Request Time Range - Request Time Frequency
+BEGIN_REQUESTTIME 0
+END_REQUESTTIME

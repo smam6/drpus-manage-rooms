@@ -1,0 +1,141 @@
+# Translation of Plugins - WPS Hide Login - Stable (latest release) in Persian
+# This file is distributed under the same license as the Plugins - WPS Hide Login - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2024-12-15 10:46:56+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: GlotPress/4.0.3\n"
+"Language: fa\n"
+"Project-Id-Version: Plugins - WPS Hide Login - Stable (latest release)\n"
+
+#: classes/plugin.php:900
+msgid "Dashboard"
+msgstr "پیشخوان"
+
+#: classes/plugin.php:393
+msgid "WPBoutik"
+msgstr "WPBoutik"
+
+#: classes/plugin.php:393
+msgid "You want to find out how to simplify ecommerce with WordPress, try"
+msgstr "می‌خواهید بدانید چگونه تجارت الکترونیک را با وردپرس ساده کنید، امتحان کنید"
+
+#: classes/plugin.php:867
+msgid "WPS Hide Login : Please note that the comment_registration option “Users must be registered and logged in to comment” is activated on your site, the connection link will not be hidden on the comments block."
+msgstr "WPS Hide Login: لطفاً توجه داشته باشید که گزینۀ لزوم ثبت نام برای دیدگاه گذاشتن (کاربران باید نام‌نویسی کرده باشند و وارد شده باشند تا بتوانند دیدگاهشان را بنویسند) در سایت شما فعال باشد؛ پیوند اتصال در بلوک دیدگاه‌ها مخفی نخواهد بود."
+
+#: classes/plugin.php:840
+msgid "WPS Hide Login : Please note, if you check the comment_registration option \"Users must be registered and logged in to comment\", the login link will not be hidden on the comment block."
+msgstr "WPS Hide Login: لطفاً توجه داشته باشید که اگر گزینۀ لزوم ثبت نام برای دیدگاه گذاشتن (کاربران باید نام‌نویسی کرده باشند و وارد شده باشند تا بتوانند دیدگاهشان را بنویسند) را فعال کرده باشید؛ پیوند ورود در بلوک دیدگاه‌ها مخفی نخواهد بود."
+
+#. Author of the plugin
+#: wps-hide-login.php
+msgid "WPServeur, NicolasKulka, wpformation"
+msgstr "WPServeur, NicolasKulka, wpformation"
+
+#: classes/plugin.php:437
+msgid "Redirect URL when someone tries to access the wp-login.php page and the wp-admin directory while not logged in."
+msgstr "نشانی تغییر مسیر برای زمانی که شخصی سعی می‌کند به برگۀ wp-login.php و پوشه wp-admin دسترسی پیدا کند؛ درحالی‌که وارد نشده است."
+
+#: classes/plugin.php:422
+msgid "Protect your website by changing the login URL and preventing access to the wp-login.php page and the wp-admin directory to non-connected people."
+msgstr "با تغییر آدرس ورود و جلوگیری از دسترسی به برگۀ wp-login.php و پوشۀ wp-admin برای افراد غیرمرتبط، از وب‌سایت خود محافظت کنید."
+
+#: classes/plugin.php:392
+msgid "WPS Limit Login"
+msgstr "WPS Limit Login"
+
+#: classes/plugin.php:392
+msgid "and"
+msgstr "و"
+
+#: classes/plugin.php:391
+msgid "WPS Cleaner"
+msgstr "WPS Cleaner"
+
+#: classes/plugin.php:390
+msgid "WPS Bidouille"
+msgstr "WPS Bidouille"
+
+#: classes/plugin.php:390 classes/plugin.php:391
+msgid "the plugin"
+msgstr "افزونه"
+
+#: classes/plugin.php:389
+msgid "Discover our other plugins:"
+msgstr "افزونه‌های دیگر ما را بشناسید:"
+
+#: classes/plugin.php:388
+msgid "WordPress specialized hosting"
+msgstr "هاستینگ مخصوص وردپرس"
+
+#: classes/plugin.php:304
+msgid "Redirection url"
+msgstr "نشانی اینترنتی تغییر مسیر"
+
+#: classes/plugin.php:253
+msgid "Redirection url default"
+msgstr "تغییر مسیر آدرس پیشفرض"
+
+#. Author URI of the plugin
+#: wps-hide-login.php
+msgid "https://wpserveur.net"
+msgstr "https://wpserveur.net"
+
+#: classes/plugin.php:533
+msgid "This has been disabled"
+msgstr "غیر فعال شده"
+
+#. Description of the plugin
+#: wps-hide-login.php
+msgid "Protect your website by changing the login URL and preventing access to wp-login.php page and wp-admin directory while not logged-in"
+msgstr "با تغییر نشانی ورود و جلوگیری از دسترسی به برگۀ wp-login.php و پوشۀ wp-admin برای کاربران واردنشده از وب‌سایت خود محافظت کنید."
+
+#: classes/plugin.php:915
+msgid "This feature is not enabled."
+msgstr "این ویژگی فعال نیست."
+
+#: classes/plugin.php:462 classes/plugin.php:466
+msgid "Settings"
+msgstr "تنظیمات "
+
+#: classes/plugin.php:451
+msgid "Your login page is now here: <strong><a href=\"%1$s\">%2$s</a></strong>. Bookmark this page!"
+msgstr "اکنون صفحه ورد شما اینجاست: <strong><a href=\"%1$s\">%2$s</a></strong> این صفحه را به بوک مارک‌های خود اضافه کنید!"
+
+#: classes/plugin.php:402
+msgid "To set a networkwide default, go to <a href=\"%s\">Network Settings</a>."
+msgstr "برای تنظیمات گسترده شبکه به <a href=\"%s\">تنظمات شبکه بروید</a>."
+
+#: classes/plugin.php:296
+msgid "Login url"
+msgstr "نشانی اینترنتی ورود"
+
+#: classes/plugin.php:251
+msgid "Networkwide default"
+msgstr "پیش فرض شبکه گسترده"
+
+#: classes/plugin.php:248 classes/plugin.php:388
+msgid "Need help? Try the <a href=\"%1$s\" target=\"_blank\">support forum</a>. This plugin is kindly brought to you by <a href=\"%2$s\" target=\"_blank\">WPServeur</a>"
+msgstr "به کمک نیاز داری؟ <a href=\"%1$s\" target=\"_blank\">انجمن پشتیبانی</a> را امتحان کنید. این افزونه به لطف شما ایجاد شده است توسط <a href=\"%2$s\" target=\"_blank\">WPServeur</a>"
+
+#: classes/plugin.php:247
+msgid "This option allows you to set a networkwide default, which can be overridden by individual sites. Simply go to to the site’s permalink settings to change the url."
+msgstr "این گزینه به شما این امکان را می دهد که به صورت پیش‌فرض در شبکه تنظیم کنید، که می تواند توسط سایت های مختلف منعکس شود. برای تغییر آدرس به تنظیمات پیوند یکتا سایت بروید."
+
+#: classes/plugin.php:229
+msgid "WPS Hide Login could not be activated because you already have Rename wp-login.php active. Please uninstall rename wp-login.php to use WPS Hide Login"
+msgstr "WPS Hide Login نمی تواند فعال شود، زیرا شما قبلا wp-login.php را تغییر داده اید. لطفا wp-login.php را تغییر نام دهید تا امکان استفاده برایتان فراهم شود"
+
+#. Plugin Name of the plugin
+#: wps-hide-login.php classes/plugin.php:223 classes/plugin.php:246
+#: classes/plugin.php:727 classes/plugin.php:736
+msgid "WPS Hide Login"
+msgstr "WPS Hide Login"
+
+#: classes/plugin.php:223
+msgid "Please upgrade to the latest version of WordPress to activate"
+msgstr "لطفا برای فعال شدن، به آخرین نسخه وردپرس ارتقا دهید."

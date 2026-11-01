@@ -1,0 +1,147 @@
+<?php
+
+namespace SyncBasalam\Services\Products;
+
+use SyncBasalam\Config\Endpoints;
+use SyncBasalam\Jobs\Exceptions\NonRetryableException;
+use SyncBasalam\Jobs\Exceptions\RetryableException;
+use SyncBasalam\Jobs\Exceptions\StaleVariationException;
+use SyncBasalam\Logger\Logger;
+use SyncBasalam\Services\ApiServiceManager;
+
+defined('ABSPATH') || exit;
+
+class UpdateProductVariationsService
+{
+    /** Variant fields that are sent to the single-variation endpoint. */
+    private const VARIATION_FIELDS = ['primary_price', 'stock', 'sku'];
+
+    private $apiservice;
+
+    public function __construct($apiservice = null)
+    {
+        $this->apiservice = $apiservice ?: syncBasalamContainer()->get(ApiServiceManager::class);
+    }
+
+    /**
+     * True when every variant already has a Basalam variation id, so each one can be
+     * updated with its own request instead of being sent inside the product payload.
+     */
+    public static function allVariantsHaveBasalamId(array $variants): bool
+    {
+        if (empty($variants)) return false;
+
+        foreach ($variants as $variant) {
+            if (empty($variant['id'])) return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Sends one PATCH request per variation.
+     *
+     * @return array{updated: int, skipped: int, failed: int}
+     */
+    public function updateVariations($basalamProductId, array $variants, $productId = null): array
+    {
+        $updated = 0;
+        $skipped = 0;
+        $failed = 0;
+        $firstError = null;
+
+        foreach ($variants as $variant) {
+            $data = array_intersect_key($variant, array_flip(self::VARIATION_FIELDS));
+            $data = array_filter($data, fn($value) => $value !== null);
+
+            if (empty($data)) {
+                $skipped++;
+                continue;
+            }
+
+            $url = sprintf(Endpoints::PRODUCT_VARIATION_UPDATE, $basalamProductId, $variant['id']);
+
+            try {
+                $this->sendVariationUpdate($url, $data);
+                $updated++;
+            } catch (RetryableException $e) {
+                throw $e;
+            } catch (NonRetryableException $e) {
+                // A missing remote variation means the local mapping is stale,
+                // not that the whole product is missing. Abort this per-variant
+                // pass immediately so the caller can rebuild all mappings in a
+                // single product update.
+                if ((int) $e->getCode() === 404) {
+                    throw new StaleVariationException($basalamProductId, $variant['id'], $e);
+                }
+
+                $failed++;
+                $firstError = $firstError ?: $e->getMessage();
+
+                $this->logVariationError($e, $productId, $basalamProductId, $variant['id']);
+            } catch (\Exception $e) {
+                $failed++;
+                $firstError = $firstError ?: $e->getMessage();
+
+                $this->logVariationError($e, $productId, $basalamProductId, $variant['id']);
+            }
+        }
+
+        // Every variation failed with a permanent error: report it instead of pretending success.
+        if ($updated === 0 && $failed > 0) {
+            throw NonRetryableException::permanent(esc_html('بروزرسانی متغیرهای محصول ناموفق بود: ' . $firstError));
+        }
+
+        return ['updated' => $updated, 'skipped' => $skipped, 'failed' => $failed];
+    }
+
+    private function logVariationError(\Throwable $error, $productId, $basalamProductId, $basalamVariationId): void
+    {
+        Logger::error('خطا در بروزرسانی متغیر محصول در باسلام: ' . $error->getMessage(), [
+            'operation'            => 'بروزرسانی متغیر محصول',
+            'product_id'           => $productId,
+            'basalam_product_id'   => $basalamProductId,
+            'basalam_variation_id' => $basalamVariationId,
+        ]);
+    }
+
+    private function sendVariationUpdate(string $url, array $data): void
+    {
+        $skuRetry = false;
+
+        while (true) {
+            try {
+                $response = $this->apiservice->patch($url, $data);
+            } catch (RetryableException $e) {
+                if ($this->retryWithoutDuplicateSku($data, $e, $skuRetry)) continue;
+
+                throw $e;
+            } catch (\Exception $e) {
+                if ($this->retryWithoutDuplicateSku($data, $e, $skuRetry)) continue;
+
+                throw $e;
+            }
+
+            if ($this->retryWithoutDuplicateSku($data, $response, $skuRetry)) continue;
+
+            // API adapters normally throw client errors, but keep the fallback
+            // bounded if an adapter returns the error response directly.
+            if (ProductSkuRetry::isDuplicateSkuError($response)) {
+                throw NonRetryableException::permanent('SKU متغیر محصول در باسلام تکراری است.');
+            }
+
+            return;
+        }
+    }
+
+    private function retryWithoutDuplicateSku(array &$data, $error, bool &$retried): bool
+    {
+        if ($retried || !ProductSkuRetry::hasSku($data)) return false;
+        if (!ProductSkuRetry::isDuplicateSkuError($error)) return false;
+
+        $data = ProductSkuRetry::withoutSkus($data);
+        $retried = true;
+
+        return true;
+    }
+}

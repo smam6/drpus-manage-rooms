@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <!--[if lt IE 9]><script language="javascript" type="text/javascript" src="//html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <meta charset="UTF-8">
+  <style>
+    html {
+      font-size: 100%;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    a:focus {
+      outline: thin dotted #333;
+      outline: 5px auto -webkit-focus-ring-color;
+      outline-offset: -2px;
+    }
+    a:hover,
+    a:active {
+      outline: 0;
+    }
+    input {
+      margin: 0;
+      font-size: 100%;
+      vertical-align: middle;
+      *overflow: visible;
+      line-height: normal;
+    }
+    input::-moz-focus-inner {
+      padding: 0;
+      border: 0;
+    }
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 20px;
+      color: #333;
+      background-color: #fff;
+    }
+    a {
+      color: #08c;
+      text-decoration: none;
+    }
+    a:hover {
+      color: #005580;
+      text-decoration: underline;
+    }
+    .row {
+      margin-left: -20px;
+      *zoom: 1;
+    }
+    .row:before,
+    .row:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    .row:after {
+      clear: both;
+    }
+    .span3 {
+      float: left;
+      min-height: 1px;
+      margin-left: 20px;
+      width: 220px;
+    }
+    .container {
+      width: 940px;
+      margin-right: auto;
+      margin-left: auto;
+      *zoom: 1;
+    }
+    .container:before,
+    .container:after {
+      display: table;
+      content: "";
+      line-height: 0;
+    }
+    .container:after {
+      clear: both;
+    }
+    small {
+      font-size: 85%;
+    }
+    h1 {
+      margin: 10px 0;
+      font-family: inherit;
+      font-weight: bold;
+      line-height: 20px;
+      color: inherit;
+      text-rendering: optimizelegibility;
+      line-height: 40px;
+      font-size: 38.5px;
+    }
+    h1 small {
+      font-weight: normal;
+      line-height: 1;
+      color: #999;
+      font-size: 24.5px;
+    }
+
+    body {
+      margin-top: 90px;
+    }
+    .header {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      margin-left: -480px;
+      background-color: #fff;
+      border-bottom: 1px solid #ddd;
+      padding-top: 10px;
+      z-index: 10;
+    }
+    .footer {
+      color: #ddd;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .footer a {
+      color: #ccc;
+      text-decoration: underline;
+    }
+    .the-icons {
+      font-size: 14px;
+      line-height: 24px;
+    }
+    .switch {
+      position: absolute;
+      right: 0;
+      bottom: 10px;
+      color: #666;
+    }
+    .switch input {
+      margin-right: 0.3em;
+    }
+    .codesOn .i-name {
+      display: none;
+    }
+    .codesOn .i-code {
+      display: inline;
+    }
+    .i-code {
+      display: none;
+    }
+    @font-face {
+      font-family: 'drplus';
+      src: url('./font/drplus.eot?40849512');
+      src: url('./font/drplus.eot?40849512#iefix') format('embedded-opentype'),
+           url('./font/drplus.woff?40849512') format('woff'),
+           url('./font/drplus.ttf?40849512') format('truetype'),
+           url('./font/drplus.svg?40849512#drplus') format('svg');
+      font-weight: normal;
+      font-style: normal;
+    }
+    .demo-icon {
+      font-family: "drplus";
+      font-style: normal;
+      font-weight: normal;
+      speak: never;
+     
+      display: inline-block;
+      text-decoration: inherit;
+      width: 1em;
+      margin-right: .2em;
+      text-align: center;
+      /* opacity: .8; */
+     
+      /* For safety - reset parent styles, that can break glyph codes*/
+      font-variant: normal;
+      text-transform: none;
+     
+      /* fix buttons height, for twitter bootstrap */
+      line-height: 1em;
+     
+      /* Animation center compensation - margins should be symmetric */
+      /* remove if not needed */
+      margin-left: .2em;
+     
+      /* You can be more comfortable with increased icons size */
+      /* font-size: 120%; */
+     
+      /* Font smoothing. That was taken from TWBS */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+     
+      /* Uncomment for 3D effect */
+      /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+    }
+    </style>
+    <link rel="stylesheet" href="css/animation.css"><!--[if IE 7]><link rel="stylesheet" href="css/" + font.fontname + "-ie7.css"><![endif]-->
+    <script>
+      function toggleCodes(on) {
+        var obj = document.getElementById('icons');
+      
+        if (on) {
+          obj.className += ' codesOn';
+        } else {
+          obj.className = obj.className.replace(' codesOn', '');
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="container header">
+      <h1>drplus <small>font demo</small></h1>
+      <label class="switch">
+        <input type="checkbox" onclick="toggleCodes(this.checked)">show codes
+      </label>
+    </div>
+    <div class="container" id="icons">
+      <div class="row">
+        <div class="span3" title="Code: 0xe800">
+          <i class="demo-icon drplus-icon-tejarat">&#xe800;</i> <span class="i-name">drplus-icon-tejarat</span><span class="i-code">0xe800</span>
+        </div>
+        <div class="span3" title="Code: 0xe801">
+          <i class="demo-icon drplus-icon-tejarat-no">&#xe801;</i> <span class="i-name">drplus-icon-tejarat-no</span><span class="i-code">0xe801</span>
+        </div>
+        <div class="span3" title="Code: 0xe802">
+          <i class="demo-icon drplus-icon-tejarat-no-logo">&#xe802;</i> <span class="i-name">drplus-icon-tejarat-no-logo</span><span class="i-code">0xe802</span>
+        </div>
+        <div class="span3" title="Code: 0xe803">
+          <i class="demo-icon drplus-icon-khadamat-darmani">&#xe803;</i> <span class="i-name">drplus-icon-khadamat-darmani</span><span class="i-code">0xe803</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe804">
+          <i class="demo-icon drplus-icon-khadamat-darmani-logo">&#xe804;</i> <span class="i-name">drplus-icon-khadamat-darmani-logo</span><span class="i-code">0xe804</span>
+        </div>
+        <div class="span3" title="Code: 0xe805">
+          <i class="demo-icon drplus-icon-hekmat-saba">&#xe805;</i> <span class="i-name">drplus-icon-hekmat-saba</span><span class="i-code">0xe805</span>
+        </div>
+        <div class="span3" title="Code: 0xe806">
+          <i class="demo-icon drplus-icon-eitaa">&#xe806;</i> <span class="i-name">drplus-icon-eitaa</span><span class="i-code">0xe806</span>
+        </div>
+        <div class="span3" title="Code: 0xe807">
+          <i class="demo-icon drplus-icon-bimeh-salamat">&#xe807;</i> <span class="i-name">drplus-icon-bimeh-salamat</span><span class="i-code">0xe807</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe808">
+          <i class="demo-icon drplus-icon-bimeh-salamat-logo">&#xe808;</i> <span class="i-name">drplus-icon-bimeh-salamat-logo</span><span class="i-code">0xe808</span>
+        </div>
+        <div class="span3" title="Code: 0xe809">
+          <i class="demo-icon drplus-icon-bale">&#xe809;</i> <span class="i-name">drplus-icon-bale</span><span class="i-code">0xe809</span>
+        </div>
+        <div class="span3" title="Code: 0xe80a">
+          <i class="demo-icon drplus-icon-atieh-sazan-hafez">&#xe80a;</i> <span class="i-name">drplus-icon-atieh-sazan-hafez</span><span class="i-code">0xe80a</span>
+        </div>
+        <div class="span3" title="Code: 0xe80b">
+          <i class="demo-icon drplus-icon-atieh-sazan-hafez-logo">&#xe80b;</i> <span class="i-name">drplus-icon-atieh-sazan-hafez-logo</span><span class="i-code">0xe80b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe80c">
+          <i class="demo-icon drplus-icon-x">&#xe80c;</i> <span class="i-name">drplus-icon-x</span><span class="i-code">0xe80c</span>
+        </div>
+        <div class="span3" title="Code: 0xe80d">
+          <i class="demo-icon drplus-icon-whatsapp">&#xe80d;</i> <span class="i-name">drplus-icon-whatsapp</span><span class="i-code">0xe80d</span>
+        </div>
+        <div class="span3" title="Code: 0xe80e">
+          <i class="demo-icon drplus-icon-warning">&#xe80e;</i> <span class="i-name">drplus-icon-warning</span><span class="i-code">0xe80e</span>
+        </div>
+        <div class="span3" title="Code: 0xe80f">
+          <i class="demo-icon drplus-icon-voice-square">&#xe80f;</i> <span class="i-name">drplus-icon-voice-square</span><span class="i-code">0xe80f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe810">
+          <i class="demo-icon drplus-icon-virus">&#xe810;</i> <span class="i-name">drplus-icon-virus</span><span class="i-code">0xe810</span>
+        </div>
+        <div class="span3" title="Code: 0xe811">
+          <i class="demo-icon drplus-icon-video">&#xe811;</i> <span class="i-name">drplus-icon-video</span><span class="i-code">0xe811</span>
+        </div>
+        <div class="span3" title="Code: 0xe812">
+          <i class="demo-icon drplus-icon-verify">&#xe812;</i> <span class="i-name">drplus-icon-verify</span><span class="i-code">0xe812</span>
+        </div>
+        <div class="span3" title="Code: 0xe813">
+          <i class="demo-icon drplus-icon-verify-fill">&#xe813;</i> <span class="i-name">drplus-icon-verify-fill</span><span class="i-code">0xe813</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe814">
+          <i class="demo-icon drplus-icon-users">&#xe814;</i> <span class="i-name">drplus-icon-users</span><span class="i-code">0xe814</span>
+        </div>
+        <div class="span3" title="Code: 0xe815">
+          <i class="demo-icon drplus-icon-users-fill">&#xe815;</i> <span class="i-name">drplus-icon-users-fill</span><span class="i-code">0xe815</span>
+        </div>
+        <div class="span3" title="Code: 0xe816">
+          <i class="demo-icon drplus-icon-user">&#xe816;</i> <span class="i-name">drplus-icon-user</span><span class="i-code">0xe816</span>
+        </div>
+        <div class="span3" title="Code: 0xe817">
+          <i class="demo-icon drplus-icon-user-group">&#xe817;</i> <span class="i-name">drplus-icon-user-group</span><span class="i-code">0xe817</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe818">
+          <i class="demo-icon drplus-icon-user-check">&#xe818;</i> <span class="i-name">drplus-icon-user-check</span><span class="i-code">0xe818</span>
+        </div>
+        <div class="span3" title="Code: 0xe819">
+          <i class="demo-icon drplus-icon-user-add">&#xe819;</i> <span class="i-name">drplus-icon-user-add</span><span class="i-code">0xe819</span>
+        </div>
+        <div class="span3" title="Code: 0xe81a">
+          <i class="demo-icon drplus-icon-undo">&#xe81a;</i> <span class="i-name">drplus-icon-undo</span><span class="i-code">0xe81a</span>
+        </div>
+        <div class="span3" title="Code: 0xe81b">
+          <i class="demo-icon drplus-icon-twitter">&#xe81b;</i> <span class="i-name">drplus-icon-twitter</span><span class="i-code">0xe81b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe81c">
+          <i class="demo-icon drplus-icon-truck-fast">&#xe81c;</i> <span class="i-name">drplus-icon-truck-fast</span><span class="i-code">0xe81c</span>
+        </div>
+        <div class="span3" title="Code: 0xe81d">
+          <i class="demo-icon drplus-icon-trash">&#xe81d;</i> <span class="i-name">drplus-icon-trash</span><span class="i-code">0xe81d</span>
+        </div>
+        <div class="span3" title="Code: 0xe81e">
+          <i class="demo-icon drplus-icon-trash-2">&#xe81e;</i> <span class="i-name">drplus-icon-trash-2</span><span class="i-code">0xe81e</span>
+        </div>
+        <div class="span3" title="Code: 0xe81f">
+          <i class="demo-icon drplus-icon-toseei">&#xe81f;</i> <span class="i-name">drplus-icon-toseei</span><span class="i-code">0xe81f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe820">
+          <i class="demo-icon drplus-icon-top">&#xe820;</i> <span class="i-name">drplus-icon-top</span><span class="i-code">0xe820</span>
+        </div>
+        <div class="span3" title="Code: 0xe821">
+          <i class="demo-icon drplus-icon-tooth">&#xe821;</i> <span class="i-name">drplus-icon-tooth</span><span class="i-code">0xe821</span>
+        </div>
+        <div class="span3" title="Code: 0xe822">
+          <i class="demo-icon drplus-icon-tooth-2">&#xe822;</i> <span class="i-name">drplus-icon-tooth-2</span><span class="i-code">0xe822</span>
+        </div>
+        <div class="span3" title="Code: 0xe823">
+          <i class="demo-icon drplus-icon-tonsils">&#xe823;</i> <span class="i-name">drplus-icon-tonsils</span><span class="i-code">0xe823</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe824">
+          <i class="demo-icon drplus-icon-time-circle">&#xe824;</i> <span class="i-name">drplus-icon-time-circle</span><span class="i-code">0xe824</span>
+        </div>
+        <div class="span3" title="Code: 0xe825">
+          <i class="demo-icon drplus-icon-tick">&#xe825;</i> <span class="i-name">drplus-icon-tick</span><span class="i-code">0xe825</span>
+        </div>
+        <div class="span3" title="Code: 0xe826">
+          <i class="demo-icon drplus-icon-tick-circle">&#xe826;</i> <span class="i-name">drplus-icon-tick-circle</span><span class="i-code">0xe826</span>
+        </div>
+        <div class="span3" title="Code: 0xe827">
+          <i class="demo-icon drplus-icon-tick-circle-bold">&#xe827;</i> <span class="i-name">drplus-icon-tick-circle-bold</span><span class="i-code">0xe827</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe828">
+          <i class="demo-icon drplus-icon-telegram">&#xe828;</i> <span class="i-name">drplus-icon-telegram</span><span class="i-code">0xe828</span>
+        </div>
+        <div class="span3" title="Code: 0xe829">
+          <i class="demo-icon drplus-icon-task">&#xe829;</i> <span class="i-name">drplus-icon-task</span><span class="i-code">0xe829</span>
+        </div>
+        <div class="span3" title="Code: 0xe82a">
+          <i class="demo-icon drplus-icon-taavon">&#xe82a;</i> <span class="i-name">drplus-icon-taavon</span><span class="i-code">0xe82a</span>
+        </div>
+        <div class="span3" title="Code: 0xe82b">
+          <i class="demo-icon drplus-icon-stethoscope">&#xe82b;</i> <span class="i-name">drplus-icon-stethoscope</span><span class="i-code">0xe82b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe82c">
+          <i class="demo-icon drplus-icon-star">&#xe82c;</i> <span class="i-name">drplus-icon-star</span><span class="i-code">0xe82c</span>
+        </div>
+        <div class="span3" title="Code: 0xe82d">
+          <i class="demo-icon drplus-icon-star-fill">&#xe82d;</i> <span class="i-name">drplus-icon-star-fill</span><span class="i-code">0xe82d</span>
+        </div>
+        <div class="span3" title="Code: 0xe82e">
+          <i class="demo-icon drplus-icon-square-arrow-right">&#xe82e;</i> <span class="i-name">drplus-icon-square-arrow-right</span><span class="i-code">0xe82e</span>
+        </div>
+        <div class="span3" title="Code: 0xe82f">
+          <i class="demo-icon drplus-icon-square-arrow-left">&#xe82f;</i> <span class="i-name">drplus-icon-square-arrow-left</span><span class="i-code">0xe82f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe830">
+          <i class="demo-icon drplus-icon-spine">&#xe830;</i> <span class="i-name">drplus-icon-spine</span><span class="i-code">0xe830</span>
+        </div>
+        <div class="span3" title="Code: 0xe831">
+          <i class="demo-icon drplus-icon-sms">&#xe831;</i> <span class="i-name">drplus-icon-sms</span><span class="i-code">0xe831</span>
+        </div>
+        <div class="span3" title="Code: 0xe832">
+          <i class="demo-icon drplus-icon-sms-bold">&#xe832;</i> <span class="i-name">drplus-icon-sms-bold</span><span class="i-code">0xe832</span>
+        </div>
+        <div class="span3" title="Code: 0xe833">
+          <i class="demo-icon drplus-icon-skin">&#xe833;</i> <span class="i-name">drplus-icon-skin</span><span class="i-code">0xe833</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe834">
+          <i class="demo-icon drplus-icon-sina">&#xe834;</i> <span class="i-name">drplus-icon-sina</span><span class="i-code">0xe834</span>
+        </div>
+        <div class="span3" title="Code: 0xe835">
+          <i class="demo-icon drplus-icon-shopping-cart">&#xe835;</i> <span class="i-name">drplus-icon-shopping-cart</span><span class="i-code">0xe835</span>
+        </div>
+        <div class="span3" title="Code: 0xe836">
+          <i class="demo-icon drplus-icon-shopping-bag">&#xe836;</i> <span class="i-name">drplus-icon-shopping-bag</span><span class="i-code">0xe836</span>
+        </div>
+        <div class="span3" title="Code: 0xe837">
+          <i class="demo-icon drplus-icon-shield-tick">&#xe837;</i> <span class="i-name">drplus-icon-shield-tick</span><span class="i-code">0xe837</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe838">
+          <i class="demo-icon drplus-icon-share">&#xe838;</i> <span class="i-name">drplus-icon-share</span><span class="i-code">0xe838</span>
+        </div>
+        <div class="span3" title="Code: 0xe839">
+          <i class="demo-icon drplus-icon-setting">&#xe839;</i> <span class="i-name">drplus-icon-setting</span><span class="i-code">0xe839</span>
+        </div>
+        <div class="span3" title="Code: 0xe83a">
+          <i class="demo-icon drplus-icon-send">&#xe83a;</i> <span class="i-name">drplus-icon-send</span><span class="i-code">0xe83a</span>
+        </div>
+        <div class="span3" title="Code: 0xe83b">
+          <i class="demo-icon drplus-icon-search">&#xe83b;</i> <span class="i-name">drplus-icon-search</span><span class="i-code">0xe83b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe83c">
+          <i class="demo-icon drplus-icon-search-cross">&#xe83c;</i> <span class="i-name">drplus-icon-search-cross</span><span class="i-code">0xe83c</span>
+        </div>
+        <div class="span3" title="Code: 0xe83d">
+          <i class="demo-icon drplus-icon-search-2">&#xe83d;</i> <span class="i-name">drplus-icon-search-2</span><span class="i-code">0xe83d</span>
+        </div>
+        <div class="span3" title="Code: 0xe83e">
+          <i class="demo-icon drplus-icon-search-2-fill">&#xe83e;</i> <span class="i-name">drplus-icon-search-2-fill</span><span class="i-code">0xe83e</span>
+        </div>
+        <div class="span3" title="Code: 0xe83f">
+          <i class="demo-icon drplus-icon-saman">&#xe83f;</i> <span class="i-name">drplus-icon-saman</span><span class="i-code">0xe83f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe840">
+          <i class="demo-icon drplus-icon-routing">&#xe840;</i> <span class="i-name">drplus-icon-routing</span><span class="i-code">0xe840</span>
+        </div>
+        <div class="span3" title="Code: 0xe841">
+          <i class="demo-icon drplus-icon-right">&#xe841;</i> <span class="i-name">drplus-icon-right</span><span class="i-code">0xe841</span>
+        </div>
+        <div class="span3" title="Code: 0xe842">
+          <i class="demo-icon drplus-icon-redo">&#xe842;</i> <span class="i-name">drplus-icon-redo</span><span class="i-code">0xe842</span>
+        </div>
+        <div class="span3" title="Code: 0xe843">
+          <i class="demo-icon drplus-icon-raazi">&#xe843;</i> <span class="i-name">drplus-icon-raazi</span><span class="i-code">0xe843</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe844">
+          <i class="demo-icon drplus-icon-qoute">&#xe844;</i> <span class="i-name">drplus-icon-qoute</span><span class="i-code">0xe844</span>
+        </div>
+        <div class="span3" title="Code: 0xe845">
+          <i class="demo-icon drplus-icon-qoute-1">&#xe845;</i> <span class="i-name">drplus-icon-qoute-1</span><span class="i-code">0xe845</span>
+        </div>
+        <div class="span3" title="Code: 0xe846">
+          <i class="demo-icon drplus-icon-profile">&#xe846;</i> <span class="i-name">drplus-icon-profile</span><span class="i-code">0xe846</span>
+        </div>
+        <div class="span3" title="Code: 0xe847">
+          <i class="demo-icon drplus-icon-plus">&#xe847;</i> <span class="i-name">drplus-icon-plus</span><span class="i-code">0xe847</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe848">
+          <i class="demo-icon drplus-icon-plus-square">&#xe848;</i> <span class="i-name">drplus-icon-plus-square</span><span class="i-code">0xe848</span>
+        </div>
+        <div class="span3" title="Code: 0xe849">
+          <i class="demo-icon drplus-icon-play">&#xe849;</i> <span class="i-name">drplus-icon-play</span><span class="i-code">0xe849</span>
+        </div>
+        <div class="span3" title="Code: 0xe84a">
+          <i class="demo-icon drplus-icon-pharmacy">&#xe84a;</i> <span class="i-name">drplus-icon-pharmacy</span><span class="i-code">0xe84a</span>
+        </div>
+        <div class="span3" title="Code: 0xe84b">
+          <i class="demo-icon drplus-icon-personalcard">&#xe84b;</i> <span class="i-name">drplus-icon-personalcard</span><span class="i-code">0xe84b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe84c">
+          <i class="demo-icon drplus-icon-personalcard-bold">&#xe84c;</i> <span class="i-name">drplus-icon-personalcard-bold</span><span class="i-code">0xe84c</span>
+        </div>
+        <div class="span3" title="Code: 0xe84d">
+          <i class="demo-icon drplus-icon-pasargad">&#xe84d;</i> <span class="i-name">drplus-icon-pasargad</span><span class="i-code">0xe84d</span>
+        </div>
+        <div class="span3" title="Code: 0xe84e">
+          <i class="demo-icon drplus-icon-parsian">&#xe84e;</i> <span class="i-name">drplus-icon-parsian</span><span class="i-code">0xe84e</span>
+        </div>
+        <div class="span3" title="Code: 0xe84f">
+          <i class="demo-icon drplus-icon-paperclip">&#xe84f;</i> <span class="i-name">drplus-icon-paperclip</span><span class="i-code">0xe84f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe850">
+          <i class="demo-icon drplus-icon-novin">&#xe850;</i> <span class="i-name">drplus-icon-novin</span><span class="i-code">0xe850</span>
+        </div>
+        <div class="span3" title="Code: 0xe851">
+          <i class="demo-icon drplus-icon-notification">&#xe851;</i> <span class="i-name">drplus-icon-notification</span><span class="i-code">0xe851</span>
+        </div>
+        <div class="span3" title="Code: 0xe852">
+          <i class="demo-icon drplus-icon-notification-fill">&#xe852;</i> <span class="i-name">drplus-icon-notification-fill</span><span class="i-code">0xe852</span>
+        </div>
+        <div class="span3" title="Code: 0xe853">
+          <i class="demo-icon drplus-icon-mouse">&#xe853;</i> <span class="i-name">drplus-icon-mouse</span><span class="i-code">0xe853</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe854">
+          <i class="demo-icon drplus-icon-monitor">&#xe854;</i> <span class="i-name">drplus-icon-monitor</span><span class="i-code">0xe854</span>
+        </div>
+        <div class="span3" title="Code: 0xe855">
+          <i class="demo-icon drplus-icon-mobile">&#xe855;</i> <span class="i-name">drplus-icon-mobile</span><span class="i-code">0xe855</span>
+        </div>
+        <div class="span3" title="Code: 0xe856">
+          <i class="demo-icon drplus-icon-moalem">&#xe856;</i> <span class="i-name">drplus-icon-moalem</span><span class="i-code">0xe856</span>
+        </div>
+        <div class="span3" title="Code: 0xe857">
+          <i class="demo-icon drplus-icon-minus">&#xe857;</i> <span class="i-name">drplus-icon-minus</span><span class="i-code">0xe857</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe858">
+          <i class="demo-icon drplus-icon-microscope">&#xe858;</i> <span class="i-name">drplus-icon-microscope</span><span class="i-code">0xe858</span>
+        </div>
+        <div class="span3" title="Code: 0xe859">
+          <i class="demo-icon drplus-icon-microscope-1">&#xe859;</i> <span class="i-name">drplus-icon-microscope-1</span><span class="i-code">0xe859</span>
+        </div>
+        <div class="span3" title="Code: 0xe85a">
+          <i class="demo-icon drplus-icon-microphone">&#xe85a;</i> <span class="i-name">drplus-icon-microphone</span><span class="i-code">0xe85a</span>
+        </div>
+        <div class="span3" title="Code: 0xe85b">
+          <i class="demo-icon drplus-icon-messages">&#xe85b;</i> <span class="i-name">drplus-icon-messages</span><span class="i-code">0xe85b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe85c">
+          <i class="demo-icon drplus-icon-messages-2">&#xe85c;</i> <span class="i-name">drplus-icon-messages-2</span><span class="i-code">0xe85c</span>
+        </div>
+        <div class="span3" title="Code: 0xe85d">
+          <i class="demo-icon drplus-icon-messages-2-bold">&#xe85d;</i> <span class="i-name">drplus-icon-messages-2-bold</span><span class="i-code">0xe85d</span>
+        </div>
+        <div class="span3" title="Code: 0xe85e">
+          <i class="demo-icon drplus-icon-message-text">&#xe85e;</i> <span class="i-name">drplus-icon-message-text</span><span class="i-code">0xe85e</span>
+        </div>
+        <div class="span3" title="Code: 0xe85f">
+          <i class="demo-icon drplus-icon-message-square-dots">&#xe85f;</i> <span class="i-name">drplus-icon-message-square-dots</span><span class="i-code">0xe85f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe860">
+          <i class="demo-icon drplus-icon-message-question">&#xe860;</i> <span class="i-name">drplus-icon-message-question</span><span class="i-code">0xe860</span>
+        </div>
+        <div class="span3" title="Code: 0xe861">
+          <i class="demo-icon drplus-icon-message-edit">&#xe861;</i> <span class="i-name">drplus-icon-message-edit</span><span class="i-code">0xe861</span>
+        </div>
+        <div class="span3" title="Code: 0xe862">
+          <i class="demo-icon drplus-icon-menu">&#xe862;</i> <span class="i-name">drplus-icon-menu</span><span class="i-code">0xe862</span>
+        </div>
+        <div class="span3" title="Code: 0xe863">
+          <i class="demo-icon drplus-icon-mental-health">&#xe863;</i> <span class="i-name">drplus-icon-mental-health</span><span class="i-code">0xe863</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe864">
+          <i class="demo-icon drplus-icon-mellat">&#xe864;</i> <span class="i-name">drplus-icon-mellat</span><span class="i-code">0xe864</span>
+        </div>
+        <div class="span3" title="Code: 0xe865">
+          <i class="demo-icon drplus-icon-maximize">&#xe865;</i> <span class="i-name">drplus-icon-maximize</span><span class="i-code">0xe865</span>
+        </div>
+        <div class="span3" title="Code: 0xe866">
+          <i class="demo-icon drplus-icon-maximize-2">&#xe866;</i> <span class="i-name">drplus-icon-maximize-2</span><span class="i-code">0xe866</span>
+        </div>
+        <div class="span3" title="Code: 0xe867">
+          <i class="demo-icon drplus-icon-markazi">&#xe867;</i> <span class="i-name">drplus-icon-markazi</span><span class="i-code">0xe867</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe868">
+          <i class="demo-icon drplus-icon-mail">&#xe868;</i> <span class="i-name">drplus-icon-mail</span><span class="i-code">0xe868</span>
+        </div>
+        <div class="span3" title="Code: 0xe869">
+          <i class="demo-icon drplus-icon-ma">&#xe869;</i> <span class="i-name">drplus-icon-ma</span><span class="i-code">0xe869</span>
+        </div>
+        <div class="span3" title="Code: 0xe86a">
+          <i class="demo-icon drplus-icon-lungs">&#xe86a;</i> <span class="i-name">drplus-icon-lungs</span><span class="i-code">0xe86a</span>
+        </div>
+        <div class="span3" title="Code: 0xe86b">
+          <i class="demo-icon drplus-icon-lungs-2">&#xe86b;</i> <span class="i-name">drplus-icon-lungs-2</span><span class="i-code">0xe86b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe86c">
+          <i class="demo-icon drplus-icon-lovely">&#xe86c;</i> <span class="i-name">drplus-icon-lovely</span><span class="i-code">0xe86c</span>
+        </div>
+        <div class="span3" title="Code: 0xe86d">
+          <i class="demo-icon drplus-icon-logout">&#xe86d;</i> <span class="i-name">drplus-icon-logout</span><span class="i-code">0xe86d</span>
+        </div>
+        <div class="span3" title="Code: 0xe86e">
+          <i class="demo-icon drplus-icon-login">&#xe86e;</i> <span class="i-name">drplus-icon-login</span><span class="i-code">0xe86e</span>
+        </div>
+        <div class="span3" title="Code: 0xe86f">
+          <i class="demo-icon drplus-icon-location">&#xe86f;</i> <span class="i-name">drplus-icon-location</span><span class="i-code">0xe86f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe870">
+          <i class="demo-icon drplus-icon-location-fill">&#xe870;</i> <span class="i-name">drplus-icon-location-fill</span><span class="i-code">0xe870</span>
+        </div>
+        <div class="span3" title="Code: 0xe871">
+          <i class="demo-icon drplus-icon-liver">&#xe871;</i> <span class="i-name">drplus-icon-liver</span><span class="i-code">0xe871</span>
+        </div>
+        <div class="span3" title="Code: 0xe872">
+          <i class="demo-icon drplus-icon-linkedin">&#xe872;</i> <span class="i-name">drplus-icon-linkedin</span><span class="i-code">0xe872</span>
+        </div>
+        <div class="span3" title="Code: 0xe873">
+          <i class="demo-icon drplus-icon-like">&#xe873;</i> <span class="i-name">drplus-icon-like</span><span class="i-code">0xe873</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe874">
+          <i class="demo-icon drplus-icon-left">&#xe874;</i> <span class="i-name">drplus-icon-left</span><span class="i-code">0xe874</span>
+        </div>
+        <div class="span3" title="Code: 0xe875">
+          <i class="demo-icon drplus-icon-kosar">&#xe875;</i> <span class="i-name">drplus-icon-kosar</span><span class="i-code">0xe875</span>
+        </div>
+        <div class="span3" title="Code: 0xe876">
+          <i class="demo-icon drplus-icon-karafarin">&#xe876;</i> <span class="i-name">drplus-icon-karafarin</span><span class="i-code">0xe876</span>
+        </div>
+        <div class="span3" title="Code: 0xe877">
+          <i class="demo-icon drplus-icon-iran">&#xe877;</i> <span class="i-name">drplus-icon-iran</span><span class="i-code">0xe877</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe878">
+          <i class="demo-icon drplus-icon-instagram">&#xe878;</i> <span class="i-name">drplus-icon-instagram</span><span class="i-code">0xe878</span>
+        </div>
+        <div class="span3" title="Code: 0xe879">
+          <i class="demo-icon drplus-icon-injection">&#xe879;</i> <span class="i-name">drplus-icon-injection</span><span class="i-code">0xe879</span>
+        </div>
+        <div class="span3" title="Code: 0xe87a">
+          <i class="demo-icon drplus-icon-income">&#xe87a;</i> <span class="i-name">drplus-icon-income</span><span class="i-code">0xe87a</span>
+        </div>
+        <div class="span3" title="Code: 0xe87b">
+          <i class="demo-icon drplus-icon-house">&#xe87b;</i> <span class="i-name">drplus-icon-house</span><span class="i-code">0xe87b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe87c">
+          <i class="demo-icon drplus-icon-hospital">&#xe87c;</i> <span class="i-name">drplus-icon-hospital</span><span class="i-code">0xe87c</span>
+        </div>
+        <div class="span3" title="Code: 0xe87d">
+          <i class="demo-icon drplus-icon-hospital-pin">&#xe87d;</i> <span class="i-name">drplus-icon-hospital-pin</span><span class="i-code">0xe87d</span>
+        </div>
+        <div class="span3" title="Code: 0xe87e">
+          <i class="demo-icon drplus-icon-hospital-location">&#xe87e;</i> <span class="i-name">drplus-icon-hospital-location</span><span class="i-code">0xe87e</span>
+        </div>
+        <div class="span3" title="Code: 0xe87f">
+          <i class="demo-icon drplus-icon-hospital-1">&#xe87f;</i> <span class="i-name">drplus-icon-hospital-1</span><span class="i-code">0xe87f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe880">
+          <i class="demo-icon drplus-icon-home-fill">&#xe880;</i> <span class="i-name">drplus-icon-home-fill</span><span class="i-code">0xe880</span>
+        </div>
+        <div class="span3" title="Code: 0xe881">
+          <i class="demo-icon drplus-icon-heart">&#xe881;</i> <span class="i-name">drplus-icon-heart</span><span class="i-code">0xe881</span>
+        </div>
+        <div class="span3" title="Code: 0xe882">
+          <i class="demo-icon drplus-icon-heart-smile">&#xe882;</i> <span class="i-name">drplus-icon-heart-smile</span><span class="i-code">0xe882</span>
+        </div>
+        <div class="span3" title="Code: 0xe883">
+          <i class="demo-icon drplus-icon-heart-bold">&#xe883;</i> <span class="i-name">drplus-icon-heart-bold</span><span class="i-code">0xe883</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe884">
+          <i class="demo-icon drplus-icon-heart-2">&#xe884;</i> <span class="i-name">drplus-icon-heart-2</span><span class="i-code">0xe884</span>
+        </div>
+        <div class="span3" title="Code: 0xe885">
+          <i class="demo-icon drplus-icon-health-clinic">&#xe885;</i> <span class="i-name">drplus-icon-health-clinic</span><span class="i-code">0xe885</span>
+        </div>
+        <div class="span3" title="Code: 0xe886">
+          <i class="demo-icon drplus-icon-headphone">&#xe886;</i> <span class="i-name">drplus-icon-headphone</span><span class="i-code">0xe886</span>
+        </div>
+        <div class="span3" title="Code: 0xe887">
+          <i class="demo-icon drplus-icon-grid-fill">&#xe887;</i> <span class="i-name">drplus-icon-grid-fill</span><span class="i-code">0xe887</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe888">
+          <i class="demo-icon drplus-icon-flash">&#xe888;</i> <span class="i-name">drplus-icon-flash</span><span class="i-code">0xe888</span>
+        </div>
+        <div class="span3" title="Code: 0xe889">
+          <i class="demo-icon drplus-icon-faq">&#xe889;</i> <span class="i-name">drplus-icon-faq</span><span class="i-code">0xe889</span>
+        </div>
+        <div class="span3" title="Code: 0xe88a">
+          <i class="demo-icon drplus-icon-facebook">&#xe88a;</i> <span class="i-name">drplus-icon-facebook</span><span class="i-code">0xe88a</span>
+        </div>
+        <div class="span3" title="Code: 0xe88b">
+          <i class="demo-icon drplus-icon-eye">&#xe88b;</i> <span class="i-name">drplus-icon-eye</span><span class="i-code">0xe88b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe88c">
+          <i class="demo-icon drplus-icon-eye-slash">&#xe88c;</i> <span class="i-name">drplus-icon-eye-slash</span><span class="i-code">0xe88c</span>
+        </div>
+        <div class="span3" title="Code: 0xe88d">
+          <i class="demo-icon drplus-icon-eye-slash-2">&#xe88d;</i> <span class="i-name">drplus-icon-eye-slash-2</span><span class="i-code">0xe88d</span>
+        </div>
+        <div class="span3" title="Code: 0xe88e">
+          <i class="demo-icon drplus-icon-eye-2">&#xe88e;</i> <span class="i-name">drplus-icon-eye-2</span><span class="i-code">0xe88e</span>
+        </div>
+        <div class="span3" title="Code: 0xe88f">
+          <i class="demo-icon drplus-icon-error">&#xe88f;</i> <span class="i-name">drplus-icon-error</span><span class="i-code">0xe88f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe890">
+          <i class="demo-icon drplus-icon-element-3">&#xe890;</i> <span class="i-name">drplus-icon-element-3</span><span class="i-code">0xe890</span>
+        </div>
+        <div class="span3" title="Code: 0xe891">
+          <i class="demo-icon drplus-icon-edit">&#xe891;</i> <span class="i-name">drplus-icon-edit</span><span class="i-code">0xe891</span>
+        </div>
+        <div class="span3" title="Code: 0xe892">
+          <i class="demo-icon drplus-icon-ear">&#xe892;</i> <span class="i-name">drplus-icon-ear</span><span class="i-code">0xe892</span>
+        </div>
+        <div class="span3" title="Code: 0xe893">
+          <i class="demo-icon drplus-icon-dr-plus-6">&#xe893;</i> <span class="i-name">drplus-icon-dr-plus-6</span><span class="i-code">0xe893</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe894">
+          <i class="demo-icon drplus-icon-dr-plus-5">&#xe894;</i> <span class="i-name">drplus-icon-dr-plus-5</span><span class="i-code">0xe894</span>
+        </div>
+        <div class="span3" title="Code: 0xe895">
+          <i class="demo-icon drplus-icon-dr-plus-4">&#xe895;</i> <span class="i-name">drplus-icon-dr-plus-4</span><span class="i-code">0xe895</span>
+        </div>
+        <div class="span3" title="Code: 0xe896">
+          <i class="demo-icon drplus-icon-dr-plus-3">&#xe896;</i> <span class="i-name">drplus-icon-dr-plus-3</span><span class="i-code">0xe896</span>
+        </div>
+        <div class="span3" title="Code: 0xe897">
+          <i class="demo-icon drplus-icon-dr-plus-2">&#xe897;</i> <span class="i-name">drplus-icon-dr-plus-2</span><span class="i-code">0xe897</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe898">
+          <i class="demo-icon drplus-icon-dr-plus-1">&#xe898;</i> <span class="i-name">drplus-icon-dr-plus-1</span><span class="i-code">0xe898</span>
+        </div>
+        <div class="span3" title="Code: 0xe899">
+          <i class="demo-icon drplus-icon-download">&#xe899;</i> <span class="i-name">drplus-icon-download</span><span class="i-code">0xe899</span>
+        </div>
+        <div class="span3" title="Code: 0xe89a">
+          <i class="demo-icon drplus-icon-double-arrow-right">&#xe89a;</i> <span class="i-name">drplus-icon-double-arrow-right</span><span class="i-code">0xe89a</span>
+        </div>
+        <div class="span3" title="Code: 0xe89b">
+          <i class="demo-icon drplus-icon-double-arrow-left">&#xe89b;</i> <span class="i-name">drplus-icon-double-arrow-left</span><span class="i-code">0xe89b</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe89c">
+          <i class="demo-icon drplus-icon-documentmoney">&#xe89c;</i> <span class="i-name">drplus-icon-documentmoney</span><span class="i-code">0xe89c</span>
+        </div>
+        <div class="span3" title="Code: 0xe89d">
+          <i class="demo-icon drplus-icon-document">&#xe89d;</i> <span class="i-name">drplus-icon-document</span><span class="i-code">0xe89d</span>
+        </div>
+        <div class="span3" title="Code: 0xe89e">
+          <i class="demo-icon drplus-icon-document-text">&#xe89e;</i> <span class="i-name">drplus-icon-document-text</span><span class="i-code">0xe89e</span>
+        </div>
+        <div class="span3" title="Code: 0xe89f">
+          <i class="demo-icon drplus-icon-document-text-bold">&#xe89f;</i> <span class="i-name">drplus-icon-document-text-bold</span><span class="i-code">0xe89f</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8a0">
+          <i class="demo-icon drplus-icon-doctor-profile">&#xe8a0;</i> <span class="i-name">drplus-icon-doctor-profile</span><span class="i-code">0xe8a0</span>
+        </div>
+        <div class="span3" title="Code: 0xe8a1">
+          <i class="demo-icon drplus-icon-doctor-plus">&#xe8a1;</i> <span class="i-name">drplus-icon-doctor-plus</span><span class="i-code">0xe8a1</span>
+        </div>
+        <div class="span3" title="Code: 0xe8a2">
+          <i class="demo-icon drplus-icon-discovery">&#xe8a2;</i> <span class="i-name">drplus-icon-discovery</span><span class="i-code">0xe8a2</span>
+        </div>
+        <div class="span3" title="Code: 0xe8a3">
+          <i class="demo-icon drplus-icon-discovery-square-fill">&#xe8a3;</i> <span class="i-name">drplus-icon-discovery-square-fill</span><span class="i-code">0xe8a3</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8a4">
+          <i class="demo-icon drplus-icon-discount">&#xe8a4;</i> <span class="i-name">drplus-icon-discount</span><span class="i-code">0xe8a4</span>
+        </div>
+        <div class="span3" title="Code: 0xe8a5">
+          <i class="demo-icon drplus-icon-diamond">&#xe8a5;</i> <span class="i-name">drplus-icon-diamond</span><span class="i-code">0xe8a5</span>
+        </div>
+        <div class="span3" title="Code: 0xe8a6">
+          <i class="demo-icon drplus-icon-dey">&#xe8a6;</i> <span class="i-name">drplus-icon-dey</span><span class="i-code">0xe8a6</span>
+        </div>
+        <div class="span3" title="Code: 0xe8a7">
+          <i class="demo-icon drplus-icon-delivery">&#xe8a7;</i> <span class="i-name">drplus-icon-delivery</span><span class="i-code">0xe8a7</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8a8">
+          <i class="demo-icon drplus-icon-dana">&#xe8a8;</i> <span class="i-name">drplus-icon-dana</span><span class="i-code">0xe8a8</span>
+        </div>
+        <div class="span3" title="Code: 0xe8a9">
+          <i class="demo-icon drplus-icon-cross">&#xe8a9;</i> <span class="i-name">drplus-icon-cross</span><span class="i-code">0xe8a9</span>
+        </div>
+        <div class="span3" title="Code: 0xe8aa">
+          <i class="demo-icon drplus-icon-counter">&#xe8aa;</i> <span class="i-name">drplus-icon-counter</span><span class="i-code">0xe8aa</span>
+        </div>
+        <div class="span3" title="Code: 0xe8ab">
+          <i class="demo-icon drplus-icon-copy">&#xe8ab;</i> <span class="i-name">drplus-icon-copy</span><span class="i-code">0xe8ab</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8ac">
+          <i class="demo-icon drplus-icon-copy-2">&#xe8ac;</i> <span class="i-name">drplus-icon-copy-2</span><span class="i-code">0xe8ac</span>
+        </div>
+        <div class="span3" title="Code: 0xe8ad">
+          <i class="demo-icon drplus-icon-copy-2-bold">&#xe8ad;</i> <span class="i-name">drplus-icon-copy-2-bold</span><span class="i-code">0xe8ad</span>
+        </div>
+        <div class="span3" title="Code: 0xe8ae">
+          <i class="demo-icon drplus-icon-coin">&#xe8ae;</i> <span class="i-name">drplus-icon-coin</span><span class="i-code">0xe8ae</span>
+        </div>
+        <div class="span3" title="Code: 0xe8af">
+          <i class="demo-icon drplus-icon-close">&#xe8af;</i> <span class="i-name">drplus-icon-close</span><span class="i-code">0xe8af</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8b0">
+          <i class="demo-icon drplus-icon-close-circle">&#xe8b0;</i> <span class="i-name">drplus-icon-close-circle</span><span class="i-code">0xe8b0</span>
+        </div>
+        <div class="span3" title="Code: 0xe8b1">
+          <i class="demo-icon drplus-icon-close-circle-bold">&#xe8b1;</i> <span class="i-name">drplus-icon-close-circle-bold</span><span class="i-code">0xe8b1</span>
+        </div>
+        <div class="span3" title="Code: 0xe8b2">
+          <i class="demo-icon drplus-icon-clock-fill">&#xe8b2;</i> <span class="i-name">drplus-icon-clock-fill</span><span class="i-code">0xe8b2</span>
+        </div>
+        <div class="span3" title="Code: 0xe8b3">
+          <i class="demo-icon drplus-icon-circle-graph">&#xe8b3;</i> <span class="i-name">drplus-icon-circle-graph</span><span class="i-code">0xe8b3</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8b4">
+          <i class="demo-icon drplus-icon-chevron-right-dot">&#xe8b4;</i> <span class="i-name">drplus-icon-chevron-right-dot</span><span class="i-code">0xe8b4</span>
+        </div>
+        <div class="span3" title="Code: 0xe8b5">
+          <i class="demo-icon drplus-icon-chevron-left-dot">&#xe8b5;</i> <span class="i-name">drplus-icon-chevron-left-dot</span><span class="i-code">0xe8b5</span>
+        </div>
+        <div class="span3" title="Code: 0xe8b6">
+          <i class="demo-icon drplus-icon-cheque">&#xe8b6;</i> <span class="i-name">drplus-icon-cheque</span><span class="i-code">0xe8b6</span>
+        </div>
+        <div class="span3" title="Code: 0xe8b7">
+          <i class="demo-icon drplus-icon-check-circle">&#xe8b7;</i> <span class="i-name">drplus-icon-check-circle</span><span class="i-code">0xe8b7</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8b8">
+          <i class="demo-icon drplus-icon-chat">&#xe8b8;</i> <span class="i-name">drplus-icon-chat</span><span class="i-code">0xe8b8</span>
+        </div>
+        <div class="span3" title="Code: 0xe8b9">
+          <i class="demo-icon drplus-icon-chat-fill">&#xe8b9;</i> <span class="i-name">drplus-icon-chat-fill</span><span class="i-code">0xe8b9</span>
+        </div>
+        <div class="span3" title="Code: 0xe8ba">
+          <i class="demo-icon drplus-icon-cart-tick">&#xe8ba;</i> <span class="i-name">drplus-icon-cart-tick</span><span class="i-code">0xe8ba</span>
+        </div>
+        <div class="span3" title="Code: 0xe8bb">
+          <i class="demo-icon drplus-icon-cart-happy">&#xe8bb;</i> <span class="i-name">drplus-icon-cart-happy</span><span class="i-code">0xe8bb</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8bc">
+          <i class="demo-icon drplus-icon-cart-add">&#xe8bc;</i> <span class="i-name">drplus-icon-cart-add</span><span class="i-code">0xe8bc</span>
+        </div>
+        <div class="span3" title="Code: 0xe8bd">
+          <i class="demo-icon drplus-icon-capsule-pill">&#xe8bd;</i> <span class="i-name">drplus-icon-capsule-pill</span><span class="i-code">0xe8bd</span>
+        </div>
+        <div class="span3" title="Code: 0xe8be">
+          <i class="demo-icon drplus-icon-calling">&#xe8be;</i> <span class="i-name">drplus-icon-calling</span><span class="i-code">0xe8be</span>
+        </div>
+        <div class="span3" title="Code: 0xe8bf">
+          <i class="demo-icon drplus-icon-calling-fill">&#xe8bf;</i> <span class="i-name">drplus-icon-calling-fill</span><span class="i-code">0xe8bf</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8c0">
+          <i class="demo-icon drplus-icon-call-calling">&#xe8c0;</i> <span class="i-name">drplus-icon-call-calling</span><span class="i-code">0xe8c0</span>
+        </div>
+        <div class="span3" title="Code: 0xe8c1">
+          <i class="demo-icon drplus-icon-calendar">&#xe8c1;</i> <span class="i-name">drplus-icon-calendar</span><span class="i-code">0xe8c1</span>
+        </div>
+        <div class="span3" title="Code: 0xe8c2">
+          <i class="demo-icon drplus-icon-calendar-2">&#xe8c2;</i> <span class="i-name">drplus-icon-calendar-2</span><span class="i-code">0xe8c2</span>
+        </div>
+        <div class="span3" title="Code: 0xe8c3">
+          <i class="demo-icon drplus-icon-calendar-1">&#xe8c3;</i> <span class="i-name">drplus-icon-calendar-1</span><span class="i-code">0xe8c3</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8c4">
+          <i class="demo-icon drplus-icon-brush">&#xe8c4;</i> <span class="i-name">drplus-icon-brush</span><span class="i-code">0xe8c4</span>
+        </div>
+        <div class="span3" title="Code: 0xe8c5">
+          <i class="demo-icon drplus-icon-brain">&#xe8c5;</i> <span class="i-name">drplus-icon-brain</span><span class="i-code">0xe8c5</span>
+        </div>
+        <div class="span3" title="Code: 0xe8c6">
+          <i class="demo-icon drplus-icon-brain-2">&#xe8c6;</i> <span class="i-name">drplus-icon-brain-2</span><span class="i-code">0xe8c6</span>
+        </div>
+        <div class="span3" title="Code: 0xe8c7">
+          <i class="demo-icon drplus-icon-bottom">&#xe8c7;</i> <span class="i-name">drplus-icon-bottom</span><span class="i-code">0xe8c7</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8c8">
+          <i class="demo-icon drplus-icon-bitcoin-card">&#xe8c8;</i> <span class="i-name">drplus-icon-bitcoin-card</span><span class="i-code">0xe8c8</span>
+        </div>
+        <div class="span3" title="Code: 0xe8c9">
+          <i class="demo-icon drplus-icon-bag">&#xe8c9;</i> <span class="i-name">drplus-icon-bag</span><span class="i-code">0xe8c9</span>
+        </div>
+        <div class="span3" title="Code: 0xe8ca">
+          <i class="demo-icon drplus-icon-bag-1">&#xe8ca;</i> <span class="i-name">drplus-icon-bag-1</span><span class="i-code">0xe8ca</span>
+        </div>
+        <div class="span3" title="Code: 0xe8cb">
+          <i class="demo-icon drplus-icon-author">&#xe8cb;</i> <span class="i-name">drplus-icon-author</span><span class="i-code">0xe8cb</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8cc">
+          <i class="demo-icon drplus-icon-asia">&#xe8cc;</i> <span class="i-name">drplus-icon-asia</span><span class="i-code">0xe8cc</span>
+        </div>
+        <div class="span3" title="Code: 0xe8cd">
+          <i class="demo-icon drplus-icon-arrow-up">&#xe8cd;</i> <span class="i-name">drplus-icon-arrow-up</span><span class="i-code">0xe8cd</span>
+        </div>
+        <div class="span3" title="Code: 0xe8ce">
+          <i class="demo-icon drplus-icon-arrow-up-right-square">&#xe8ce;</i> <span class="i-name">drplus-icon-arrow-up-right-square</span><span class="i-code">0xe8ce</span>
+        </div>
+        <div class="span3" title="Code: 0xe8cf">
+          <i class="demo-icon drplus-icon-arrow-up-left-square">&#xe8cf;</i> <span class="i-name">drplus-icon-arrow-up-left-square</span><span class="i-code">0xe8cf</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8d0">
+          <i class="demo-icon drplus-icon-arrow-square-up">&#xe8d0;</i> <span class="i-name">drplus-icon-arrow-square-up</span><span class="i-code">0xe8d0</span>
+        </div>
+        <div class="span3" title="Code: 0xe8d1">
+          <i class="demo-icon drplus-icon-arrow-square-right">&#xe8d1;</i> <span class="i-name">drplus-icon-arrow-square-right</span><span class="i-code">0xe8d1</span>
+        </div>
+        <div class="span3" title="Code: 0xe8d2">
+          <i class="demo-icon drplus-icon-arrow-square-left">&#xe8d2;</i> <span class="i-name">drplus-icon-arrow-square-left</span><span class="i-code">0xe8d2</span>
+        </div>
+        <div class="span3" title="Code: 0xe8d3">
+          <i class="demo-icon drplus-icon-arrow-square-down">&#xe8d3;</i> <span class="i-name">drplus-icon-arrow-square-down</span><span class="i-code">0xe8d3</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8d4">
+          <i class="demo-icon drplus-icon-arrow-right">&#xe8d4;</i> <span class="i-name">drplus-icon-arrow-right</span><span class="i-code">0xe8d4</span>
+        </div>
+        <div class="span3" title="Code: 0xe8d5">
+          <i class="demo-icon drplus-icon-arrow-left">&#xe8d5;</i> <span class="i-name">drplus-icon-arrow-left</span><span class="i-code">0xe8d5</span>
+        </div>
+        <div class="span3" title="Code: 0xe8d6">
+          <i class="demo-icon drplus-icon-arrow-down">&#xe8d6;</i> <span class="i-name">drplus-icon-arrow-down</span><span class="i-code">0xe8d6</span>
+        </div>
+        <div class="span3" title="Code: 0xe8d7">
+          <i class="demo-icon drplus-icon-arrow-down-right-square">&#xe8d7;</i> <span class="i-name">drplus-icon-arrow-down-right-square</span><span class="i-code">0xe8d7</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8d8">
+          <i class="demo-icon drplus-icon-arrow-down-left-square">&#xe8d8;</i> <span class="i-name">drplus-icon-arrow-down-left-square</span><span class="i-code">0xe8d8</span>
+        </div>
+        <div class="span3" title="Code: 0xe8d9">
+          <i class="demo-icon drplus-icon-arman">&#xe8d9;</i> <span class="i-name">drplus-icon-arman</span><span class="i-code">0xe8d9</span>
+        </div>
+        <div class="span3" title="Code: 0xe8da">
+          <i class="demo-icon drplus-icon-archive-book">&#xe8da;</i> <span class="i-name">drplus-icon-archive-book</span><span class="i-code">0xe8da</span>
+        </div>
+        <div class="span3" title="Code: 0xe8db">
+          <i class="demo-icon drplus-icon-archive-book-bold">&#xe8db;</i> <span class="i-name">drplus-icon-archive-book-bold</span><span class="i-code">0xe8db</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span3" title="Code: 0xe8dc">
+          <i class="demo-icon drplus-icon-alborz">&#xe8dc;</i> <span class="i-name">drplus-icon-alborz</span><span class="i-code">0xe8dc</span>
+        </div>
+        <div class="span3" title="Code: 0xe8dd">
+          <i class="demo-icon drplus-icon-add-square">&#xe8dd;</i> <span class="i-name">drplus-icon-add-square</span><span class="i-code">0xe8dd</span>
+        </div>
+      </div>
+    </div>
+    <div class="container footer">Generated by <a href="https://fontello.com">fontello.com</a></div>
+  </body>
+</html>

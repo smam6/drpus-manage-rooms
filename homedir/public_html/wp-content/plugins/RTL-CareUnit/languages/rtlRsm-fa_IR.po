@@ -1,0 +1,986 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: افزونه مدیریت هوشمند راستچین\n"
+"POT-Creation-Date: 2024-04-13 11:33-0700\n"
+"PO-Revision-Date: 2025-09-13 16:17+0330\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fa_IR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n==0 || n==1);\n"
+"X-Generator: Poedit 3.6\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-Flags-xgettext: --add-comments=translators:\n"
+"X-Poedit-WPHeader: RTL-CareUnit.php\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+
+#: RTL/App/Controllers/BackupController.php:69
+msgid "Bad request"
+msgstr "درخواست ناموفق بود، پاسخ خالی است"
+
+#: RTL/App/Controllers/BackupController.php:82
+#: RTL/App/Controllers/BackupController.php:140
+msgid "The backup file is corrupted"
+msgstr "فایل پشتیبانی خراب است"
+
+#: RTL/App/Controllers/BackupController.php:90 RTL/Backup/BackupHooks.php:170
+#: RTL/Backup/BackupHooks.php:192
+msgid "Please disable the plugin first"
+msgstr "لطفا ابتدا افزونه را غیر فعال نمایید"
+
+#: RTL/App/Controllers/BackupController.php:92 RTL/Backup/BackupHooks.php:194
+msgid "Deactivate Plugin"
+msgstr "افزونه غیرفعال"
+
+#: RTL/App/Controllers/BackupController.php:108 RTL/Backup/BackupHooks.php:205
+msgid "Please remove the plugin first"
+msgstr "لطفا ابتدا افزونه را حذف نمایید"
+
+#: RTL/App/Controllers/BackupController.php:110 RTL/Backup/BackupHooks.php:207
+msgid "The previous plugin was deleted"
+msgstr "افزونه قبلی حذف شد"
+
+#: RTL/App/Controllers/BackupController.php:121
+#: RTL/App/Controllers/BackupController.php:172
+msgid "Can't install"
+msgstr "نصب نشد"
+
+#: RTL/App/Controllers/BackupController.php:124
+#: RTL/App/Controllers/BackupController.php:174 RTL/Backup/BackupHooks.php:218
+msgid "The theme successfully restored!"
+msgstr "قالب با موفقیت بازیابی شد!"
+
+#: RTL/App/Controllers/BackupController.php:126
+#: RTL/App/Controllers/BackupController.php:177 RTL/Backup/BackupHooks.php:222
+msgid "File not exist"
+msgstr "فایل وجود ندارد"
+
+#: RTL/App/Controllers/BackupController.php:147
+msgid "Please disable the Theme first"
+msgstr "لطفا ابتدا قالب را غیر فعال نمایید"
+
+#: RTL/App/Controllers/BackupController.php:162
+msgid "Please remove the theme first"
+msgstr "لطفا ابتدا قالب را حذف نمایید"
+
+#: RTL/App/Controllers/BackupController.php:164
+msgid "The previous theme was deleted"
+msgstr "قالب قبلی حذف شد"
+
+#: RTL/App/Controllers/LicenseController.php:33 RTL/App/Hooks.php:295
+msgid "success"
+msgstr "موفق"
+
+#: RTL/App/Controllers/LicenseController.php:33
+msgid "unsuccessful"
+msgstr "ناموفق"
+
+#: RTL/App/Controllers/LicenseController.php:38
+msgid "never"
+msgstr "هرگز"
+
+#: RTL/App/Controllers/SettingsController.php:28
+msgid "Show Plugin"
+msgstr "نمایش افزونه"
+
+#: RTL/App/Controllers/SettingsController.php:28
+msgid "Hide plugin"
+msgstr "مخفی کردن افزونه"
+
+#: RTL/App/Hooks.php:206
+msgid "Smart Manager Rtl Theme"
+msgstr "مدیریت هوشمند راست چین"
+
+#: RTL/App/Hooks.php:296 RTL/Front/Views/pages/licenseManagement.php:112
+#: RTL/Front/Views/pages/licenseManagement.php:137
+#: RTL/Front/Views/pages/licenseManagement.php:162
+#: RTL/Front/Views/pages/licenseManagement.php:185
+msgid "not tested"
+msgstr "تست نشده"
+
+#: RTL/App/Hooks.php:297
+msgid "error"
+msgstr "خطا"
+
+#: RTL/App/Hooks.php:298
+msgid "The operation was successful"
+msgstr "عملیات با موفقیت انجام شد"
+
+#: RTL/App/Hooks.php:299
+msgid "The operation was failed"
+msgstr "عملیات ناموفق بود"
+
+#: RTL/App/Hooks.php:300 RTL/Backup/BackupHooks.php:78
+msgid "Are you sure?"
+msgstr "آیا مطمئن هستید؟"
+
+#: RTL/App/Hooks.php:301 RTL/Backup/BackupHooks.php:79
+msgid "After deleting, it is not possible to recover the file!"
+msgstr "بعد از حذف امکان بازیابی فایل نمی باشد!"
+
+#: RTL/App/Hooks.php:302 RTL/Backup/BackupHooks.php:80
+msgid "After restore this version, it is not possible to recover the current version without backup!"
+msgstr "پس از بازنشانی این نسخه، امکان بازیابی نسخه فعلی بدون پشتیبان وجود ندارد!"
+
+msgid "Are you sure you want install this product?"
+msgstr "آیا از نصب محصول فوق اطمینان دارید؟"
+
+#: RTL/App/Hooks.php:303
+msgid "After updating to a higher version, if automatic backup is not enabled, it will not be possible to return to the existing version"
+msgstr "بعد از بروزرسانی به نسخه بالاتر درصورتی که پشتیبان گیری خودکار فعال نباشد امکان بازگشت به نسخه موجود امکان پذیر نخواهد بود"
+
+#: RTL/App/Hooks.php:304 RTL/Backup/BackupHooks.php:81
+msgid "Yes, restore it!"
+msgstr "بله، بازنشانی کن!"
+
+msgid "Yes, install it!"
+msgstr "بله، نصب کن!"
+
+#: RTL/App/Hooks.php:305
+msgid "Yes, update it!"
+msgstr "بله، بروزسانی کن!"
+
+#: RTL/App/Hooks.php:306 RTL/Backup/BackupHooks.php:82
+msgid "Cancel"
+msgstr "خیر"
+
+#: RTL/App/Hooks.php:307
+msgid "Close"
+msgstr "بستن"
+
+#: RTL/App/Hooks.php:308
+msgid "Yes"
+msgstr "بله"
+
+#: RTL/App/Hooks.php:309
+msgid "Please allow popups for this website"
+msgstr "لطفا اجازه بازکردن popup در این صفحه را قبول کنید"
+
+#: RTL/App/Hooks.php:444 RTL/Front/Front.php:167
+msgid "Settings"
+msgstr "تنظیمات"
+
+#: RTL/App/Hooks.php:445
+msgid "Check Updates"
+msgstr "بررسی بروزرسانی"
+
+#: RTL/App/Hooks.php:478 RTL/App/Hooks.php:485
+msgid "Update From RTL Theme"
+msgstr "بروزرسانی از راست چین"
+
+#: RTL/App/Hooks.php:486
+msgid "Buy new version from rtl-theme"
+msgstr "نسخه جدید را از راستچین خریداری کنید"
+
+#: RTL/App/Hooks.php:486
+msgid "click here"
+msgstr "اینجا کلیک کنید"
+
+#: RTL/App/Request.php:30
+msgid "Provided request section is not found"
+msgstr "بخش درخواست ارائه شده یافت نشد"
+
+#: RTL/Backup/Backup.php:77
+msgid "A plugin backup can not be created since a destination path for the backup file could not be found."
+msgstr "امکان ایجاد نسخه پشتیبان از افزونه امکان پذیر نیست زیرا مسیر مقصد برای فایل پشتیبان یافت نشد."
+
+#: RTL/Backup/Backup.php:100
+#, php-format
+msgid "A plugin backup can not be created as creation of the zip file failed with the following error: %1$s"
+msgstr "امکان ایجاد نسخه پشتیبان از افزونه امکان پذیر نیست زیرا ایجاد فایل فشرده با خطای زیر انجام نشد: %1$s"
+
+#: RTL/Backup/BackupHooks.php:177
+msgid "Cant install"
+msgstr "نصب نشد"
+
+#: RTL/Core/Helper/Helper.php:266
+msgid "Add log was failed. Please check your access to database."
+msgstr "افزودن لاگ با خطا مواجه شد. دسترسی به دیتابیس را بررسی کنید."
+
+#: RTL/Core/Router.php:99
+msgid "Requests should be made from dashboard side"
+msgstr "درخواست ها باید از سمت داشبورد انجام شود"
+
+#: RTL/Core/Router.php:108
+msgid "Current user does not have access to make this request"
+msgstr "کاربر فعلی دسترسی به این درخواست را ندارد"
+
+#: RTL/Core/Server.php:313
+msgid "No working server found"
+msgstr "سرور فعال یافت نشد"
+
+#: RTL/Core/Server.php:383 RTL/Core/Server.php:443 RTL/Core/Server.php:559
+msgid "Host Not Found"
+msgstr "(host) پیدا نشد"
+
+#: RTL/Core/Server.php:447 RTL/Core/Server.php:563
+msgid "Please make sure the handshake connection"
+msgstr "لطفا از اتصال handshake مطمئن شوید"
+
+#: RTL/Core/Server.php:584
+msgid "Request Failed, Empty Response."
+msgstr "درخواست ناموفق بود، پاسخ خالی است."
+
+#: RTL/Core/Utility/Date.php:29
+msgid "ago"
+msgstr "قبل"
+
+#: RTL/Core/Utility/Date.php:48
+msgid "Year"
+msgstr "سال"
+
+#: RTL/Core/Utility/Date.php:49
+msgid "Month"
+msgstr "ماه"
+
+#: RTL/Core/Utility/Date.php:50
+msgid "Week"
+msgstr "هفته"
+
+#: RTL/Core/Utility/Date.php:51
+msgid "Day"
+msgstr "روز"
+
+#: RTL/Core/Utility/Date.php:52
+msgid "Hour"
+msgstr "ساعت"
+
+#: RTL/Core/Utility/Date.php:53
+msgid "Minute"
+msgstr "دقیقه"
+
+#: RTL/Core/Utility/Date.php:54
+msgid "Second"
+msgstr "ثانیه"
+
+#: RTL/Core/Utility/Date.php:70
+msgid "right now"
+msgstr "الان"
+
+#: RTL/Front/Front.php:40
+msgid "Home"
+msgstr "خانه"
+
+#: RTL/Front/Front.php:57
+msgid "MyProducts"
+msgstr "محصولات من"
+
+#: RTL/Front/Front.php:86
+msgid "Showcase"
+msgstr "ویترین"
+
+#: RTL/Front/Front.php:103
+msgid "My Backups"
+msgstr "نسخه های پشتیبان"
+
+#: RTL/Front/Front.php:115
+msgid "License Management"
+msgstr "مدیریت لایسنس"
+
+#: RTL/Front/Front.php:133
+msgid "Notifications"
+msgstr "اعلان ها"
+
+#: RTL/Front/Views/pages/licenseManagement.php:50
+msgid "Synchronizing with server"
+msgstr "در حال همگام سازی با سرور"
+
+#: RTL/Front/Views/pages/licenseManagement.php:51
+msgid "Synchronization with the server"
+msgstr "همگام سازی با سرور"
+
+#: RTL/Front/Views/pages/licenseManagement.php:107
+msgid "Connection Test"
+msgstr "تست اتصال به سرور (Connection Test)"
+
+#: RTL/Front/Views/pages/licenseManagement.php:132
+msgid "Handshake Test"
+msgstr "تست ارتباط اولیه با سرور (Handshake Test)"
+
+#: RTL/Front/Views/pages/licenseManagement.php:157
+msgid "Sync Test"
+msgstr "تست همگام سازی با سرور"
+
+#: RTL/Front/Views/pages/licenseManagement.php:180
+msgid "File Access Test"
+msgstr "تست دسترسی به فایل افزونه"
+
+#: RTL/License/LicenseHooks.php:181
+msgid "Successful connection, but the received response is invalid, selecting a new server..."
+msgstr "اتصال موفق ولی پاسخ دریافتی نامعتبر می باشد، در حال انتخاب سرور جدید..."
+
+#: RTL/License/LicenseHooks.php:188 RTL/License/LicenseHooks.php:218
+#: RTL/License/LicenseHooks.php:246
+msgid "Test connection to the server successfully"
+msgstr "اتصال به سرور با موفقیت انجام شد"
+
+#: RTL/License/LicenseHooks.php:264
+msgid "Not exist file url"
+msgstr "URL فایل پیدا نشد"
+
+#: RTL/License/LicenseHooks.php:291
+msgid "The plugin file access test was done successfully."
+msgstr "تست دسترسی به فایل افزونه با موفقیت انجام شد."
+
+#: RTL/License/LicenseHooks.php:292
+msgid "File Type: "
+msgstr "نوع فایل: "
+
+#: RTL/License/LicenseHooks.php:296
+msgid "File Size: "
+msgstr "سایز فایل: "
+
+#: RTL/License/LicenseHooks.php:296
+msgid " megabyte"
+msgstr " مگابایت"
+
+#: RTL/License/LicenseHooks.php:301
+msgid "Latest Edit: "
+msgstr "آخرین ویرایش: "
+
+#: RTL/License/LicenseHooks.php:320
+msgid "invalid server"
+msgstr "سرور نامعتبر می باشد"
+
+#: RTL/License/LicenseHooks.php:325 RTL/License/LicenseHooks.php:327
+msgid "server registered successfully"
+msgstr "سرور با موفقیت ثبت شد"
+
+msgid "The server could not be registered"
+msgstr "سرور ثبت نشد"
+
+#: RTL/License/LicenseHooks.php:347
+msgid "There was a problem synchronizing with the server, please try again in a few minutes."
+msgstr "مشکلی هنگام همگام سازی با سرور به وجود آمده است، لطفا پس از چند دقیقه مجددا تلاش نمایید."
+
+#: RTL/License/LicenseHooks.php:352
+msgid "Synchronization with the server was successful."
+msgstr "همگام سازی با سرور با موفقیت انجام شد."
+
+#: RTL/Products/ProductsHooks.php:278
+#, php-format
+msgid "Update list has changed. Please %s page and try again."
+msgstr "لیست بروزرسانی تغییر کرده است. لطفاً صفحه %s و دوباره امتحان کنید."
+
+msgid "The %s update link expired, please use check update in rtl smart management plugin"
+msgstr "لینک آپدیت برای %s منقضی شده است، لطفا از قسمت محصولات در افزونه مدیریت هوشمند راستچین برروی بررسی بروز رسانی ها استفاده کنید"
+
+#: RTL/Products/ProductsHooks.php:278 RTL/Products/ProductsHooks.php:324
+#: RTL/Products/ProductsHooks.php:381
+msgid "Refresh"
+msgstr "تازه کردن"
+
+#: RTL/Products/ProductsHooks.php:286 RTL/Products/ProductsHooks.php:352
+#, php-format
+msgid "The %s update link expired,please use check update in rsm plugin"
+msgstr "لینک آپدیت %s منقضی شده است، لطفاً از گزینه بررسی بروزرسانی در افزونه مدیریت راست چین استفاده کنید"
+
+#: RTL/Products/ProductsHooks.php:324 RTL/Products/ProductsHooks.php:381
+#, php-format
+msgid "Backup can't take it. Please %s page and try again."
+msgstr "پشتیبان گیری انجام نشد. لطفاً صفحه %s و دوباره امتحان کنید."
+
+#: RTL/Products/ProductsHooks.php:345
+#, php-format
+msgid "The %s update not available now,please use check update in rsm plugin"
+msgstr "آپدیت %s در حال حاضر در دسترس نیست،  لطفاً از گزینه بررسی بروزرسانی در افزونه مدیریت راست چین استفاده کنید"
+
+#: RTL/Products/ProductsHooks.php:561
+msgid "The plugin settings save successfully"
+msgstr "تنظیمات افزونه با موفقیت ذخیره شد"
+
+#: RTL/Products/ProductsHooks.php:563
+msgid "The plugin settings save failed"
+msgstr "ذخیره تنظیمات افزونه انجام نشد"
+
+#: RTL/Products/ProductsHooks.php:602
+msgid "The theme settings save successfully"
+msgstr "تنظیمات قالب با موفقیت ذخیره شد"
+
+#: RTL/Products/ProductsHooks.php:604
+msgid "The theme settings save failed"
+msgstr "ذخیره تنظیمات قالب انجام نشد"
+
+#: RTL/Products/ProductsHooks.php:616
+msgid "The product list updated successfully"
+msgstr "لیست محصولات با موفقیت بروز رسانی شد"
+
+#: RTL/Products/ProductsHooks.php:618
+msgid "The product list updated failed"
+msgstr "لیست محصولات بروز رسانی نشد"
+
+#: RTL/Settings/SettingsHooks.php:74 RTL/Showcase/ShowcaseHook.php:61
+msgid "do you want receive notification in this email after this time ?"
+msgstr "آیا می خواهید بعد از این تاریخ در این ایمیل اعلان دریافت کنید؟"
+
+#: RTL/Settings/SettingsHooks.php:75 RTL/Showcase/ShowcaseHook.php:62
+msgid "The email is not valid"
+msgstr "ایمیل معتبر نیست"
+
+#: RTL/Settings/SettingsHooks.php:76 RTL/Showcase/ShowcaseHook.php:63
+msgid "Are you sure about hiding the smart management plugin of rtl-theme?"
+msgstr "آیا از مخفی کردن افزونه مدیریت هوشمند  راست چین مطمئن هستید؟"
+
+#: RTL/Settings/SettingsHooks.php:77 RTL/Showcase/ShowcaseHook.php:64
+msgid "Are you sure about showing the smart management plugin of rtl-theme?"
+msgstr "آیا از نمایش افزونه مدیریت هوشمند راستچین مطمئن هستید؟"
+
+#: RTL/Settings/SettingsHooks.php:78 RTL/Showcase/ShowcaseHook.php:65
+msgid "Be sure to keep the plugin access link with you."
+msgstr "حتما لینک دسترسی به افزونه را همراه خود نگه دارید."
+
+#: RTL/Settings/SettingsHooks.php:100
+msgid "Invalid email format"
+msgstr "قالب ایمیل نامعتبر است"
+
+#: RTL/Settings/SettingsHooks.php:121
+msgid "The plugin is invisible now"
+msgstr "افزونه در حال حاضر مخفی است"
+
+#: RTL/Update/Update.php:95
+msgid "Update list was successfully updated."
+msgstr "لیست بروزرسانی با موفقیت به روز شد."
+
+#. Plugin Name of the plugin/theme
+msgid "RTL Theme smart management plugin"
+msgstr "افزونه مدیریت هوشمند راستچین"
+
+#. Plugin URI of the plugin/theme
+#. Author URI of the plugin/theme
+msgid "https://www.rtl-theme.com/"
+msgstr "https://www.rtl-theme.com/"
+
+#. Description of the plugin/theme
+msgid "A plugin for managing and maintaining WordPress products"
+msgstr "افزونه ای جهت مدیریت و نگهداری محصولات وردپرسی"
+
+#. Author of the plugin/theme
+msgid "RTL-Theme"
+msgstr "راست چین"
+
+msgid "Themes"
+msgstr "قالب ها"
+
+msgid "Plugins"
+msgstr "افزونه ها"
+
+msgid "Guide"
+msgstr "راهنما"
+
+msgid "No"
+msgstr "نه"
+
+msgid "Yes, delete it!"
+msgstr "بله، حدفش کن!"
+
+msgid "• By disabling or removing this plugin, the performance of products purchased from RTL will be disrupted."
+msgstr "• با غیرفعال کردن یا حذف این افزونه، عملکرد محصولات خریداری شده از راستچین مختل می شود."
+
+msgid "• you can deactivate this plugin from <a target=\"_blank\" class=\"RSM-PDA-Settings-Link\">settings</a>"
+msgstr "• شما میتوانید این افزونه را از بخش <a target=\"_blank\" class=\"RSM-PDA-Settings-Link\">تنظیمات</a> مخفی نمایید تا در این قسمت چیزی دیده نشود"
+
+#: includes/admin/assets.php:48
+msgid "to deactivate"
+msgstr "غیرفعال کردن"
+
+#: includes/admin/assets.php:49
+msgid "dismiss"
+msgstr "انصراف"
+
+#: includes/admin/assets.php:46
+msgid "warning"
+msgstr "هشدار"
+
+msgid "The %s has update"
+msgstr "برای %s بروزرسانی موجود است"
+
+msgid "Removed successfully"
+msgstr "با موفقیت حذف شد"
+
+msgid "Successfully restored!"
+msgstr "با موفقیت بازنشانی شد!"
+
+msgid "welcome to RTL Smart management"
+msgstr "به افزونه مدیریت هوشمند راست چین خوش آمدید"
+
+msgid "purchased products"
+msgstr "محصولات خریداری شده"
+
+msgid "products need to be updated"
+msgstr "محصولات نیاز به آپدیت"
+
+msgid "active products"
+msgstr "محصولات فعال"
+
+msgid "number of backup files"
+msgstr "تعداد فایل‌های پشتیبان"
+
+msgid "latest announcements"
+msgstr "آخرین اطلاعیه ها"
+
+msgid "view all"
+msgstr "مشاهده همه"
+
+msgid "There are currently no announcements!"
+msgstr "در حال حاضر هیچ اطلاعیه ای وجود ندارد!"
+
+msgid "RTL Smart Management Plugin"
+msgstr "افزونه مدیریت هوشمند راست چین"
+
+msgid "RTL is proud to present the first and only plugin for the intelligent management of WordPress products to the digital product market has done. To learn how to work with the plugin, please watch the video below, or if you need advice, register a ticket Be in touch with us."
+msgstr "راست چین مفتخر است که اولین و تنها افزونه جهت مدیریت هوشمند محصولات وردپرسی را به بازار محصولات دیجیتال عرضه کرده است. جهت آشنایی با نحوه کار با افزونه لطفا فیلم زیر را مشاهده و یا در صورت نیاز به مشاوره از طریق ثبت تیکت با ما در ارتباط باشید."
+
+msgid "contact support"
+msgstr "ارتباط با پشتیبانی"
+
+msgid "All material and intellectual rights of this plugin belong to <span><a target='_blank' href='https://www.rtl-theme.com/'> www.rtl-theme.com </a></span>. Any copying of it is illegal and will be prosecuted."
+msgstr "کلیه حقوق مادی و معنوی این افزونه متعلق به <span><a target='_blank' href='https://www.rtl-theme.com/'> www.rtl-theme.com </a></span>است. هرگونه کپی برداری از آن غیرمجاز بوده و پیگرد قانونی دارد."
+
+msgid "RTl license management"
+msgstr "مدیریت لایسنس راست چین"
+
+msgid "initial communication"
+msgstr "ارتباط اولیه"
+
+msgid "last sync"
+msgstr "آخرین همگام سازی"
+
+msgid "the current version of the plugin"
+msgstr "نسخه فعلی افزونه"
+
+msgid "the latest version of the plugin"
+msgstr "آخرین نسخه افزونه"
+
+msgid "manual synchronization"
+msgstr "همگام سازی دستی"
+
+msgid "this setting is temporary and will be changed automatically if there is a problem with the connection"
+msgstr "این تنظیم به صورت موقت بوده و در صورت بروز مشکل در ارتباط، به صورت خودکار تغییر خواهد کرد"
+
+msgid "if there is a problem with the server and the products are not activated or synchronized, change the server manually."
+msgstr "در صورت بروز مشکل در ارتباط با سرور و عدم فعال سازی محصولات یا همگام سازی، به صورت دستی اقدام به تغییر سرور نمایید."
+
+msgid "save and change server"
+msgstr "ذخیره و تغییر سرور"
+
+msgid "check the status"
+msgstr "بررسی وضعیت"
+
+msgid "You can check the status of your connection with the Right China license server and see the errors in case of problems. If any of the steps encounter an error, a troubleshooting guide will be displayed under the corresponding accordion."
+msgstr "شما می توانید وضعیت ارتباط خود با سرور لایسنس راست چین را بررسی کرده و در صورت بروز مشکل خطاهای رخ داده را مشاهده نمایید. در صورتی که هر کدام از مراحل با خطا مواجه شد، راهنمای حل مشکل در زیر آکاردیون مرتبط به شما نمایش داده خواهد شد."
+
+msgid "start debugging"
+msgstr "شروع اشکال زدایی"
+
+msgid "news and announcements"
+msgstr "اخبار و اطلاعیه ها"
+
+msgid "show unread"
+msgstr "نمایش خوانده نشده ها"
+
+msgid "version changes"
+msgstr "تغییرات نسخه"
+
+msgid "to close"
+msgstr "بستن"
+
+msgid "save changes"
+msgstr "ذخیره تغییرات"
+
+msgid "check for updates"
+msgstr "بررسی بروزرسانی‌ها"
+
+msgid "backup all"
+msgstr "پشتیبان گیری همه"
+
+msgid "auto update all"
+msgstr "بروزرسانی خودکار همه"
+
+msgid "my plugins"
+msgstr "افزونه های من"
+
+msgid "inactive license"
+msgstr "لایسنس غیرفعال"
+
+msgid "active license"
+msgstr "لایسنس فعال"
+
+msgid "free"
+msgstr "رایگان"
+
+msgid "support"
+msgstr "پشتیبانی"
+
+msgid "automatic update"
+msgstr "بروزرسانی خودکار"
+
+msgid "automatic backup"
+msgstr "پشتیبان گیری خودکار"
+
+msgid "version %s update is available."
+msgstr "بروز رسانی نسخه %s موجود است."
+
+msgid "return to the previous version"
+msgstr "بازگشت به نسخه قبل"
+
+msgid "update"
+msgstr "بروزرسانی"
+
+msgid "buy from RTL"
+msgstr "خرید از راست چین"
+
+msgid "the latest version available"
+msgstr "آخرین نسخه موجود"
+
+msgid "hiding license management section"
+msgstr "مخفی سازی بخش مدیریت لایسنس"
+
+msgid "by hiding the license management section, there will be no interference in the performance of this feature."
+msgstr "با مخفی کردن بخش مدیریت لایسنس تداخلی در عملکرد این قابلیت ایجاد نخواد شد."
+
+msgid "hiding the label of RTL products"
+msgstr "مخفی سازی لیبل محصولات راست چین"
+
+msgid "by activating this feature, the RTL logo will be hidden from the corresponding product card."
+msgstr "با فعالسازی این قابلیت لوگوی راست چین از کارت محصولات مربوطه مخفی خواهد شد."
+
+msgid "optimizing site speed and performance"
+msgstr "بهینه سازی سرعت و عملکرد سایت"
+
+msgid "By activating this feature, your website will not have access to the WordPress repository, and checking for product updates in Elementor, GitHub, Yoast, WooCommerce, and WordPress will be stopped, and the speed of the site will improve"
+msgstr "با فعالسازی این قابلیت وبسایت شما به مخزن وردپرس دسترسی نخواهد داشت و بررسی آپدیت محصولات در المنتور، گیت هاب، یواست، ووکامرس و وردپرس قطع خواهد شد و سرعت سایت بهبود می یابد"
+
+msgid "hide the smart management plugin"
+msgstr "مخفی سازی افزونه مدیریت هوشمند"
+
+msgid "* if you hide the admin plugin, updates will still be sent to you through the default WordPress menu."
+msgstr "* در صورت مخفی کردن افزونه مدیریت، بروزرسانی ها همچنان از طریق منوی پیش فرض وردپرس برای شما ارسال خواهد شد."
+
+msgid "* the link below is the only way to access the plugin again after hiding and revealing it, be careful in maintaining it."
+msgstr "* لینک زیر تنها راه دسترسی مجدد به افزونه پس از مخفی سازی و نمایان سازی آن است، در حفظ و نگهداری آن دقت نمایید."
+
+msgid "notices"
+msgstr "اطلاع رسانی"
+
+msgid "receive update notification:"
+msgstr "دریافت اعلان بروزرسانی :"
+
+msgid "in the WordPress dashboard"
+msgstr "در پیشخوان وردپرس"
+
+msgid "receive email"
+msgstr "دریافت ایمیل"
+
+msgid "notification email:"
+msgstr "ایمیل دریافت اطلاع رسانی :"
+
+msgid "record and save"
+msgstr "ثبت و ذخیره"
+
+msgid "my templates"
+msgstr "قالب های من"
+
+msgid "affiliates"
+msgstr "وابسته ها"
+
+msgid "a version update is available."
+msgstr "بروزرسانی نسخه موجود است."
+
+msgid "Toman"
+msgstr "تومان"
+
+msgid "buy and download"
+msgstr "خرید و دانلود"
+
+msgid "view"
+msgstr "مشاهده"
+
+msgid "Specify the maximum number of backup files you want to keep on your server. The higher the number, the more space will be occupied. Additional files will be deleted with each update"
+msgstr "حداکثر تعداد فایل‌های پشتیبانی که می‌خواهید روی سرور شما نگهداری شود را مشخص کنید. هرچه این تعداد بیشتر باشد، فضای بیشتری اشغال خواهد شد. با هر بار بروز رسانی فایل های اضافی حذف خواهد شد"
+
+msgid "product name"
+msgstr "نام محصول"
+
+msgid "version"
+msgstr "نسخه"
+
+msgid "creation date"
+msgstr "تاریخ ایجاد"
+
+msgid "action"
+msgstr "عملیات"
+
+msgid "install and rewrite the version"
+msgstr "نصب و بازنویسی نسخه"
+
+msgid "support file not found"
+msgstr "فایل پشتیبانی یافت نشد"
+
+msgid "search"
+msgstr "جستجو"
+
+msgid "First Server"
+msgstr "سرور اول"
+
+msgid "Second Server"
+msgstr "سرور دوم"
+
+msgid "continue the list"
+msgstr "ادامه لیست"
+
+msgid "collapse list"
+msgstr "جمع کردن فهرست"
+
+msgid "All material and intellectual rights belong to <a href='https://www.rtl-theme.com/' target='_blank' class='sidebar__copyright-link'>www.rtl-theme.com</a>."
+msgstr "کلیه حقوق مادی و معنوی متعلق به <a href='https://www.rtl-theme.com/' target='_blank' class='sidebar__copyright-link'> www.rtl-theme.com </a> است."
+
+msgid "ping"
+msgstr "پینگ"
+
+msgid "Select server ..."
+msgstr "انتخاب سرور ..."
+
+msgid "Malformed Response"
+msgstr "پاسخ نادرست"
+
+msgid "Incomplete Response"
+msgstr "پاسخ ناقص"
+
+msgid "Not installed"
+msgstr "نصب نشده"
+
+msgid "install"
+msgstr "نصب"
+
+msgid "The plugin not exist in your product list"
+msgstr "افزونه در لیست افزونه های شما پیدا نشد"
+
+msgid "The theme not exist in your product list"
+msgstr "قالب در لیست قالب های شما پیدا نشد"
+
+msgid "Install the plugin is get problem, use sync with server in license management"
+msgstr "نصب افزونه مشکل دارد، از همگام سازی با سرور در مدیریت مجوز استفاده کنید"
+
+msgid "There was a problem installing the plugin, try later"
+msgstr "مشکلی در نصب افزونه وجود داشت، بعداً امتحان کنید"
+
+msgid "There was a problem updating the plugin, try later"
+msgstr "مشکلی در بروزرسانی افزونه وجود داشت، بعداً امتحان کنید"
+
+msgid "Successfully install the plugin!"
+msgstr "نصب افزونه با موفقیت انجام شد!"
+
+msgid "Successfully update the plugin!"
+msgstr "بروزرسانی افزونه با موفقیت انجام شد!"
+
+msgid "Successfully update the theme!"
+msgstr "بروزرسانی قالب با موفقیت انجام شد!"
+
+msgid "debug"
+msgstr "اشکال زدایی"
+
+msgid "log"
+msgstr "تاریخچه خطاها"
+
+msgid "error mean"
+msgstr "معنی خطا ها"
+
+msgid "test"
+msgstr "آزمایش"
+
+msgid "logout"
+msgstr "خروج"
+
+msgid "license notice:"
+msgstr "اطلاعیه‌ اخطار لایسنس :"
+
+msgid "marketing announcement:"
+msgstr "اطلاعیه‌ مارکتینگ :"
+
+msgid "test connection"
+msgstr "بررسی اتصال"
+
+msgid "Local Product"
+msgstr "محصولات داخلی"
+
+msgid "New updates available for %s"
+msgstr "آپدیت جدید برای %s موجود است"
+
+msgid "Risk of product deactivation and site performance disruption due to lack of connection to the RTL THEME Smart Management plugin server. Please debug through the license management and server selection section and re-establish your connection or contact RTL THEME support as soon as possible."
+msgstr "خطر غیرفعال شدن محصولات و اختلال در عملکرد سایت به دلیل عدم ارتباط با سرور افزونه مدیریت هوشمند راست چین، لطفا  از طریق قسمت مدیریت لایسنس و انتخاب سرور اشکال زدایی کرده و مجددا ارتباط خود را برقرار نمایید و یا هرچه سریعتر با پشتیبانان راست چین تماس حاصل فرمایید."
+
+msgid "changes list"
+msgstr "لیست تغییرات"
+
+msgid "Return to the plugins page"
+msgstr "برگشت به صفحه افزونه ها"
+
+msgid "Return to the themes page"
+msgstr "برگشت به صفحه قالب ها"
+
+msgid "Plugin backup failed"
+msgstr "پشتیبان گیری از افزونه ناموفق بود"
+
+msgid "Plugin backup was successful"
+msgstr "پشتیبان گیری از افزونه موفق بود"
+
+msgid "update the plugin is get problem, use update product list in plugin or theme page"
+msgstr "آپدیت محصول با مشکل مواجه شد. لطفا لیست محصولات را در صفحه افزونه ها یا قالب ها بروز رسانی کنید"
+
+msgid "update the theme is get problem, use update product list in plugin or theme page"
+msgstr "آپدیت محصول با مشکل مواجه شد. لطفا لیست محصولات را در صفحه افزونه ها یا قالب ها بروز رسانی کنید"
+
+msgid "The plugin update failed"
+msgstr "افزونه آپدیت نشد"
+
+msgid "Failed updating the plugin"
+msgstr "بروزرسانی افزونه ناموفق بود"
+
+msgid "There is a new version of %s available. <a class='rtl-update-plugin' href='%s' %s>View version %s details</a> or <a href='%s' %s>update now</a>."
+msgstr "There is a new version of %s available. <a class='rtl-update-pluign' href='%s' %s>View version %s details</a> or <a href='%s' %s>update now</a>."
+
+msgid "updating ..."
+msgstr "در حال بروز رسانی ..."
+
+msgid "updating %s ..."
+msgstr "در حال بروز رسانی %s ..."
+
+msgid "installing %s ..."
+msgstr "در حال نصب %s ..."
+
+msgid "There is a new version of %s available in RTL-Theme. <a class='details-btn' href='%s' %s >View version %s details</a> or <a class='buy-btn' href='%s' %s>update now</a>"
+msgstr "جدید ترین نسخه %s در راست چین منتشر شد. <a class='details-btn' href='%s' %s> جزییات نگارش %s را مشاهده نمایید</a> <a class='buy-btn' href='%s' %s >هم اکنون بروز رسانی کنید.</a>"
+
+msgid "There is a new version of %s available in RTL-Theme. <a class='details-btn' href='%s' %s >View version %s details</a> <a class='buy-btn' href='%s' %s>Buy from RTL-THEME</a>"
+msgstr "نسخه بروز تر محصول %s در راست چین موجود است <a class='details-btn' href='%s' %s > مشاهده جزئیات نسخه %s </a> <a class='buy-btn' href='%s' %s> خربد از راست چین</a>"
+
+msgid "There is a new version of available in RTL-Theme. <a href='%s' %s>update now</a>."
+msgstr "جدید ترین نسخه در راست چین منتشر شد. <a href='%s' %s>هم اکنون بروز رسانی کنید.</a>."
+
+msgid "There is a new version of available in RTL-Theme. <button  data-slug='%s' %s>update now</button>."
+msgstr "جدید ترین نسخه در راست چین منتشر شد. <button  data-slug='%s' %s>هم اکنون بروز رسانی کنید.</button>."
+
+msgid "There is a new version of available in RTL-Theme.Buy the product from <a href='%s' %s>RTL-THEME</a> now."
+msgstr "نسخه بروز تر محصول در راست چین موجود است. هم اکنون محصول را از <a href='%s' %s> راست چین </a> خریداری کنید."
+
+msgid "Please remove the %s plugin to prevent the RTL-Theme smart management  plugin from malfunctioning"
+msgstr "لطفاً برای جلوگیری از عملکرد نادرست افزونه هوشمند راست چین، افزونه %s را حذف کنید"
+
+msgid "Problem In Setting The Storage Key"
+msgstr "مشکلی در ذخیره key وجود دارد"
+
+msgid "not Found Function"
+msgstr "درخواست معتبر نیست"
+
+msgid "You can't handshake in localhost"
+msgstr "در localhost امکان handshake نیست"
+
+msgid "wait %s second for next request and try again"
+msgstr "برای ارسال درخواست %s ثانیه منتظر باشید و دوباره امتحان کنید"
+
+msgid "Product list is updating, please wait a few seconds"
+msgstr "در حال بروزرسانی لیست محصولات،لطفا کمی منتظر باشید"
+
+msgid "Offer to buy a newer version:"
+msgstr "پیشنهاد خرید نسخه جدیدتر :"
+
+msgid "In the list of WordPress plugins and themes"
+msgstr "در لیست افزونه ها و پوسته های وردپرس"
+
+msgid "It is not possible to receive links on localhost"
+msgstr "امکان دریافت لینک در لوکال هاست وجود ندارد"
+
+msgid "The files of the <b>RTL-Theme Smart Management (RSM)</b> plugin are not valid,to activate the product <b>#productName#</b>, delete the RSM plugin, download and install the latest version from <a href='https://www.rtl-theme.com/rtl-smart-management/' target='_blank'>this link</a>,Use 'start debugging' button in license management page"
+msgstr "فایل های افزونه <b>مدیریت هوشمند راست چین(RSM)</b> معتبر نیست،جهت فعالسازی محصول <b>#productName#</b>، افزونه RSM را حذف و آخرین نسخه را از <a href='https://www.rtl-theme.com/rtl-smart-management/' target='_blank'> این لینک </a> دانلود و نصب نمایید و مجددا نسبت به فعالسازی از طریق دکمه 'اشکال زدایی' در صفحه مدیریت لایسنس در RSM اقدام نمایید"
+
+msgid "Theme dependencies are updated or installed"
+msgstr "وابستگی های تم، بروزرسانی یا نصب می شود"
+
+msgid "Path %s is not writable"
+msgstr "مسیر %s قابل نوشتن نمی باشد"
+
+msgid "Download link for %s not found"
+msgstr "لینک دانلود برای %s پیدا نشد"
+
+msgid "The file does not exist in %s. Please update the link"
+msgstr "فایل در %s وجود ندارد لطفا لینک را بروزرسانی فرمایید"
+
+msgid "Cannot delete %s"
+msgstr "امکان حذف %s وجود ندارد"
+
+msgid "Cannot create %s"
+msgstr "امکان ایجاد %s وجود ندارد"
+
+msgid "The file %s is not a zip file"
+msgstr "فایل %s، فایل zip نمی باشد"
+
+msgid "Unable to connect to the link"
+msgstr "اتصال به لینک امکانپذیر نیست"
+
+msgid "The path %s is not writable. Check your host volumes and try again"
+msgstr "مسیر %s قابل نوشتن نمی باشد حجم  هاست خود را چک قرمایید و دوباره تلاش فرمایید"
+
+msgid "communication with the server and manual debugging"
+msgstr "ارتباط با سرور و اشکال زدایی دستی"
+
+msgid "this situation indicates that the products are active and the management plugin is connected to the server."
+msgstr "این وضعیت نشان دهنده فعال بودن محصولات و ارتباط افزونه مدیریت با سرور می‌باشد."
+
+msgid "fix license inactivity through the server connection button and manual debugging."
+msgstr "غیرفعال بودن لایسنس را از طریق دکمه ارتباط با سرور و اشکال زدایی دستی برطرف نمایید."
+
+msgid "notification settings"
+msgstr "تنظیمات اطلاع رسانی"
+
+msgid "hide settings"
+msgstr "تنظیمات مخفی‌سازی"
+
+msgid "receive notification of product updates in WordPress"
+msgstr "دریافت نوتیف بروزرسانی محصولات در وردپرس"
+
+msgid "receive email product updates"
+msgstr "دریافت ایمیل بروزرسانی محصولات"
+
+msgid "receive product license notification email"
+msgstr "دریافت ایمیل اخطار لایسنس محصولات"
+
+msgid "receive the email of RTL festivals"
+msgstr "دریافت ایمیل جشنواره‌های راست‌چین"
+
+msgid "offer to buy the latest version of the products"
+msgstr "پیشنهاد خرید نسخه بروزتر محصولات"
+
+msgid "synchronization with the server"
+msgstr "همگام سازی با سرور"
+
+msgid "perform debugging to communicate with the server and activate the products."
+msgstr "برای ارتباط با سرور و فعالسازی محصولات، اشکال زدایی را انجام دهید."
+
+msgid "connection to the server is established"
+msgstr "اتصال با سرور برقرار است"
+
+msgid "could not connect to the server"
+msgstr "اتصال با سرور برقرار نشد"
+
+msgid "connection to the server is unknown"
+msgstr "اتصال با سرور نامشخص"
+
+msgid "download the file"
+msgstr "دانلود فایل"
+
+msgid "delete the backup file"
+msgstr "حذف فایل پشتیبان"
+
+msgid "Requesting more than allowed"
+msgstr "ارسال درخواست بیش از حد مجاز"
+
+msgid "Duplicate request"
+msgstr "درخواست تکراری"
+
+msgid "Your site cannot connect to RTL-THEME for synchronization. You can submit a support ticket to follow up and resolve the issue."
+msgstr "سایت شما امکان اتصال به راست‌چین برای همگام‌سازی را ندارد. برای پیگیری و رفع مشکل می‌توانید تیکت پشتیبانی ارسال کنید."

@@ -1,0 +1,440 @@
+AWSTATS DATA FILE 8.0 (build 20240604)
+# If you remove this file, all statistics for date 202603 will be lost/reset.
+# Last config file used to build this data file was /home/aghazga1/tmp/awstats/ssl/awstats.newsite.aghazgarclinic.ir.conf.
+
+# Position (offset in bytes) in this file for beginning of each section for
+# direct I/O access. If you made changes somewhere in this file, you should
+# also remove completely the MAP section (AWStats will rewrite it at next
+# update).
+BEGIN_MAP 28
+POS_GENERAL 2097                
+POS_TIME 2775                
+POS_VISITOR 7030                
+POS_DAY 7695                
+POS_DOMAIN 3406                
+POS_LOGIN 3658                
+POS_ROBOT 3813                
+POS_WORMS 3945                
+POS_EMAILSENDER 4076                
+POS_EMAILRECEIVER 4219                
+POS_SESSION 7938                
+POS_FILESIZE 16272               
+POS_REQUESTTIME 16422               
+POS_SIDER 8134                
+POS_FILETYPES 4354                
+POS_DOWNLOADS 4675                
+POS_OS 4723                
+POS_BROWSER 4862                
+POS_SCREENSIZE 4955                
+POS_UNKNOWNREFERER 5029                
+POS_UNKNOWNREFERERBROWSER 5182                
+POS_ORIGIN 5330                
+POS_SEREFERRALS 5471                
+POS_PAGEREFS 5615                
+POS_SEARCHWORDS 5763                
+POS_KEYWORDS 5915                
+POS_MISC 2439                
+POS_ERRORS 5974                
+POS_CLUSTER 3514                
+POS_SIDER_404 6113                
+END_MAP
+
+# LastLine    = Date of last record processed - Last record line number in last log - Last record offset in last log - Last record signature value
+# FirstTime   = Date of first visit for history file
+# LastTime    = Date of last visit for history file
+# LastUpdate  = Date of last update - Nb of parsed records - Nb of parsed old records - Nb of parsed new records - Nb of parsed corrupted - Nb of parsed dropped
+# TotalVisits = Number of visits
+# TotalUnique = Number of unique visitors
+# MonthHostsKnown   = Number of hosts known
+# MonthHostsUnKnown = Number of hosts unknown
+BEGIN_GENERAL 8
+LastLine 20260321124658 18 4445 17837609501273
+FirstTime 20260301000152
+LastTime 20260321124652
+LastUpdate 20260321154743 18 0 18 0 0
+TotalVisits 29                  
+TotalUnique 12                  
+MonthHostsKnown 0                   
+MonthHostsUnknown 12                  
+END_GENERAL
+
+# Misc ID - Pages - Hits - Bandwidth
+BEGIN_MISC 10
+WindowsMediaPlayerSupport 0 0 0
+PDFSupport 0 0 0
+RealPlayerSupport 0 0 0
+JavaEnabled 0 0 0
+JavascriptDisabled 0 0 0
+DirectorSupport 0 0 0
+QuickTimeSupport 0 0 0
+FlashSupport 0 0 0
+TotalMisc 0 0 0
+AddToFavourites 0 0 0
+END_MISC
+
+# Hour - Pages - Hits - Bandwidth - Not viewed Pages - Not viewed Hits - Not viewed Bandwidth
+BEGIN_TIME 24
+0 43 252 3341116 4 4 795
+1 0 0 0 0 0 0
+2 0 0 0 0 0 0
+3 0 0 0 0 0 0
+4 0 0 0 0 0 0
+5 0 0 0 0 0 0
+6 0 0 0 0 0 0
+7 0 0 0 0 0 0
+8 0 0 0 0 0 0
+9 167 690 6461889 1 2 0
+10 580 866 11481911 5 6 39541
+11 725 1382 15387444 24 24 1398
+12 476 1131 24701495 12 13 39766
+13 342 372 5442581 0 0 0
+14 156 251 4338953 1 1 0
+15 12 115 613327 0 0 0
+16 33 51 2446734 1 1 0
+17 251 614 4564928 4 4 0
+18 209 389 3457805 5 6 2206
+19 187 189 4861173 2 2 0
+20 186 186 51535 1 1 0
+21 69 69 26306 0 0 0
+22 0 0 0 0 0 0
+23 0 0 0 0 0 0
+END_TIME
+
+# Domain - Pages - Hits - Bandwidth
+# The 25 first Pages must be first (order not required for others)
+BEGIN_DOMAIN 2
+ir 2652 5415 86253644
+ru 784 1142 923553
+END_DOMAIN
+
+# Cluster ID - Pages - Hits - Bandwidth
+BEGIN_CLUSTER 0
+END_CLUSTER
+
+# Login - Pages - Hits - Bandwidth - Last visit
+# The 10 first Pages must be first (order not required for others)
+BEGIN_LOGIN 0
+END_LOGIN
+
+# Robot ID - Hits - Bandwidth - Last visit - Hits on robots.txt
+# The 25 first Hits must be first (order not required for others)
+BEGIN_ROBOT 0
+END_ROBOT
+
+# Worm ID - Hits - Bandwidth - Last visit
+# The 5 first Hits must be first (order not required for others)
+BEGIN_WORMS 0
+END_WORMS
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first Hits must be first (order not required for others)
+BEGIN_EMAILSENDER 0
+END_EMAILSENDER
+
+# EMail - Hits - Bandwidth - Last visit
+# The 20 first hits must be first (order not required for others)
+BEGIN_EMAILRECEIVER 0
+END_EMAILRECEIVER
+
+# Files type - Hits - Bandwidth - Bandwidth without compression - Bandwidth after compression
+BEGIN_FILETYPES 13
+jpg 144 5738559 0 0
+woff2 59 1943088 0 0
+css 778 1669693 0 0
+gif 8 38202 0 0
+php 2621 53043170 0 0
+woff 3 116960 0 0
+png 186 10525390 0 0
+html 305 5958203 0 0
+jpeg 6 59739 0 0
+webp 77 620838 0 0
+svg 73 168205 0 0
+js 1849 6795918 0 0
+Unknown 448 499232 0 0
+END_FILETYPES
+
+# Downloads - Hits - Bandwidth
+BEGIN_DOWNLOADS 0
+END_DOWNLOADS
+
+# OS ID - Hits
+BEGIN_OS ID - Hits - Pages 4
+win10 5233 2617
+androidmarshmallow 25 2
+Unknown 1142 784
+android10 157 33
+END_OS
+
+# Browser ID - Hits - Pages
+BEGIN_BROWSER 2
+Unknown 1142 784
+chrome145.0.0.0 5415 2652
+END_BROWSER
+
+# Screen size - Hits
+BEGIN_SCREENSIZE 0
+END_SCREENSIZE
+
+# Unknown referer OS - Last visit date
+BEGIN_UNKNOWNREFERER 1
+WordPress/6.9.1;_https://newsite.aghazgarclinic.ir 20260321124652
+END_UNKNOWNREFERER
+
+# Unknown referer Browser - Last visit date
+BEGIN_UNKNOWNREFERERBROWSER 1
+WordPress/6.9.1;_https://newsite.aghazgarclinic.ir 20260321124652
+END_UNKNOWNREFERERBROWSER
+
+# Origin - Pages - Hits 
+BEGIN_ORIGIN 6
+From0 819 1279
+From1 0 0
+From2 0 0
+From3 0 0
+From4 2617 5278
+From5 0 0
+END_ORIGIN
+
+# Search engine referers ID - Pages - Hits
+BEGIN_SEREFERRALS 0
+END_SEREFERRALS
+
+# External page referers - Pages - Hits
+# The 25 first Pages must be first (order not required for others)
+BEGIN_PAGEREFS 0
+END_PAGEREFS
+
+# Search keyphrases - Number of search
+# The 10 first number of search must be first (order not required for others)
+BEGIN_SEARCHWORDS 0
+END_SEARCHWORDS
+
+# Search keywords - Number of search
+# The 25 first number of search must be first (order not required for others)
+BEGIN_KEYWORDS 0
+END_KEYWORDS
+
+# Errors - Hits - Bandwidth
+BEGIN_ERRORS 6
+404 8 79778
+500 2 2206
+403 9 754
+301 29 795
+302 12 0
+400 1 173
+END_ERRORS
+
+# URL with 404 errors - Hits - Last URL referrer
+BEGIN_SIDER_404 7
+/wp-json/wp/v2/product_cat/preview 1 https://newsite.aghazgarclinic.ir/wp-admin/site-editor.php
+/wp-content/uploads/2026/03/17ac9ecb-9c69-49a3-86d6-3d0ca36ecc42.png 1 https://newsite.aghazgarclinic.ir/wp-admin/admin.php
+/wp-json/wc/v3/products/1 1 https://newsite.aghazgarclinic.ir/wp-admin/site-editor.php
+/404 2 https://newsite.aghazgarclinic.ir/
+/wp-json/wp/v2/product/1 1 https://newsite.aghazgarclinic.ir/wp-admin/site-editor.php
+/wp-json/wp/v2/media/1 1 https://newsite.aghazgarclinic.ir/wp-admin/site-editor.php
+/site-editor/templates/header/508 1 https://newsite.aghazgarclinic.ir/wp-admin/admin.php
+END_SIDER_404
+
+# Host - Pages - Hits - Bandwidth - Last visit date - [Start date of last visit] - [Last page of last visit]
+# [Start date of last visit] and [Last page of last visit] are saved only if session is not finished
+# The 25 first Hits must be first (order not required for others)
+BEGIN_VISITOR 12
+5.215.227.130 1042 2155 29000584 20260306123830
+5.202.54.255 986 1534 37988639 20260301214932
+88.135.68.13 784 1142 923553 20260321124658 20260321124652 /wp-admin/admin-ajax.php
+5.134.167.169 312 621 7568567 20260305182318
+109.125.181.56 252 511 4200193 20260307212927
+37.137.0.160 31 240 3341116 20260301003604
+5.134.167.202 14 124 43631 20260304171214
+89.32.102.113 7 81 2987072 20260307161000
+37.137.4.110 3 42 31665 20260309152442
+109.125.181.114 2 90 163268 20260309145611
+5.239.173.125 2 16 928735 20260321124651 20260321124641 /wp-admin/admin-ajax.php
+5.217.6.5 1 1 174 20260307163809
+END_VISITOR
+
+# Date - Pages - Hits - Bandwidth - Visits
+BEGIN_DAY 7
+20260301 1307 2181 41586570 8
+20260304 22 132 181374 2
+20260305 422 855 7840747 2
+20260306 1281 2511 29257399 2
+20260307 392 725 7187439 10
+20260309 8 135 194933 3
+20260321 4 18 928735 2
+END_DAY
+
+# Session range - Number of visits
+BEGIN_SESSION 6
+5mn-15mn 2
+1h+ 11
+15mn-30mn 2
+30mn-1h 6
+0s-30s 5
+30s-2mn 1
+END_SESSION
+
+# URL - Pages - Bandwidth - Entry - Exit
+# The 25 first Pages must be first (order not required for others)
+BEGIN_SIDER 145
+/wp-admin/admin-ajax.php 1831 30799562 9 12
+/wp-cron.php 677 0 8 11
+/ 176 2688512 10 1
+/wp-json/elementor/v1/checklist/user-progress 165 28710 2 1
+/wp-json/wp/v2/users/me 68 80208 0 0
+/product-category/%d8%aa%d8%ac%d9%87%db%8c%d8%b2%d8%a7%d8%aa-%d9%be%d8%b2%d8%b4%da%a9%db%8c/ 33 75333 0 0
+/wp-json/wc-admin/options 32 2156 0 0
+/wp-admin/admin.php 29 4512991 0 0
+/wp-json/wc-analytics/admin/notes 19 12953 0 0
+/wp-admin/post.php 15 10413242 0 0
+/wp-admin/load-styles.php 15 1674754 0 0
+/specialists/ 14 292622 0 0
+/wp-json/elementor/v1/user-data/current-user 12 7044 0 0
+/my-account/ 12 430267 0 0
+/wp-json/elementor/v1/globals 11 3190 0 0
+/wp-admin/load-scripts.php 11 443840 0 0
+/wp-admin/nav-menus.php 10 1436981 0 0
+/wp-json/elementor/v1/site-navigation/recent-posts 10 3626 0 0
+/wp-json/elementor/v1/kit-elements-defaults 10 60 0 0
+/wp-json/elementor/v1/global-widget/templates 10 60 0 0
+/wp-json/wc-analytics/reports/performance-indicators 10 2220 0 0
+/booking/ 9 193457 0 0
+/blog/ 8 181661 0 0
+/wp-admin/async-upload.php 7 4270 0 0
+/wp-json/wc/store/v1/products/collection-data 6 1078 0 0
+/specialist/sara/ 1 26548 0 0
+/wp-content/themes/dr-plus/assets/fonts/iranyekanxfanum/iranyekanxfanum-medium.woff2 4 55680 0 0
+/wp-json/post-duplicator/v1/parent-posts 1 185 0 0
+/wp-json/wp/v2/product_cat/preview 1 6 0 0
+/wp-content/themes/dr-plus/assets/fonts/anjomanfanum/anjoman-fanum-black.woff2 4 74368 0 0
+/wp-json/wp/v2/types 2 25554 0 0
+/wp-json/wp/v2/template-parts 1 1414 0 0
+/wp-content/plugins/elementor/assets/lib/eicons/fonts/eicons.woff2 2 105172 0 0
+/specialist/arsalan/ 1 27807 0 0
+/category/%d8%a7%d8%ae%d8%a8%d8%a7%d8%b1-%d9%be%d8%b2%d8%b4%da%a9%db%8c/ 1 22145 0 0
+/wp-json/wc-analytics/data/countries 1 24072 0 0
+/wp-json/wc-analytics/admin/notes/81 1 595 0 0
+/specialist/ali/ 3 81734 0 0
+/wp-json/wp/v2/block-patterns/patterns 1 19183 0 0
+/wp-json/wp/v2/categories 1 572 0 0
+/booking/time/ 1 23142 0 0
+/wp-json/wc/v3/products/803 1 2157 0 0
+/wp-admin/profile.php 1 209592 0 0
+/wp-json/wc-analytics/settings/general/batch 2 64401 0 0
+/wp-json/wc-analytics/data/countries/locales 1 1264 0 0
+/cart/ 4 169003 0 0
+/my-account/orders/ 3 119860 0 0
+/wp-json/wc/store/v1/products 5 35957 0 0
+/wp-json/wp/v2/product/1 1 2313 0 0
+/wp-json/wc-analytics/admin/notes/83 1 491 0 0
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-regular-400.woff2 1 13276 0 0
+/wp-json/wc/v3/products/775 1 2449 0 0
+/wp-content/plugins/redux-framework/redux-core/assets/fonts/elusiveicons-webfont.woff 2 98136 0 0
+/wp-json/wc-admin/onboarding/profile 3 552 0 0
+/hello-world-copy-2/ 1 17459 0 0
+/wp-json/wp/v2/templates/lookup 1 6 0 0
+/wp-json/wp-block-editor/v1/navigation-fallback 1 671 0 0
+/wp-content/themes/dr-plus/assets/fonts/iranyekanxfanum/iranyekanxfanum-bold.woff2 4 56064 0 0
+/wp-json/post-duplicator/v1/users 1 89 0 0
+/wp-json/post-duplicator/v1/post-full-data/22 1 164 0 0
+/%d8%af%d8%b1%d9%85%d8%a7%d9%86%d9%87%d8%a7%db%8c-%d9%86%d9%88%db%8c%d9%86-%d8%af%db%8c%d8%a7%d8%a8%d8%aa-%d8%af%d8%b1-%d8%b3%d8%a7%d9%84-%db%b2%db%b0%db%b2%db%b5-copy/ 1 26889 0 0
+/2-2/ 1 21052 0 0
+/wp-content/themes/dr-plus/assets/fonts/drplus-icon/iconly.woff2 4 121936 0 0
+/wp-admin/edit.php 2 259484 0 0
+/hospital/%d8%af%d8%a7%d8%b1%d9%88%d8%ae%d8%a7%d9%86%d9%87-%d8%af%d8%a7%d8%b1%d9%88%d9%87%d8%a7%db%8c-%d8%ae%d8%a7%d8%b5-%db%8c%d8%a7%d8%b3-copy/ 2 47386 0 1
+/wp-admin/update-core.php 2 249149 0 0
+/wp-json/wp/v2/types/wp_block 1 1148 0 0
+/wp-json/wp/v2/navigation 2 3003 0 0
+/wp-login.php 3 9480 0 1
+/wp-json/wp/v2/block-renderer/core/tag-cloud 1 0 0 0
+/wp-json/wc/v3/products 2 20776 0 0
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-solid-900.woff2 1 78196 0 0
+/%d9%86%d9%82%d8%b4-%d9%88%d8%a7%da%a9%d8%b3%db%8c%d9%86%d8%a7%d8%b3%db%8c%d9%88%d9%86-%d8%af%d8%b1-%d9%be%db%8c%d8%b4%da%af%db%8c%d8%b1%db%8c-%d8%a7%d8%b2-%d8%a8%db%8c%d9%85%d8%a7%d8%b1%db%8c/ 1 28630 0 0
+/wp-content/themes/dr-plus/assets/libs/fontawesome/webfonts/fa-solid-900.woff2 3 471576 0 0
+/wp-admin/user-edit.php 2 419251 0 0
+/wp-content/themes/dr-plus/assets/fonts/iranyekanxfanum/iranyekanxfanum-light.woff2 4 54568 0 0
+/my-account/downloads/ 1 41074 0 0
+/wp-json/wp/v2/product 2 3868 0 0
+/wp-admin/customize.php 6 1052783 0 0
+/wp-json/jetpack/v4/connection 3 369 0 0
+/%d9%86%d9%82%d8%b4-%d9%88%d8%a7%da%a9%d8%b3%db%8c%d9%86%d8%a7%d8%b3%db%8c%d9%88%d9%86-%d8%af%d8%b1-%d9%be%db%8c%d8%b4%da%af%db%8c%d8%b1%db%8c-%d8%a7%d8%b2-%d8%a8%db%8c%d9%85%d8%a7%d8%b1%db%8c-copy/ 1 25719 0 0
+/wp-json/wc-admin/plugins/installed 3 381 0 0
+/%d9%86%d9%82%d8%b4-%d8%aa%d8%ba%d8%b0%db%8c%d9%87-%d8%b3%d8%a7%d9%84%d9%85-%d8%af%d8%b1-%d9%be%db%8c%d8%b4%da%af%db%8c%d8%b1%db%8c-%d8%a7%d8%b2-%d8%a8%db%8c%d9%85%d8%a7%d8%b1%db%8c%d9%87-copy/ 1 25601 0 0
+/wp-json/wp/v2/product_cat 1 697 0 0
+/wp-json/wp/v2/block-renderer/woocommerce/product-new 1 0 0 0
+/my-account/specialist-dashboard/ 1 20804 0 0
+/wp-json/wp/v2/media/1321 1 1011 0 0
+/wp-admin/user-new.php 1 181396 0 0
+/wp-json/wp/v2/menus 1 393 0 0
+/wp-json/wp/v2/block-renderer/core/latest-comments 1 0 0 0
+/wp-content/themes/dr-plus/assets/libs/fontawesome/webfonts/fa-regular-400.woff2 3 76392 0 0
+/wp-json/wc/v3/marketplace/featured 1 77 0 0
+/wp-content/themes/dr-plus/assets/fonts/anjomanfanum/anjoman-fanum-extrabold.woff2 4 72672 0 0
+/hospitals/ 6 139179 0 0
+/wp-content/plugins/elementor/assets/lib/font-awesome/webfonts/fa-brands-400.woff2 1 81612 0 0
+/wp-json/wc/store/v1 1 5033 0 0
+/wp-json/wp/v2/wp_pattern_category 1 6 0 0
+/wp-content/themes/dr-plus/assets/libs/fontawesome/webfonts/fa-brands-400.woff2 3 354216 0 0
+/wp-json/wc-analytics/settings/tax 1 1566 0 0
+/wp-json/wc-analytics/settings/tax/batch 1 1663 0 0
+/wp-json/wc-analytics/admin/notes/80 1 662 0 0
+/my-account/edit-address/ 1 63744 0 0
+/wp-content/themes/dr-plus/assets/fonts/iranyekanxfanum/iranyekanxfanum-regular.woff2 4 50824 0 0
+/shop/ 5 135284 0 0
+/wp-includes/js/tinymce/skins/lightgray/fonts/tinymce.woff 1 18824 0 0
+/wp-json/elementor/v1/site-editor/templates 5 3849 0 0
+/wp-admin/index.php 1 136594 0 0
+/wp-json/wc-analytics/orders 1 6 0 0
+/wp-json/wc-analytics/admin/notes/82 1 611 0 0
+/wp-json/wc-admin/onboarding/tasks 5 8037 0 0
+/wp-json/wp/v2/comments 2 1035 0 0
+/wp-json/wp/v2/taxonomies 5 10570 0 0
+/wp-content/themes/dr-plus/assets/fonts/iranyekanxfanum/iranyekanxfanum-black.woff2 4 50720 0 0
+/my-account/wishlist/ 1 41110 0 0
+/wp-json/post-duplicator/v1/post-data/22 1 19544 0 0
+/wp-content/uploads/elementor/custom-icons/drplus/font/drplus.woff2 4 107408 0 0
+/hospital/%d8%af%d8%a7%d8%b1%d9%88%d8%ae%d8%a7%d9%86%d9%87-%d8%af%d8%a7%d8%b1%d9%88%d9%87%d8%a7%db%8c-%d8%ae%d8%a7%d8%b5-%db%8c%d8%a7%d8%b3/ 1 27198 0 0
+/wp-admin/ 5 684995 0 0
+/wp-json/wc-analytics/products/reviews 1 6 0 0
+/wp-json/wp/v2/posts 3 19084 0 0
+/wp-json/wc/store/v1/products/attributes/2/terms 1 201 0 0
+/wp-admin/site-editor.php 1 354468 0 0
+/wp-json/wc-analytics/admin/notes/79 1 602 0 0
+/wp-json/wp/v2/block-renderer/core/rss 1 0 0 0
+/specialist/reza/ 1 26683 0 0
+/wp-content/themes/dr-plus/assets/fonts/iranyekanxfanum/iranyekanxfanum-extrabold.woff2 4 55976 0 0
+/wp-content/plugins/woocommerce/assets/fonts/WooCommerce.woff2 1 6488 0 0
+/my-account/edit-account/ 2 83988 0 0
+/wp-json/post-duplicator/v1/duplicate-post 1 7946 0 0
+/wp-json/wp/v2/pages/22 1 29740 0 0
+/product/%d8%af%d8%b3%d8%aa%da%af%d8%a7%d9%87-%da%a9%d8%a7%d9%88%d8%b1-%da%a9%d9%81%d8%b4-%d8%ad%d8%b1%d8%a7%d8%b1%d8%aa%db%8c-%d9%85%d8%af%d9%84-55-copy-copy/ 2 51061 0 0
+/wp-json/wp/v2/pages 2 25057 0 0
+/about-us/ 3 71275 0 0
+/wp-json/wc-admin/plugins/active 3 372 0 0
+/wp-json/wp/v2/block-renderer/woocommerce/product-categories 1 0 0 0
+/wp-json/wp/v2/block-renderer/core/archives 1 0 0 0
+/wp-json/wc-admin/settings/payments/providers 1 1290 0 0
+/wp-admin/options-general.php 1 131806 0 0
+/wp-json/wp/v2/blocks 2 2854 0 0
+/wp-content/themes/dr-plus/assets/fonts/iranyekanxfanum/iranyekanxfanum-demibold.woff2 4 55944 0 0
+/wp-json/wp/v2/settings 1 2212 0 0
+/wp-admin/users.php 6 753527 0 0
+/wp-json/wc/v3/products/814 1 2148 0 0
+/wp-json/wc-analytics/products/count-low-in-stock 1 15 0 0
+/contact-us/ 2 46981 0 0
+END_SIDER
+
+# Payload Range - Payload Frequency
+BEGIN_FILESIZE 7
+44-100 1220
+5K+ 856
+0-44 2667
+500-1K 278
+2K-5K 689
+1K-2K 324
+100-500 587
+END_FILESIZE
+
+# Request Time Range - Request Time Frequency
+BEGIN_REQUESTTIME 0
+END_REQUESTTIME
