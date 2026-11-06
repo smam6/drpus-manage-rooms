@@ -1,0 +1,1 @@
+<div class="button-loading"><?php echo file_get_contents( DRPLUS_DIR . "assets/images/loading.svg" ) ?></div>

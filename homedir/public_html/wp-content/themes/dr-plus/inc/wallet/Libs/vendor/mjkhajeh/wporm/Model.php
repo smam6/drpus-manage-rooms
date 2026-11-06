@@ -1,0 +1,2854 @@
+<?php
+namespace MJ\WPORM;
+
+/**
+ * Class Model
+ *
+ * @method string getTable()   Get the table name for the model instance
+ * @method static string tableName()   Get the table name for the model statically
+ */
+abstract class Model implements \ArrayAccess {
+
+	// ── Instance properties (per-model) ─────────────────────────────────────
+
+	// Table / schema
+	protected $table;
+	protected $primaryKey = 'id';
+	protected $schema = '';
+
+	// Mass assignment
+	protected $fillable = [];
+	protected $guarded = ['id'];
+	protected $fillableFlip = null;
+	protected $guardedFlip = null;
+
+	// Type casting
+	protected $casts = [];
+
+	// Timestamps
+	protected $timestamps = true;
+	protected $createdAtColumn = 'created_at';
+	protected $updatedAtColumn = 'updated_at';
+
+	// Soft deletes
+	protected $softDeletes = false;
+	protected $deletedAtColumn = 'deleted_at';
+	protected $softDeleteType = 'timestamp';
+
+	// Relationships
+	protected $touches = [];
+
+	// Attribute visibility / JSON output
+	protected $hidden = [];
+	protected $visible = [];
+	protected $runtimeHidden = [];
+	protected $runtimeVisible = [];
+	protected $appends = [];
+
+	// Runtime data
+	protected $attributes = [];
+	protected $original = [];
+	protected $exists = false;
+	protected $wasRecentlyCreated = false;
+	protected $_eagerLoaded = [];
+
+	// ── Static properties (shared across instances) ─────────────────────────
+
+	// Boot / lifecycle
+	protected static $booted = [];
+	protected static $modelEvents = [];
+
+	// Global scopes & observers
+	protected static $globalScopes = [];
+	protected static $observers = [];
+	protected static $observerInstances = [];
+
+	// Morph map
+	protected static $morphMap = [];
+	protected static $flippedMorphMap = [];
+
+	// Caches
+	protected static $tableChecked = [];
+	protected static $queryModelInstances = [];
+	protected static $tableNameCache = [];
+	protected static $accessorCache = [];
+
+    /**
+     * Get the casts array for this model.
+     * @return array
+     */
+    public function getCasts() {
+        return $this->casts;
+    }
+
+    /**
+     * Get whether soft deletes are enabled for this model.
+     * @return bool
+     */
+    public function getSoftDeletes() {
+        return $this->softDeletes;
+    }
+
+    /**
+     * Get the soft delete type ('timestamp' or 'boolean').
+     * @return string
+     */
+    public function getSoftDeleteType() {
+        return $this->softDeleteType;
+    }
+
+    /**
+     * Get the deleted_at column name.
+     * @return string
+     */
+    public function getDeletedAtColumn() {
+        return $this->deletedAtColumn;
+    }
+
+    /**
+     * Get whether timestamps are enabled for this model.
+     * @return bool
+     */
+    public function getTimestamps() {
+        return $this->timestamps;
+    }
+
+    /**
+     * Get the relationships that should be touched when this model is saved.
+     *
+     * @return array<int, string>
+     */
+    public function getTouches(): array {
+        return $this->touches;
+    }
+
+    /**
+     * Get the appended attributes for this model.
+     *
+     * @return array<int, string>
+     */
+    public function getAppends(): array {
+        return $this->appends;
+    }
+
+    /**
+     * Get the created_at column name.
+     * @return string
+     */
+    public function getCreatedAtColumn() {
+        return $this->createdAtColumn ?? 'created_at';
+    }
+
+    /**
+     * Get the updated_at column name.
+     * @return string
+     */
+    public function getUpdatedAtColumn() {
+        return $this->updatedAtColumn ?? 'updated_at';
+    }
+
+    /**
+     * Get the primary key column name.
+     * @return string
+     */
+    public function getPrimaryKey() {
+        return $this->primaryKey ?? 'id';
+    }
+
+    /**
+     * Check if this model was created by a recent save (INSERT) call.
+     *
+     * Returns true only if the most recent save() triggered an INSERT,
+     * not an UPDATE. The flag is reset on the next save() call.
+     *
+     * Usage:
+     *   $user = new User(['name' => 'John']);
+     *   $user->save();
+     *   $user->wasRecentlyCreated; // true
+     *
+     *   $user->name = 'Jane';
+     *   $user->save();
+     *   $user->wasRecentlyCreated; // false
+     *
+     * @return bool
+     */
+    public function getWasRecentlyCreated(): bool {
+        return $this->wasRecentlyCreated;
+    }
+
+    /**
+     * Set a single eager loaded relation value.
+     * @param string $relation
+     * @param mixed $value
+     */
+    public function setEagerLoaded(string $relation, $value) {
+        $this->_eagerLoaded[$relation] = $value;
+    }
+
+    /**
+     * Merge multiple eager loaded relations.
+     * @param array $map
+     */
+    public function setEagerLoadedMany(array $map) {
+        foreach ($map as $k => $v) {
+            $this->_eagerLoaded[$k] = $v;
+        }
+    }
+    /**
+     * Maps model lifecycle event names to listener classes (Eloquent-style
+     * $dispatchesEvents). Each key is the lowercase event short-name; the
+     * value is a fully-qualified listener class that exposes a handle() method,
+     * or any callable understood by EventDispatcher.
+     *
+     * Supported keys: retrieved, creating, created, updating, updated,
+     *                 saving, saved, deleting, deleted,
+     *                 softDeleting, softDeleted, restoring, restored.
+     *
+     * Example:
+     *   protected $dispatchesEvents = [
+     *       'creating' => \App\Listeners\LogUserCreating::class,
+     *       'deleted'  => \App\Listeners\CleanupUserData::class,
+     *   ];
+     *
+     * @var array<string, class-string|callable>
+     */
+    public $dispatchesEvents = [];
+
+    /**
+     * Get the deleted_at column as a DateTime instance (if set and not null).
+     * @return \DateTimeInterface|null
+     */
+    public function getDeletedAtAttribute() {
+        $column = $this->deletedAtColumn;
+        $value = $this->attributes[$column] ?? null;
+        if ($value) {
+            try {
+                return new \DateTime($value);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Set the deleted_at column from a DateTime, timestamp, or string.
+     * @param \DateTimeInterface|int|string|null $value
+     * @return void
+     */
+    public function setDeletedAtAttribute($value) {
+        $column = $this->deletedAtColumn;
+        if ($value instanceof \DateTimeInterface) {
+            $this->attributes[$column] = $value->format('Y-m-d H:i:s');
+        } elseif (is_numeric($value)) {
+            $this->attributes[$column] = date('Y-m-d H:i:s', (int)$value);
+        } elseif (is_string($value)) {
+            $this->attributes[$column] = date('Y-m-d H:i:s', strtotime($value));
+        } elseif ($value === null) {
+            $this->attributes[$column] = null;
+        }
+    }
+
+	/**
+	 * Register a global scope for this model.
+	 *
+	 * Accepts a callable (closure), a ScopeInterface instance, or a
+	 * class-string that implements ScopeInterface.
+	 *
+	 * Usage:
+	 *   // Closure
+	 *   User::addGlobalScope('active', function($query) {
+	 *       $query->where('active', true);
+	 *   });
+	 *
+	 *   // Scope class instance
+	 *   User::addGlobalScope('active', new ActiveScope());
+	 *
+	 *   // Scope class-string (instantiated automatically)
+	 *   User::addGlobalScope('active', ActiveScope::class);
+	 *
+	 * @param string $identifier  Unique name for this scope
+	 * @param callable|\MJ\WPORM\Scopes\ScopeInterface|class-string $scope
+	 * @return void
+	 */
+	public static function addGlobalScope($identifier, $scope) {
+		// Auto-instantiate class-strings that implement ScopeInterface
+		if (is_string($scope) && class_exists($scope)
+			&& is_subclass_of($scope, \MJ\WPORM\Scopes\ScopeInterface::class)
+		) {
+			$scope = new $scope();
+		}
+		static::$globalScopes[static::class][$identifier] = $scope;
+	}
+
+	// Remove a global scope
+	public static function removeGlobalScope($identifier) {
+		unset(static::$globalScopes[static::class][$identifier]);
+	}
+
+	// Get all global scopes for this model
+	public static function getGlobalScopes() {
+		return static::$globalScopes[static::class] ?? [];
+	}
+
+	/**
+	 * Apply global scopes to a query builder.
+	 *
+	 * Handles both callable scopes (closures) and ScopeInterface instances.
+	 */
+	public static function applyGlobalScopes(QueryBuilder $query) {
+		foreach (static::getGlobalScopes() as $scope) {
+			if ($scope instanceof \MJ\WPORM\Scopes\ScopeInterface) {
+				$scope->apply($query, new static);
+			} elseif (is_callable($scope)) {
+				$scope($query);
+			}
+		}
+		return $query;
+	}
+
+	public function __construct(array $attributes = []) {
+		static::bootIfNotBooted();
+		static::ensureTableExists();
+		$this->fill($attributes);
+	}
+
+	/**
+	 * Ensure the model's table exists in the database. Runs Blueprint +
+	 * createTableIfNotExists exactly once per model class, cached in
+	 * $tableChecked so subsequent instantiations skip all schema work.
+	 *
+	 * @return void
+	 */
+	protected static function ensureTableExists() {
+		$class = static::class;
+		if (isset(static::$tableChecked[$class])) {
+			return;
+		}
+		// Mark as checked BEFORE any instantiation to prevent infinite
+		// recursion: new static → __construct → ensureTableExists.
+		static::$tableChecked[$class] = true;
+
+		// Resolve the table name statically without creating a model instance.
+		// This avoids the unnecessary new static call that previously created
+		// an incomplete instance just to derive the table name.
+		$table = static::resolveTableName();
+		global $wpdb;
+		$blueprint = new Blueprint($table, false, $wpdb);
+
+		// Call up() on a temporary instance to populate the Blueprint.
+		// This is necessary because up() is an instance method that subclasses
+		// override to define their schema.
+		$instance = new static;
+		$instance->up($blueprint);
+		$instance->createTableIfNotExists($blueprint);
+	}
+
+	/**
+	 * Resolve the table name for this model class without instantiation.
+	 *
+	 * Mirrors the logic of getTable() but works statically, avoiding the
+	 * need to create a model instance just to determine the table name.
+	 * If the declared $table already includes $wpdb->prefix, it is returned
+	 * as-is to avoid double-prefixing.
+	 *
+	 * @return string Fully qualified table name including the DB prefix.
+	 */
+	protected static function resolveTableName() {
+		global $wpdb;
+		$class = static::class;
+		$defaults = (new \ReflectionClass($class))->getDefaultProperties();
+		$table = $defaults['table'] ?? null;
+		if ($table !== null) {
+			if (strpos($table, $wpdb->prefix) === 0) {
+				return $table;
+			}
+			return $wpdb->prefix . $table;
+		}
+		return $wpdb->prefix . strtolower(Helpers::class_basename($class));
+	}
+
+	public static function bootIfNotBooted() {
+		$class = static::class;
+		if (!isset(static::$booted[$class])) {
+			if (method_exists($class, 'boot')) {
+				forward_static_call([$class, 'boot']);
+			}
+			static::$booted[$class] = true;
+		}
+	}
+
+	/**
+	 * Return a cached model instance for query-building purposes.
+	 *
+	 * Methods like query(), find(), tableName(), insertOrIgnore(), etc.
+	 * only need metadata (table name, primary key, timestamps, soft-deletes)
+	 * from the model — they never modify or return the instance. Caching
+	 * one instance per class avoids constructing a fresh Model (with
+	 * bootIfNotBooted + ensureTableExists + fill) on every static call.
+	 *
+	 * @return static
+	 */
+	protected static function getQueryModel() {
+		$class = static::class;
+		if (!isset(static::$queryModelInstances[$class])) {
+			static::$queryModelInstances[$class] = new static;
+		}
+		return static::$queryModelInstances[$class];
+	}
+
+	/**
+	 * Create the model's table if it does not already exist.
+	 *
+	 * Schema is sourced exclusively from the Blueprint that up() built.
+	 * The legacy $this->schema string is accepted as a fallback so that
+	 * existing models which still assign $this->schema = $blueprint->toSql()
+	 * inside up() continue to work without any changes.
+	 *
+	 * @param Blueprint $blueprint The Blueprint instance passed to up().
+	 */
+	protected function createTableIfNotExists(Blueprint $blueprint) {
+		global $wpdb;
+
+		// Prefer the Blueprint the constructor just populated.
+		// Fall back to the legacy $this->schema string for back-compat.
+		$schemaSql = $blueprint->toSql();
+		if (empty($schemaSql)) {
+			$schemaSql = $this->schema ?? '';
+		}
+
+		if (empty($schemaSql)) {
+			return;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$table = $this->getTable();
+		if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->esc_like($table))) !== $table) {
+			$charsetCollate = $wpdb->get_charset_collate();
+
+			$sql = "CREATE TABLE {$table} (
+{$schemaSql}
+) $charsetCollate;";
+
+			dbDelta($sql);
+			if (!empty($wpdb->last_error)) {
+				error_log($wpdb->last_error);
+			}
+		}
+	}
+
+	public function up(Blueprint $blueprint) {}
+
+	public function down(SchemaBuilder $schema) {
+		$schema->drop($this->getTable());
+	}
+
+	public function fill(array $attributes) {
+		foreach ($attributes as $key => $value) {
+			if ($this->isFillableAttribute($key)) {
+				$this->setAttributeDirectly($key, $value);
+			} else {
+				error_log(sprintf(
+					'WPORM: Mass-assignment guard blocked filling "%s" on %s. '
+					. 'Add "%s" to $fillable or set $guarded to [] to allow this.',
+					$key,
+					static::class,
+					$key
+				));
+			}
+		}
+		return $this;
+	}
+
+	protected function isFillableAttribute($key) {
+		if ($this->fillableFlip === null) {
+			$this->fillableFlip = array_flip($this->fillable);
+		}
+		if (isset($this->fillableFlip[$key])) {
+			return true;
+		}
+
+		if ($this->isGuardedAttribute($key)) {
+			return false;
+		}
+
+		return empty($this->fillable);
+	}
+
+	protected function isGuardedAttribute($key) {
+		if (empty($this->guarded)) {
+			return false;
+		}
+
+		if ($this->guardedFlip === null) {
+			$this->guardedFlip = array_flip($this->guarded);
+		}
+		return isset($this->guardedFlip['*']) || isset($this->guardedFlip[$key]);
+	}
+
+	public function __get($key) {
+        // Eager loaded relations: always return the cached value (even null means "loaded but empty")
+        if (array_key_exists($key, $this->_eagerLoaded)) {
+            return $this->_eagerLoaded[$key];
+        }
+
+		$class = static::class;
+
+		// Check cached accessor (get*Attribute method)
+		if (isset(static::$accessorCache[$class][$key])) {
+			return $this->{static::$accessorCache[$class][$key]}();
+		}
+		$method = 'get' . Helpers::convert_to_pascal_case($key) . 'Attribute';
+		if (method_exists($this, $method)) {
+			if (!isset(static::$accessorCache[$class])) {
+				static::$accessorCache[$class] = [];
+			}
+			static::$accessorCache[$class][$key] = $method;
+			return $this->$method();
+		}
+
+		if (method_exists($this, $key)) {
+			$result = $this->$key();
+			// If the relationship method returns a QueryBuilder, resolve it based on context
+			if ($result instanceof \MJ\WPORM\QueryBuilder) {
+                $context = $result->getRelationContext();
+                $type = $context['type'] ?? null;
+                // Single-result relations
+                if ($type === 'belongsTo' || $type === 'hasOne' || $type === 'hasOneThrough' || $type === 'hasOneOfMany' || $type === 'morphOne' || $type === 'morphTo') {
+                    return $result->first();
+                }
+                // Collection relations (hasMany, belongsToMany, hasManyThrough, morphMany)
+				return $result->get();
+			}
+			return $result;
+		}
+		// Fix: Use array_key_exists to allow empty values (like 0) to be returned
+		if (array_key_exists($key, $this->attributes)) {
+			$value = $this->castGet($key, $this->attributes[$key]);
+			return $value;
+		}
+		if (property_exists($this, $key)) {
+			return $this->{$key};
+		}
+		return null;
+	}
+
+	public function __set($key, $value) {
+		if (in_array($key, $this->appends, true)) {
+			$this->setAttributeDirectly($key, $value);
+			return;
+		}
+		if (!$this->isFillableAttribute($key)) {
+			throw MassAssignmentException::forAttribute($key, static::class);
+		}
+
+		$this->setAttributeDirectly($key, $value);
+	}
+
+	public function __isset($key) {
+		if (isset($this->_eagerLoaded[$key])) {
+			return true;
+		}
+		if (isset($this->attributes[$key])) {
+			return true;
+		}
+		$method = 'get' . Helpers::convert_to_pascal_case($key) . 'Attribute';
+		if (method_exists($this, $method)) {
+			return true;
+		}
+		return property_exists($this, $key);
+	}
+
+	public function __unset($key) {
+		unset($this->attributes[$key], $this->original[$key], $this->_eagerLoaded[$key]);
+	}
+
+	protected function setAttributeDirectly($key, $value) {
+		$method = 'set' . Helpers::convert_to_pascal_case($key) . 'Attribute';
+		if (method_exists($this, $method)) {
+			return $this->$method($value);
+		}
+		$this->attributes[$key] = $this->castSet($key, $value);
+	}
+
+	public function __call($method, $parameters) {
+        // Handle dynamic scopes: scopeXyz() — cheap check before building a query
+        if (strpos($method, 'scope') === 0 && method_exists($this, $method)) {
+            $query = static::query();
+            return $this->$method($query, ...$parameters);
+        }
+        // Proxy query builder methods and dynamic wheres for fluent API
+        if (method_exists(\MJ\WPORM\QueryBuilder::class, $method) || strpos($method, 'where') === 0) {
+            $query = static::query();
+            return $query->$method(...$parameters);
+        }
+        throw new \BadMethodCallException("Method {$method} does not exist.");
+    }
+
+	protected function castGet($key, $value) {
+    if (!isset($this->casts[$key])) return $value;
+    $cast = $this->casts[$key];
+    // Only instantiate if not a built-in type
+    switch ($cast) {
+        case 'int':
+        case 'integer':
+            return (int) $value;
+        case 'float':
+        case 'double':
+            return (float) $value;
+        case 'bool':
+        case 'boolean':
+            return (bool) $value;
+        case 'array':
+            if (empty($value)) return [];
+            if (is_array($value)) return $value;
+            $decoded = json_decode($value, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log('WPORM cast error [' . static::class . '.' . $key . ']: ' . json_last_error_msg());
+                return [];
+            }
+            return $decoded;
+        case 'json':
+            if (empty($value)) return [];
+            $decoded = json_decode($value, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log('WPORM cast error [' . static::class . '.' . $key . ']: ' . json_last_error_msg());
+                return [];
+            }
+            return $decoded;
+        case 'datetime':
+            if (empty($value)) return null;
+            if ($value instanceof \DateTime) return $value;
+            if ($value instanceof \DateTimeImmutable) return \DateTime::createFromImmutable($value);
+            if (is_numeric($value)) return (new \DateTime())->setTimestamp((int) $value);
+            if (is_string($value)) {
+                try {
+                    return new \DateTime($value);
+                } catch (\Exception $e) {
+                    return null;
+                }
+            }
+            return null;
+        case 'timestamp':
+            if (empty($value)) return null;
+            if ($value instanceof \DateTime) return $value;
+            if ($value instanceof \DateTimeImmutable) return \DateTime::createFromImmutable($value);
+            if (is_numeric($value)) return (new \DateTime())->setTimestamp((int) $value);
+            if (is_string($value)) {
+                $ts = strtotime($value);
+                return $ts !== false ? (new \DateTime())->setTimestamp($ts) : null;
+            }
+            return null;
+        default:
+            $cast_input = '';
+            if( is_array( $cast ) ) {
+                $cast_input = $cast[1];
+                $cast = $cast[0];
+            }
+            if (!class_exists($cast)) {
+                throw new \InvalidArgumentException(
+                    "Custom cast class '{$cast}' does not exist (used by " . static::class . ".{$key})"
+                );
+            }
+            if (!in_array($cast, ['int','integer','float','double','bool','boolean','array','json','datetime','timestamp'])) {
+                $castInstance = new $cast( $cast_input );
+                if ($castInstance instanceof \MJ\WPORM\Casts\CastableInterface) {
+                    return $castInstance->get($value);
+                }
+            }
+            return $value;
+    }
+}
+
+protected function castSet($key, $value) {
+    if (!isset($this->casts[$key])) return $value;
+    $cast = $this->casts[$key];
+    // Only instantiate if not a built-in type
+    switch ($cast) {
+        case 'int':
+        case 'integer':
+            return (int) $value;
+        case 'float':
+        case 'double':
+            return (float) $value;
+        case 'bool':
+        case 'boolean':
+            return (bool) $value;
+        case 'array':
+        case 'json':
+            if (empty($value)) return '[]';
+            return json_encode($value);
+        case 'datetime':
+            if ($value instanceof \DateTime) {
+                return $value->format('Y-m-d H:i:s');
+            } elseif ($value instanceof \DateTimeImmutable) {
+                return $value->format('Y-m-d H:i:s');
+            } elseif (is_numeric($value)) {
+                return date('Y-m-d H:i:s', (int) $value);
+            } elseif (is_string($value)) {
+                $ts = strtotime($value);
+                return $ts !== false ? date('Y-m-d H:i:s', $ts) : null;
+            }
+            return $value;
+        case 'timestamp':
+            if ($value instanceof \DateTime) {
+                return $value->getTimestamp();
+            } elseif ($value instanceof \DateTimeImmutable) {
+                return $value->getTimestamp();
+            } elseif (is_numeric($value)) {
+                return (int) $value;
+            } elseif (is_string($value)) {
+                $ts = strtotime($value);
+                return $ts !== false ? $ts : null;
+            }
+            return $value;
+        default:
+            $cast_input = '';
+            if( is_array( $cast ) ) {
+                $cast_input = $cast[1];
+                $cast = $cast[0];
+            }
+            if (!class_exists($cast)) {
+                throw new \InvalidArgumentException(
+                    "Custom cast class '{$cast}' does not exist (used by " . static::class . ".{$key})"
+                );
+            }
+            if (!in_array($cast, ['int','integer','float','double','bool','boolean','array','json','datetime','timestamp'])) {
+                $castInstance = new $cast( $cast_input );
+                if ($castInstance instanceof \MJ\WPORM\Casts\CastableInterface) {
+                    return $castInstance->set($value);
+                }
+            }
+            return $value;
+    }
+}
+
+	// ── Boot lifecycle & model events ─────────────────────────────────────
+
+	/**
+	 * Boot the model class once. Called automatically on first use.
+	 * Subclasses may override booted() to register event callbacks.
+	 */
+	public static function boot() {
+		$class = static::class;
+		if (isset(static::$booted[$class])) {
+			return;
+		}
+		static::$booted[$class] = true;
+		static::booted();
+	}
+
+	/**
+	 * Register model event callbacks via static::creating(), static::saving(), etc.
+	 * Override in your model class.
+	 */
+	protected static function booted() {}
+
+	/**
+	 * Register a model event callback for this model class.
+	 *
+	 * @param string   $event    Event short-name (creating, saving, retrieved, etc.)
+	 * @param callable $callback
+	 */
+	public static function registerModelEvent(string $event, callable $callback): void {
+		static::boot();
+		$class = static::class;
+		static::$modelEvents[$class][$event][] = $callback;
+	}
+
+	/**
+	 * Retrieve all registered model event callbacks for the given event.
+	 *
+	 * @param string $event
+	 * @return callable[]
+	 */
+	protected static function getModelEvents(string $event): array {
+		$class = static::class;
+		return static::$modelEvents[$class][$event] ?? [];
+	}
+
+	/**
+	 * Handle lifecycle event registration and proxy other static calls to a
+	 * fresh query builder, including query scopes and dynamic where methods.
+	 *
+	 * @param string $method
+	 * @param array $args
+	 * @return mixed
+	 */
+	public static function __callStatic($method, $args) {
+		if (in_array($method, ['creating','created','updating','updated','saving','saved','deleting','deleted','softDeleting','softDeleted','restoring','restored','retrieved'], true)) {
+			if (!empty($args[0]) && is_callable($args[0])) {
+				static::registerModelEvent($method, $args[0]);
+				return;
+			}
+			return;
+		}
+
+		$query = static::query();
+		return $query->$method(...$args);
+	}
+
+	public static function query($applyGlobalScopes = true) {
+		$instance = static::getQueryModel();
+		$query = new \MJ\WPORM\QueryBuilder($instance, $applyGlobalScopes);
+		return $query;
+	}
+
+	public static function newQuery($applyGlobalScopes = true) {
+		return static::query($applyGlobalScopes);
+	}
+
+	public static function all() {
+		return static::query()->get();
+	}
+
+	/**
+	 * Find a model by its primary key, or multiple models by an array of
+	 * primary keys (Eloquent-style).
+	 *
+	 * Usage: $user  = User::find(1);          // single id  -> Model|null
+	 *        $users = User::find([1, 2, 3]);   // array of ids -> Collection
+	 *
+	 * @param mixed $id A single primary key value, or an array of values.
+	 * @return static|\MJ\WPORM\Collection|null Model|null for a single id,
+	 *         Collection for an array of ids.
+	 */
+	public static function find($id) {
+		if (is_array($id)) {
+			return static::query()->find($id);
+		}
+
+		$instance = static::getQueryModel();
+		$pk = $instance->primaryKey;
+		return static::query()->where($pk, $id)->first();
+	}
+
+	/**
+	 * Find a model by its primary key or throw a ModelNotFoundException
+	 * if no record matches (Eloquent-style). Same single query as find();
+	 * only the not-found behavior differs.
+	 *
+	 * When given an array of ids, all matching models are returned as a
+	 * Collection, but if ANY requested id was not found, a
+	 * ModelNotFoundException is thrown listing every missing id.
+	 *
+	 * Usage: $user  = User::findOrFail(1);        // throws if id 1 doesn't exist
+	 *        $users = User::findOrFail([1, 2, 3]); // throws if any of 1, 2, 3 are missing
+	 *
+	 * @param mixed $id A single primary key value, or an array of values.
+	 * @return static|\MJ\WPORM\Collection
+	 * @throws ModelNotFoundException
+	 */
+	public static function findOrFail($id) {
+		if (is_array($id)) {
+			$instance = static::getQueryModel();
+			$pk = $instance->primaryKey;
+			$result = static::find($id);
+			$foundIds = [];
+			foreach ($result as $model) {
+				$foundIds[] = $model->$pk;
+			}
+			$missingIds = array_values(array_diff($id, $foundIds));
+			if (!empty($missingIds)) {
+				throw (new ModelNotFoundException())->setModel(static::class, $missingIds);
+			}
+			return $result;
+		}
+
+		$result = static::find($id);
+		if ($result === null) {
+			throw (new ModelNotFoundException())->setModel(static::class, $id);
+		}
+		return $result;
+	}
+
+	/**
+	 * Get the first record matching the given attributes, or throw a
+	 * ModelNotFoundException if nothing matches (Eloquent-style).
+	 *
+	 * Usage: $user = User::firstOrFail(['email' => $email]);
+	 *        $user = User::query()->where('email', $email)->firstOrFail();
+	 *
+	 * @param array $attributes
+	 * @return static
+	 * @throws ModelNotFoundException
+	 */
+	public static function firstOrFail(array $attributes = []) {
+		$query = static::query();
+		if (!empty($attributes)) {
+			$query->where($attributes);
+		}
+		$result = $query->first();
+		if ($result === null) {
+			throw (new ModelNotFoundException())->setModel(static::class);
+		}
+		return $result;
+	}
+
+	/**
+	 * updateOrCreate: Find a record matching attributes, update it or create a new one.
+	 *
+	 * @param array $attributes
+	 * @param array $values
+	 * @param bool $applyGlobalScopes
+	 * @return static
+	 */
+	public static function updateOrCreate(array $attributes, array $values = [], $applyGlobalScopes = true) {
+		$instance = static::query($applyGlobalScopes)->where($attributes)->first();
+		if ($instance) {
+			$instance->fill($values);
+			$instance->save();
+			return $instance;
+		}
+		$instance = new static(array_merge($attributes, $values));
+		$instance->save();
+		return $instance;
+	}
+
+	/**
+	 * firstOrCreate: Return the first record matching attributes or create it.
+	 *
+	 * @param array $attributes
+	 * @param array $values
+	 * @param bool $applyGlobalScopes
+	 * @return static
+	 */
+	public static function firstOrCreate(array $attributes, array $values = [], $applyGlobalScopes = true) {
+		$instance = static::query($applyGlobalScopes)->where($attributes)->first();
+		if ($instance) {
+			return $instance;
+		}
+		$instance = new static(array_merge($attributes, $values));
+		$instance->save();
+		return $instance;
+	}
+
+	/**
+	 * create: Instantiate a new model with the given (mass-assignable)
+	 * attributes, save it, and return the resulting instance — a one-line
+	 * insert + return model, Eloquent-style.
+	 *
+	 * Mass assignment still goes through the constructor/fill()/__set()
+	 * pipeline, so $fillable/$guarded are enforced exactly as they are for
+	 * `new static($attributes)`. Any attribute not allowed through mass
+	 * assignment is skipped with a logged warning, making guard violations
+	 * visible in the error log.
+	 *
+	 * Usage:
+	 *   $user = User::create(['name' => 'Jane', 'email' => 'jane@example.com']);
+	 *
+	 * @param array $attributes
+	 * @return static The newly created (and already-saved) model instance.
+	 */
+	public static function create(array $attributes = []) {
+		$instance = new static($attributes);
+		$instance->save();
+		return $instance;
+	}
+
+	/**
+	 * forceFill: Fill the model with the given attributes, bypassing
+	 * $fillable/$guarded mass-assignment protection. Each attribute is
+	 * still passed through set{Attr}Attribute() mutators and castSet(),
+	 * so custom mutators and casts are honored exactly as they are for
+	 * normal setAttributeDirectly() calls. No INSERT/UPDATE is issued;
+	 * this only populates the in-memory model.
+	 *
+	 * Usage:
+	 *   $user = User::forceFill(['name' => 'Jane', 'email' => 'jane@example.com']);
+	 *
+	 * @param array $attributes
+	 * @return static
+	 */
+	public static function forceFill(array $attributes = []) {
+		$instance = new static;
+		foreach ($attributes as $key => $value) {
+			$instance->setAttributeDirectly($key, $value);
+		}
+		return $instance;
+	}
+
+    /**
+     * Insert a record, ignoring duplicate key errors (Eloquent-style).
+     * Usage: Model::insertOrIgnore(['col' => 'val', ...])
+     * Returns true if insert succeeded or was ignored, false on other errors.
+     */
+    public static function insertOrIgnore(array $attributes)
+    {
+        $instance = static::getQueryModel();
+        $table = Helpers::quoteIdentifier($instance->getTable());
+        // If $attributes is a list of records (array of arrays)
+        if (isset($attributes[0]) && is_array($attributes[0])) {
+            $columns = array_keys($attributes[0]);
+            $rows = $attributes;
+        } else {
+            $columns = array_keys($attributes);
+            $rows = [$attributes];
+        }
+        if ($instance->timestamps) {
+            $now = current_time('mysql');
+            if (!in_array($instance->createdAtColumn, $columns)) {
+                $columns[] = $instance->createdAtColumn;
+            }
+            if (!in_array($instance->updatedAtColumn, $columns)) {
+                $columns[] = $instance->updatedAtColumn;
+            }
+            foreach( $rows as $row_index => $row ) {
+                if( !isset( $rows[$row_index][$instance->createdAtColumn] ) ) {
+                    $rows[$row_index][$instance->createdAtColumn] = $now;
+                }
+                if (!isset($rows[$row_index][$instance->updatedAtColumn])) {
+                    $rows[$row_index][$instance->updatedAtColumn] = $now;
+                }
+            }
+        }
+        $placeholdersRow = '(' . implode(', ', array_fill(0, count($columns), '%s')) . ')';
+        $allPlaceholders = implode(', ', array_fill(0, count($rows), $placeholdersRow));
+        $allValues = [];
+        foreach ($rows as $row) {
+            foreach ($columns as $col) {
+                $allValues[] = $row[$col] ?? null;
+            }
+        }
+
+        $quotedColumns = array_map([Helpers::class, 'quoteIdentifier'], $columns);
+
+        $sql = 'INSERT IGNORE INTO ' . $table . ' (' . implode(', ', $quotedColumns) . ') VALUES ' . $allPlaceholders;
+
+        global $wpdb;
+        $result = $wpdb->query($wpdb->prepare($sql, ...$allValues));
+        return $result !== false;
+    }
+
+    /**
+     * Insert or update multiple records in a single query (Eloquent-style upsert).
+     *
+     * Uses MySQL INSERT ... ON DUPLICATE KEY UPDATE syntax.
+     *
+     * @param array $values Array of records to upsert (each record is an associative array).
+     * @param array|string $uniqueBy Column(s) that uniquely identify records (used for ON DUPLICATE KEY).
+     * @param array|null $update Columns to update on duplicate. If null, all columns except $uniqueBy are updated.
+     * @return int|false Number of affected rows or false on failure.
+     *
+     * Usage:
+     *   Model::upsert([
+     *       ['email' => 'a@test.com', 'name' => 'Alice', 'votes' => 1],
+     *       ['email' => 'b@test.com', 'name' => 'Bob', 'votes' => 2],
+     *   ], ['email'], ['name', 'votes']);
+     */
+    public static function upsert(array $values, $uniqueBy, $update = null)
+    {
+        $instance = static::getQueryModel();
+        $table = Helpers::quoteIdentifier($instance->getTable());
+
+        if (empty($values)) {
+            return 0;
+        }
+
+        // Normalize to array of arrays
+        if (!isset($values[0]) || !is_array($values[0])) {
+            $values = [$values];
+        }
+
+        $uniqueBy = (array) $uniqueBy;
+
+        // Determine columns from first record
+        $columns = array_keys($values[0]);
+
+        // Add timestamps if enabled
+        if ($instance->timestamps) {
+            $now = current_time('mysql');
+            if (!in_array($instance->createdAtColumn, $columns)) {
+                $columns[] = $instance->createdAtColumn;
+            }
+            if (!in_array($instance->updatedAtColumn, $columns)) {
+                $columns[] = $instance->updatedAtColumn;
+            }
+            foreach ($values as $index => $row) {
+                if (!isset($values[$index][$instance->createdAtColumn])) {
+                    $values[$index][$instance->createdAtColumn] = $now;
+                }
+                if (!isset($values[$index][$instance->updatedAtColumn])) {
+                    $values[$index][$instance->updatedAtColumn] = $now;
+                }
+            }
+        }
+
+        // If update columns not specified, update all columns except the unique key columns
+        if ($update === null) {
+            $update = array_values(array_diff($columns, $uniqueBy));
+        }
+
+        if (empty($update)) {
+            // Nothing to update on duplicate — fall back to INSERT IGNORE behavior
+            return static::insertOrIgnore($values);
+        }
+
+        // Build placeholders
+        $placeholdersRow = '(' . implode(', ', array_fill(0, count($columns), '%s')) . ')';
+        $allPlaceholders = implode(', ', array_fill(0, count($values), $placeholdersRow));
+
+        $allValues = [];
+        foreach ($values as $row) {
+            foreach ($columns as $col) {
+                $allValues[] = $row[$col] ?? null;
+            }
+        }
+
+        // Build ON DUPLICATE KEY UPDATE clause
+        $updateParts = [];
+        foreach ($update as $col) {
+            $quoted = Helpers::quoteIdentifier($col);
+            $updateParts[] = $quoted . ' = VALUES(' . $quoted . ')';
+        }
+
+        // Always update the updated_at timestamp on duplicate if timestamps are enabled
+        if ($instance->timestamps && !in_array($instance->updatedAtColumn, $update)) {
+            $quoted = Helpers::quoteIdentifier($instance->updatedAtColumn);
+            $updateParts[] = $quoted . ' = VALUES(' . $quoted . ')';
+        }
+
+        $quotedColumns = array_map([Helpers::class, 'quoteIdentifier'], $columns);
+
+        $sql = sprintf(
+            'INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s',
+            $table,
+            implode(', ', $quotedColumns),
+            $allPlaceholders,
+            implode(', ', $updateParts)
+        );
+
+        global $wpdb;
+        return $wpdb->query($wpdb->prepare($sql, ...$allValues));
+    }
+
+	/**
+	 * firstOrNew: Return the first record matching attributes or instantiate a new one (not saved).
+	 *
+	 * @param array $attributes
+	 * @param array $values
+	 * @param bool $applyGlobalScopes
+	 * @return static
+	 */
+	public static function firstOrNew(array $attributes, array $values = [], $applyGlobalScopes = true) {
+		$instance = static::query($applyGlobalScopes)->where($attributes)->first();
+		if ($instance) {
+			return $instance;
+		}
+		return new static(array_merge($attributes, $values));
+	}
+
+	/**
+	 * Persist the model. Fires saving/saved (always) plus creating/created
+	 * (insert) or updating/updated (update) events via $dispatchesEvents and
+	 * any globally-registered EventDispatcher listeners.
+	 *
+	 * Returns false if any before-hook halts the operation (by returning false).
+	 */
+	public function save() {
+		// Reset flag before save — it will be set to true only by insert()
+		$this->wasRecentlyCreated = false;
+
+		// saving (before-hook — halts on false)
+		if ($this->fireModelEvent('saving') === false) {
+			return false;
+		}
+
+		$result = $this->exists ? $this->update() : $this->insert();
+
+		if ($result !== false) {
+			// Touch parent timestamps if $touches is defined
+			$this->touchOwners();
+
+			// saved (after-hook — result not used to halt)
+			$this->fireModelEvent('saved');
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Touch the updated_at timestamp of parent models defined in $touches.
+	 *
+	 * After this model is saved, any parent relationship listed in $touches
+	 * will have its updated_at column set to the current time. This mirrors
+	 * Eloquent's $touches behavior.
+	 *
+	 * Uses touch() instead of save() to avoid triggering model events
+	 * and prevent infinite recursion through circular $touches references.
+	 * For user-initiated timestamp updates that should fire events, use
+	 * touchWithEvents() instead.
+	 *
+	 * Usage:
+	 *   class Comment extends Model {
+	 *       protected $touches = ['post'];
+	 *
+	 *       public function post() {
+	 *           return $this->belongsTo(Post::class);
+	 *       }
+	 *   }
+	 *
+	 * @return void
+	 */
+	protected function touchOwners() {
+		if (empty($this->touches)) {
+			return;
+		}
+
+		// Pre-fetch all touched relations in one batch to avoid N+1 queries.
+		$this->eagerLoadTouchedRelations();
+
+		foreach ($this->touches as $relation) {
+			if (!method_exists($this, $relation)) {
+				continue;
+			}
+
+			$related = $this->$relation;
+			if ($related instanceof Model && $related->timestamps) {
+				$related->touch();
+			}
+		}
+	}
+
+	/**
+	 * Eager-load all relations listed in $touches to avoid N+1 queries.
+	 *
+	 * For belongsTo relations, batches the foreign-key lookup into a single
+	 * WHERE IN query. Other relation types are loaded individually since they
+	 * are uncommon in $touches and harder to batch.
+	 *
+	 * Results are stored in $_eagerLoaded so that __get() returns the cached
+	 * value without triggering a lazy-load query.
+	 *
+	 * @return void
+	 */
+	protected function eagerLoadTouchedRelations() {
+		// Group belongsTo relations by related class for batch loading.
+		$batchedByClass = [];
+		$singleRelations = [];
+
+		foreach ($this->touches as $relation) {
+			if (!method_exists($this, $relation)) {
+				continue;
+			}
+
+			// Call the relation method on a fresh instance to get context.
+			$modelClass = static::class;
+			$sampleQuery = (new $modelClass)->$relation();
+
+			if (!($sampleQuery instanceof \MJ\WPORM\QueryBuilder)) {
+				continue;
+			}
+
+			$context = $sampleQuery->getRelationContext();
+			$type = $context['type'] ?? null;
+
+			if ($type === 'belongsTo') {
+				$relClass = $context['related'];
+				if (!isset($batchedByClass[$relClass])) {
+					$batchedByClass[$relClass] = [];
+				}
+				$batchedByClass[$relClass][] = [
+					'relation'   => $relation,
+					'foreignKey' => $context['foreignKey'],
+					'ownerKey'   => $context['ownerKey'],
+				];
+			} else {
+				$singleRelations[] = $relation;
+			}
+		}
+
+		// Batch-load belongsTo relations: one query per related class.
+		foreach ($batchedByClass as $relClass => $relations) {
+			$fks = [];
+			foreach ($relations as $r) {
+				$fkValue = $this->attributes[$r['foreignKey']] ?? null;
+				if ($fkValue !== null) {
+					$fks[$r['foreignKey']] = $fkValue;
+				}
+			}
+
+			if (empty($fks)) {
+				foreach ($relations as $r) {
+					$this->setEagerLoaded($r['relation'], null);
+				}
+				continue;
+			}
+
+			$pk = (new $relClass)->getPrimaryKey();
+			$ids = array_unique(array_values($fks));
+
+			$results = $relClass::query()
+				->whereIn($pk, $ids)
+				->get();
+
+			// Index results by PK for fast lookup.
+			$index = [];
+			foreach ($results as $model) {
+				$index[$model->$pk] = $model;
+			}
+
+			// Map each relation to its loaded model.
+			foreach ($relations as $r) {
+				$fkValue = $fks[$r['foreignKey']] ?? null;
+				$this->setEagerLoaded($r['relation'], $index[$fkValue] ?? null);
+			}
+		}
+
+		// Load non-batchable relations individually.
+		foreach ($singleRelations as $relation) {
+			$modelClass = static::class;
+			$query = (new $modelClass)->$relation();
+			if ($query instanceof \MJ\WPORM\QueryBuilder) {
+				$this->setEagerLoaded($relation, $query->first());
+			}
+		}
+	}
+
+	/**
+	 * Update the model's updated_at timestamp and save WITHOUT triggering
+	 * lifecycle events (updating/updated).
+	 *
+	 * This is used internally by touchOwners() to update parent timestamps
+	 * without firing saving/saved/updating/updated events or causing
+	 * recursive touching through circular $touches references.
+	 *
+	 * IMPORTANT: Because events are skipped, any listeners registered via
+	 * dispatchesEvents, EventDispatcher, or observers will NOT be notified.
+	 * If you need events to fire, use touchWithEvents() instead.
+	 *
+	 * @see touchWithEvents()
+	 * @return bool
+	 */
+	public function touch(): bool {
+		if (!$this->timestamps || !$this->exists) {
+			return false;
+		}
+
+		$this->attributes[$this->updatedAtColumn] = current_time('mysql');
+
+		global $wpdb;
+		$pk = $this->primaryKey;
+		$result = $wpdb->update(
+			$this->getTable(),
+			[$this->updatedAtColumn => $this->attributes[$this->updatedAtColumn]],
+			[$pk => $this->attributes[$pk]]
+		);
+
+		if ($result !== false) {
+			$this->original[$this->updatedAtColumn] = $this->attributes[$this->updatedAtColumn];
+		}
+
+		return $result !== false;
+	}
+
+	/**
+	 * Update the model's updated_at timestamp and save, triggering the
+	 * full lifecycle event pipeline (saving/saved/updating/updated).
+	 *
+	 * Unlike touch(), this method fires all registered events and observers,
+	 * making it suitable for user-initiated timestamp updates where listeners
+	 * should be notified.
+	 *
+	 * WARNING: Do not use this inside touchOwners() or $touches callbacks,
+	 * as it will cause infinite recursion on circular references.
+	 *
+	 * @return bool
+	 */
+	public function touchWithEvents(): bool {
+		if (!$this->timestamps || !$this->exists) {
+			return false;
+		}
+
+		$this->attributes[$this->updatedAtColumn] = current_time('mysql');
+
+		return $this->save();
+	}
+
+	protected function insert() {
+		// creating (before-hook — halts on false)
+		if ($this->fireModelEvent('creating') === false) {
+			return false;
+		}
+
+		global $wpdb;
+		if ($this->timestamps) {
+			$now = current_time('mysql');
+			$this->attributes[$this->createdAtColumn] = $now;
+			$this->attributes[$this->updatedAtColumn] = $now;
+		}
+		$result = $wpdb->insert($this->getTable(), $this->attributes);
+		if ($result === false) {
+			return false;
+		}
+		$this->exists = true;
+		$this->wasRecentlyCreated = true;
+		$pk = $this->primaryKey;
+		$this->attributes[$pk] = $wpdb->insert_id;
+
+		// created (after-hook)
+		$this->fireModelEvent('created');
+
+		return true;
+	}
+
+	protected function update() {
+		// updating (before-hook — halts on false)
+		if ($this->fireModelEvent('updating') === false) {
+			return false;
+		}
+
+		global $wpdb;
+		if ($this->timestamps) {
+			$this->attributes[$this->updatedAtColumn] = current_time('mysql');
+		}
+		$pk = $this->primaryKey;
+		if (!isset($this->attributes[$pk]) && isset($this->$pk)) {
+			$this->attributes[$pk] = $this->$pk;
+		}
+		if (!isset($this->attributes[$pk])) {
+			return false;
+		}
+		$dirty = $this->getDirty();
+		if (empty($dirty)) {
+			return true;
+		}
+		$result = $wpdb->update($this->getTable(), $dirty, [$pk => $this->attributes[$pk]]);
+		if ($result === false) {
+			return false;
+		}
+
+		// Sync original state after successful update
+		$this->original = $this->attributes;
+
+		// updated (after-hook)
+		$this->fireModelEvent('updated');
+
+		return true;
+	}
+
+	/**
+	 * Increment a column's value for THIS model's row only (Eloquent-style).
+	 * Runs a single atomic `UPDATE ... SET col = col + amount` query scoped to
+	 * the model's primary key, and syncs the new value onto the in-memory
+	 * attribute so the model reflects the change without a re-fetch.
+	 *
+	 * Usage:
+	 *   $user->increment('votes');
+	 *   $user->increment('votes', 5);
+	 *   $user->increment('votes', 1, ['last_voted_at' => current_time('mysql')]);
+	 *
+	 * @param string $column
+	 * @param int|float $amount
+	 * @param array $extra Additional column => value pairs to set in the same query
+	 * @return int|false Number of affected rows, or false if the model has no PK value
+	 */
+	public function increment($column, $amount = 1, array $extra = []) {
+		return $this->incrementOrDecrement($column, $amount, $extra, 1);
+	}
+
+	/**
+	 * Decrement a column's value for THIS model's row only (Eloquent-style).
+	 * See increment() for details — identical behavior, opposite direction.
+	 *
+	 * @param string $column
+	 * @param int|float $amount
+	 * @param array $extra Additional column => value pairs to set in the same query
+	 * @return int|false Number of affected rows, or false if the model has no PK value
+	 */
+	public function decrement($column, $amount = 1, array $extra = []) {
+		return $this->incrementOrDecrement($column, $amount, $extra, -1);
+	}
+
+	/**
+	 * Shared implementation for the instance increment()/decrement() methods.
+	 * Scopes the update to this model's primary key value via the query builder.
+	 *
+	 * @param string $column
+	 * @param int|float $amount
+	 * @param array $extra
+	 * @param int $direction 1 for increment, -1 for decrement
+	 * @return int|false
+	 */
+	protected function incrementOrDecrement($column, $amount, array $extra, $direction) {
+		$pk = $this->primaryKey;
+		if (!isset($this->attributes[$pk]) && isset($this->$pk)) {
+			$this->attributes[$pk] = $this->$pk;
+		}
+		if (!isset($this->attributes[$pk])) {
+			// Cannot scope the update without a primary key value
+			return false;
+		}
+
+		$query = static::query()->where($pk, $this->attributes[$pk]);
+		$result = $direction > 0
+			? $query->increment($column, $amount, $extra)
+			: $query->decrement($column, $amount, $extra);
+
+		// Sync the new value(s) onto the in-memory model so it reflects the change.
+		$current = (float) ($this->attributes[$column] ?? 0);
+		$newValue = $current + ($direction * $amount);
+		// Route through the standard attribute assignment path so casts and
+		// mutators are applied consistently to the in-memory value.
+		$this->setAttributeDirectly($column, $newValue);
+		$this->original[$column] = $this->attributes[$column];
+
+		foreach ($extra as $key => $value) {
+			$this->attributes[$key] = $value;
+			$this->original[$key] = $value;
+		}
+		if ($this->timestamps && !array_key_exists($this->updatedAtColumn, $extra)) {
+			// incrementOrDecrement() on the query builder auto-touches updated_at;
+			// mirror that onto the in-memory model too (best-effort, approximate).
+			$now = current_time('mysql');
+			$this->attributes[$this->updatedAtColumn] = $now;
+			$this->original[$this->updatedAtColumn] = $now;
+		}
+
+		return $result;
+	}
+
+	public function delete() {
+		$pk = $this->primaryKey;
+		if (!isset($this->attributes[$pk])) {
+			return false;
+		}
+
+		if ($this->softDeletes) {
+			// softDeleting before-hook
+			if ($this->fireModelEvent('softDeleting') === false) {
+				return false;
+			}
+			global $wpdb;
+			$this->attributes[$this->deletedAtColumn] = $this->softDeleteType === 'boolean' ? 1 : current_time('mysql');
+			$wpdb->update($this->getTable(), [$this->deletedAtColumn => $this->attributes[$this->deletedAtColumn]], [$pk => $this->attributes[$pk]]);
+			$this->exists = true;
+			// softDeleted after-hook
+			$this->fireModelEvent('softDeleted');
+			return true;
+		}
+
+		// deleting before-hook
+		if ($this->fireModelEvent('deleting') === false) {
+			return false;
+		}
+		global $wpdb;
+		$wpdb->delete($this->getTable(), [$this->primaryKey => $this->attributes[$this->primaryKey]]);
+		$this->exists = false;
+		// deleted (after-hook)
+		$this->fireModelEvent('deleted');
+		return true;
+	}
+
+	public function trashed() {
+		return $this->softDeletes && !empty($this->attributes[$this->deletedAtColumn]);
+	}
+
+	/**
+	 * Re-fetch a fresh copy of the model from the database, returning a new
+	 * instance without modifying the current one (Eloquent-style fresh()).
+	 *
+	 * Queries by primary key only and bypasses global scopes — matching
+	 * Eloquent's newQueryWithoutScopes() — since refetching "this exact row"
+	 * should not be hidden by an unrelated global scope. Soft-delete scoping
+	 * still applies: if the row has since been soft-deleted (and $withTrashed
+	 * isn't used), it simply won't be found.
+	 *
+	 * Optionally eager-loads relations on the fresh instance, exactly like
+	 * Model::with() / QueryBuilder::with().
+	 *
+	 * Usage:
+	 *   $fresh = $user->fresh();             // new instance, $user untouched
+	 *   $fresh = $user->fresh('posts');       // with eager-loaded relation
+	 *   $fresh = $user->fresh(['posts', 'profile']);
+	 *
+	 * @param array|string $with Relation(s) to eager-load on the fresh instance.
+	 * @return static|null A new model instance, or null if the row no longer exists.
+	 */
+	public function fresh($with = []) {
+		$pk = $this->primaryKey;
+		if (!isset($this->attributes[$pk])) {
+			return null;
+		}
+
+		$query = static::query(false)->where($pk, $this->attributes[$pk]);
+
+		if (!empty($with)) {
+			$query->with($with);
+		}
+
+		return $query->first();
+	}
+
+	/**
+	 * Clone a model without its primary key and timestamps (Eloquent-style).
+	 *
+	 * Creates a new, unsaved instance with all attributes copied except the
+	 * primary key and timestamp columns. Useful for duplicating a record:
+	 *
+	 *   $clone = $post->replicate();
+	 *   $clone->title = 'Updated Title';
+	 *   $clone->save();
+	 *
+	 * @param  array $except  Additional attribute names to exclude from the clone
+	 * @return static
+	 */
+	public function replicate(array $except = []) {
+		$instance = new static;
+
+		$except[] = $this->primaryKey;
+		if ($this->timestamps) {
+			$except[] = $this->createdAtColumn;
+			$except[] = $this->updatedAtColumn;
+		}
+		if ($this->getSoftDeletes()) {
+			$except[] = $this->deletedAtColumn;
+		}
+		$except = array_unique($except);
+
+		foreach ($this->attributes as $key => $value) {
+			if (!in_array($key, $except, true)) {
+				$instance->setAttributeDirectly($key, $value);
+			}
+		}
+
+		return $instance;
+	}
+
+	/**
+	 * Re-fetch the model's attributes from the database and overwrite them
+	 * onto the CURRENT instance in place (Eloquent-style refresh()). Unlike
+	 * fresh(), this mutates $this and returns it, rather than returning a
+	 * separate instance.
+	 *
+	 * Bypasses global scopes (same rationale as fresh()). Any previously
+	 * eager-loaded relations are cleared, since they may now be stale —
+	 * re-access them via property access or with() after refreshing.
+	 *
+	 * Throws ModelNotFoundException if the row no longer exists in the
+	 * database (e.g. it was deleted, or soft-deleted and excluded by the
+	 * default scope), mirroring Eloquent's refresh() behavior.
+	 *
+	 * Usage:
+	 *   $user->refresh(); // $user now reflects the current DB row
+	 *
+	 * @return $this
+	 * @throws ModelNotFoundException
+	 */
+	public function refresh() {
+		$pk = $this->primaryKey;
+		if (!isset($this->attributes[$pk])) {
+			throw (new ModelNotFoundException())->setModel(static::class);
+		}
+
+		$fresh = static::query(false)->where($pk, $this->attributes[$pk])->first();
+
+		if ($fresh === null) {
+			throw (new ModelNotFoundException())->setModel(static::class, $this->attributes[$pk]);
+		}
+
+		$this->attributes = $fresh->attributes;
+		$this->original = $fresh->attributes;
+		$this->exists = true;
+		// Eager-loaded relations may now be stale; clear them so accessing
+		// a relation property re-resolves it against the refreshed state.
+		$this->_eagerLoaded = [];
+
+		return $this;
+	}
+
+	public function restore() {
+		if ($this->softDeletes && $this->trashed()) {
+			$pk = $this->primaryKey;
+			if (!isset($this->attributes[$pk])) {
+				return false;
+			}
+
+			// restoring before-hook
+			if ($this->fireModelEvent('restoring') === false) {
+				return false;
+			}
+			global $wpdb;
+			$this->attributes[$this->deletedAtColumn] = $this->softDeleteType === 'boolean' ? 0 : null;
+			$wpdb->update($this->getTable(), [$this->deletedAtColumn => $this->attributes[$this->deletedAtColumn]], [$pk => $this->attributes[$pk]]);
+			$this->exists = true;
+			// restored after-hook
+			$this->fireModelEvent('restored');
+			return true;
+		}
+		return false;
+	}
+
+public function forceDelete() {
+    if ($this->softDeletes) {
+        $pk = $this->primaryKey;
+        if (!isset($this->attributes[$pk])) {
+            return false;
+        }
+
+        if ($this->fireModelEvent('deleting') === false) {
+            return false;
+        }
+        global $wpdb;
+        $wpdb->delete($this->getTable(), [$pk => $this->attributes[$pk]]);
+        $this->exists = false;
+        $this->fireModelEvent('deleted');
+        return true;
+    }
+    return $this->delete();
+	}
+
+	/**
+     * Force delete the model and all specified relationships.
+     * Usage: $model->forceDeleteWith(['posts', 'comments'])
+     *
+     * @param array $relations Array of relationship method names to force delete
+     * @return bool
+     */
+    public function forceDeleteWith(array $relations = []) {
+        foreach ($relations as $relation) {
+            if (!method_exists($this, $relation)) {
+                continue;
+            }
+            $related = $this->$relation();
+
+            // All relationship methods return a QueryBuilder; resolve it based
+            // on its relation type (single model vs collection of models).
+            if ($related instanceof \MJ\WPORM\QueryBuilder) {
+                $context = $related->getRelationContext();
+                $type = $context['type'] ?? null;
+                if ($type === 'belongsTo' || $type === 'hasOne' || $type === 'hasOneThrough' || $type === 'hasOneOfMany' || $type === 'morphOne' || $type === 'morphTo') {
+                    $resolved = $related->first();
+                    if ($resolved instanceof \MJ\WPORM\Model) {
+                        $resolved->forceDelete();
+                    }
+                } else {
+                    foreach ($related->get() as $item) {
+                        if ($item instanceof \MJ\WPORM\Model) {
+                            $item->forceDelete();
+                        }
+                    }
+                }
+            } elseif ($related instanceof \MJ\WPORM\Model) {
+                $related->forceDelete();
+            } elseif ($related instanceof \MJ\WPORM\Collection) {
+                foreach ($related as $item) {
+                    if ($item instanceof \MJ\WPORM\Model) {
+                        $item->forceDelete();
+                    }
+                }
+            }
+        }
+        return $this->forceDelete();
+    }
+
+	/**
+	 * Get the table name for the model (static context).
+	 * @return string
+	 */
+	public static function tableName()
+	{
+		$class = static::class;
+		if (isset(static::$tableNameCache[$class])) {
+			return static::$tableNameCache[$class];
+		}
+		static::$tableNameCache[$class] = static::getQueryModel()->getTable();
+		return static::$tableNameCache[$class];
+	}
+
+	/**
+	 * Get the table name for the model (instance context).
+	 *
+	 * If $table already starts with $wpdb->prefix, it is returned as-is
+	 * to avoid double-prefixing. Otherwise the prefix is prepended.
+	 *
+	 * @return string Fully qualified table name including the DB prefix.
+	 */
+	public function getTable()
+	{
+		global $wpdb;
+		if (isset($this->table)) {
+			if (strpos($this->table, $wpdb->prefix) === 0) {
+				return $this->table;
+			}
+			return $wpdb->prefix . $this->table;
+		}
+		return $wpdb->prefix . strtolower(Helpers::class_basename(static::class));
+	}
+
+	// -------------------------------------------------------------------------
+	// Relationships
+	// -------------------------------------------------------------------------
+
+	/**
+	 * One-to-one relationship.
+	 * Returns a QueryBuilder that resolves to a single related model.
+	 *
+	 * @template T of Model
+	 * @param class-string<T> $related
+	 * @param string|null $foreignKey  FK on the related table pointing to this model
+	 * @param string|null $localKey    PK on this table (default: $primaryKey)
+	 * @return QueryBuilder<T>
+	 */
+	public function hasOne($related, $foreignKey = null, $localKey = null) {
+		$foreignKey = $foreignKey ?: strtolower(Helpers::class_basename(static::class)) . '_id';
+		$localKey   = $localKey   ?: $this->primaryKey;
+		$query = $related::query()->where($foreignKey, $this->$localKey);
+		return $query->setRelationContext('hasOne', [
+			'foreignKey' => $foreignKey,
+			'localKey'   => $localKey,
+			'related'    => $related,
+		]);
+	}
+
+	/**
+	 * Define a one-to-one relationship that returns a single record
+	 * from a hasMany relationship based on ordering (Eloquent-style).
+	 *
+	 * Useful for getting the "latest", "oldest", "largest", or "smallest"
+	 * related record without loading the full collection.
+	 *
+	 * @template T of Model
+	 * @param class-string<T> $related
+	 * @param string|null $foreignKey  FK on the related table pointing to this model
+	 * @param string|null $localKey    PK on this table (default: $primaryKey)
+	 * @return QueryBuilder<T>
+	 */
+	public function hasOneOfMany($related, $foreignKey = null, $localKey = null) {
+		$foreignKey = $foreignKey ?: strtolower(Helpers::class_basename(static::class)) . '_id';
+		$localKey   = $localKey   ?: $this->primaryKey;
+
+		$query = $related::query()
+			->where($foreignKey, $this->$localKey)
+			->limit(1);
+
+		return $query->setRelationContext('hasOneOfMany', [
+			'foreignKey' => $foreignKey,
+			'localKey'   => $localKey,
+			'related'    => $related,
+		]);
+	}
+
+	/**
+	 * One-to-many relationship.
+	 * Returns a QueryBuilder that resolves to a Collection.
+	 *
+	 * @template T of Model
+	 * @param class-string<T> $related
+	 * @param string|null $foreignKey  FK on the related table pointing to this model
+	 * @param string|null $localKey    PK on this table (default: $primaryKey)
+	 * @return QueryBuilder<T>
+	 */
+    public function hasMany($related, $foreignKey = null, $localKey = null) {
+        $foreignKey = $foreignKey ?: strtolower(Helpers::class_basename(static::class)) . '_id';
+        $localKey   = $localKey   ?: $this->primaryKey;
+        $query = $related::query()->where($foreignKey, $this->$localKey);
+        return $query->setRelationContext('hasMany', [
+            'foreignKey' => $foreignKey,
+            'localKey'   => $localKey,
+            'related'    => $related,
+        ]);
+    }
+
+	/**
+	 * Many-to-many relationship via a pivot table.
+	 * Returns a QueryBuilder that resolves to a Collection.
+	 *
+	 * Pivot table default follows Eloquent convention: alphabetically-sorted
+	 * singular model names joined by an underscore (without the DB prefix).
+	 *
+	 * @template T of Model
+	 * @param class-string<T> $related
+	 * @param string|null $pivotTable       Name of the pivot table (without prefix)
+	 * @param string|null $foreignPivotKey  FK for *this* model on the pivot table
+	 * @param string|null $relatedPivotKey  FK for the *related* model on the pivot table
+	 * @return QueryBuilder<T>
+	 */
+    public function belongsToMany($related, $pivotTable = null, $foreignPivotKey = null, $relatedPivotKey = null) {
+        global $wpdb;
+        $relatedInstance = new $related;
+
+        // Eloquent convention: alphabetically-sorted singular model names, no prefix.
+        if ($pivotTable === null) {
+            $models = [
+                strtolower(Helpers::class_basename(static::class)),
+                strtolower(Helpers::class_basename($related)),
+            ];
+            sort($models);
+            $pivotTable = $wpdb->prefix . implode('_', $models);
+        } else {
+            // If the caller supplied a bare table name, add the prefix.
+            if (strpos($pivotTable, $wpdb->prefix) !== 0) {
+                $pivotTable = $wpdb->prefix . $pivotTable;
+            }
+        }
+
+        $foreignPivotKey  = $foreignPivotKey  ?: strtolower(Helpers::class_basename(static::class)) . '_id';
+        $relatedPivotKey  = $relatedPivotKey  ?: strtolower(Helpers::class_basename($related)) . '_id';
+        $relatedTable     = $relatedInstance->getTable();
+        $relatedPrimaryKey = $relatedInstance->getPrimaryKey();
+        $localKey         = $this->primaryKey;
+
+        $query = $related::query();
+        $query->join(
+            $pivotTable,
+            "$relatedTable.$relatedPrimaryKey",
+            '=',
+            "$pivotTable.$relatedPivotKey"
+        )->where("$pivotTable.$foreignPivotKey", $this->$localKey);
+
+        return $query->setRelationContext('belongsToMany', [
+            'pivotTable'      => $pivotTable,
+            'foreignPivotKey' => $foreignPivotKey,
+            'relatedPivotKey' => $relatedPivotKey,
+            'localKey'        => $localKey,
+            'relatedTable'    => $relatedTable,
+            'related'         => $related,
+        ]);
+    }
+
+	/**
+	 * Has-many-through relationship.
+	 *
+	 * Convention (matching Eloquent):
+	 *   $firstKey  = FK on the *through* table pointing to *this* model  (e.g. user_id  on posts)
+	 *   $secondKey = FK on the *related* table pointing to the *through* model (e.g. post_id on comments)
+	 *   $localKey  = PK on *this* table (default: $primaryKey)
+	 *
+	 * @template T of Model
+	 * @template Through of Model
+	 * @param class-string<T>       $related
+	 * @param class-string<Through> $through
+	 * @param string|null $firstKey
+	 * @param string|null $secondKey
+	 * @param string|null $localKey
+	 * @return QueryBuilder<T>
+	 */
+    public function hasManyThrough($related, $through, $firstKey = null, $secondKey = null, $localKey = null) {
+        $throughInstance = new $through;
+        $relatedInstance = new $related;
+
+        // $firstKey:  FK on the through table pointing back to this model
+        $firstKey  = $firstKey  ?: strtolower(Helpers::class_basename(static::class)) . '_id';
+        // $secondKey: FK on the related table pointing to the through table
+        $secondKey = $secondKey ?: strtolower(Helpers::class_basename($through)) . '_id';
+        $localKey  = $localKey  ?: $this->primaryKey;
+
+        $relatedTable  = $relatedInstance->getTable();
+        $throughTable  = $throughInstance->getTable();
+        $throughPK     = $throughInstance->getPrimaryKey();
+
+        $query = $related::query();
+        $query->join(
+            $throughTable,
+            "$relatedTable.$secondKey",
+            '=',
+            "$throughTable.$throughPK"
+        )->where("$throughTable.$firstKey", $this->$localKey);
+
+        return $query->setRelationContext('hasManyThrough', [
+            'firstKey'     => $firstKey,
+            'secondKey'    => $secondKey,
+            'localKey'     => $localKey,
+            'relatedTable' => $relatedTable,
+            'throughTable' => $throughTable,
+            'throughPK'    => $throughPK,
+            'related'      => $related,
+        ]);
+    }
+
+    /**
+     * Define a one-to-one relationship through an intermediate model.
+     *
+     * Similar to hasManyThrough, but returns a single related record
+     * instead of a collection.
+     *
+     * @template T of Model
+     * @template Through of Model
+     * @param class-string<T>       $related
+     * @param class-string<Through> $through
+     * @param string|null $firstKey   FK on the through table pointing to this model
+     * @param string|null $secondKey  FK on the related table pointing to the through table
+     * @param string|null $localKey   PK on this model
+     * @return QueryBuilder<T>
+     */
+    public function hasOneThrough($related, $through, $firstKey = null, $secondKey = null, $localKey = null) {
+        $throughInstance = new $through;
+        $relatedInstance = new $related;
+
+        $firstKey  = $firstKey  ?: strtolower(Helpers::class_basename(static::class)) . '_id';
+        $secondKey = $secondKey ?: strtolower(Helpers::class_basename($through)) . '_id';
+        $localKey  = $localKey  ?: $this->primaryKey;
+
+        $relatedTable  = $relatedInstance->getTable();
+        $throughTable  = $throughInstance->getTable();
+        $throughPK     = $throughInstance->getPrimaryKey();
+
+        $query = $related::query();
+        $query->join(
+            $throughTable,
+            "$relatedTable.$secondKey",
+            '=',
+            "$throughTable.$throughPK"
+        )->where("$throughTable.$firstKey", $this->$localKey)
+         ->limit(1);
+
+        return $query->setRelationContext('hasOneThrough', [
+            'firstKey'     => $firstKey,
+            'secondKey'    => $secondKey,
+            'localKey'     => $localKey,
+            'relatedTable' => $relatedTable,
+            'throughTable' => $throughTable,
+            'throughPK'    => $throughPK,
+            'related'      => $related,
+        ]);
+    }
+
+	/**
+     * Define an inverse one-to-one or many relationship (belongsTo).
+     *
+     * @template T of Model
+     * @param class-string<T> $related
+     * @param string|null $foreignKey
+     * @param string|null $ownerKey
+     * @return QueryBuilder<T>
+     */
+    public function belongsTo($related, $foreignKey = null, $ownerKey = null) {
+        $instance = new $related;
+        $foreignKey = $foreignKey ?: strtolower(Helpers::class_basename($related)) . '_id';
+        $ownerKey = $ownerKey ?: $instance->getPrimaryKey();
+        $foreignValue = $this->attributes[$foreignKey] ?? null;
+        $query = $related::query();
+        if ($foreignValue === null) {
+            $query->whereIn($ownerKey, []);
+        } else {
+            $query->where($ownerKey, $foreignValue);
+        }
+        return $query->setRelationContext('belongsTo', [
+            'foreignKey'     => $foreignKey,
+            'ownerKey'       => $ownerKey,
+            'foreignValue'   => $foreignValue,
+            'related'        => $related,
+            'baseWhereCount' => $query->getWhereCount(),
+        ]);
+    }
+
+	/**
+	 * Define a polymorphic one-to-one relationship.
+	 *
+	 * The related table carries two columns: a "type" column storing the
+	 * owning model's morph class (its morph-map alias if registered via
+	 * morphMap(), otherwise its fully-qualified class name), and an "id"
+	 * column storing its primary key. Defaults follow Eloquent's convention:
+	 * "{name}_type" / "{name}_id", e.g. morphOne(Image::class, 'imageable')
+	 * -> imageable_type / imageable_id.
+	 *
+	 * Returns a lazy, chainable QueryBuilder — call ->first() to resolve it,
+	 * or access it as a property (e.g. $post->image) to resolve automatically.
+	 *
+	 * @template T of Model
+	 * @param class-string<T> $related
+	 * @param string $name        The morph name, e.g. 'imageable'
+	 * @param string|null $type   Override for the "type" column (default: "{name}_type")
+	 * @param string|null $id     Override for the "id" column (default: "{name}_id")
+	 * @param string|null $localKey PK on this model (default: $primaryKey)
+	 * @return QueryBuilder<T>
+	 */
+	public function morphOne($related, $name, $type = null, $id = null, $localKey = null) {
+		$type = $type ?: $name . '_type';
+		$id   = $id   ?: $name . '_id';
+		$localKey = $localKey ?: $this->primaryKey;
+
+		$morphClass = $this->getMorphClass();
+
+		$query = $related::query()
+			->where($type, $morphClass)
+			->where($id, $this->$localKey);
+
+		return $query->setRelationContext('morphOne', [
+			'morphType'  => $type,
+			'morphId'    => $id,
+			'morphClass' => $morphClass,
+			'localKey'   => $localKey,
+			'related'    => $related,
+		]);
+	}
+
+	/**
+	 * Define a polymorphic one-to-many relationship.
+	 *
+	 * Same column conventions as morphOne() ("{name}_type" / "{name}_id"),
+	 * but resolves to a Collection instead of a single model.
+	 *
+	 * @template T of Model
+	 * @param class-string<T> $related
+	 * @param string $name
+	 * @param string|null $type
+	 * @param string|null $id
+	 * @param string|null $localKey
+	 * @return QueryBuilder<T>
+	 */
+	public function morphMany($related, $name, $type = null, $id = null, $localKey = null) {
+		$type = $type ?: $name . '_type';
+		$id   = $id   ?: $name . '_id';
+		$localKey = $localKey ?: $this->primaryKey;
+
+		$morphClass = $this->getMorphClass();
+
+		$query = $related::query()
+			->where($type, $morphClass)
+			->where($id, $this->$localKey);
+
+		return $query->setRelationContext('morphMany', [
+			'morphType'  => $type,
+			'morphId'    => $id,
+			'morphClass' => $morphClass,
+			'localKey'   => $localKey,
+			'related'    => $related,
+		]);
+	}
+
+	/**
+	 * Define the inverse of a polymorphic relationship.
+	 *
+	 * Unlike morphOne()/morphMany() (defined on the "owning" model, e.g.
+	 * Post), morphTo() is defined on the "child" model (e.g. Comment) and
+	 * resolves to whichever model class is named in its own "{name}_type"
+	 * column. The related model class is not known until the row's data
+	 * has been read, so — unlike every other relationship type — $name
+	 * must be passed explicitly (PHP has no cheap, reliable way to recover
+	 * the calling relationship method's own name at runtime).
+	 *
+	 * Returns a lazy, chainable QueryBuilder scoped to the concrete related
+	 * model class and id stored on this row — call ->first() to resolve it,
+	 * or access it as a property (e.g. $comment->commentable).
+	 *
+	 * Usage:
+	 *   class Comment extends Model {
+	 *       public function commentable() {
+	 *           return $this->morphTo('commentable');
+	 *       }
+	 *   }
+	 *
+	 * @param string $name        The morph name, e.g. 'commentable'.
+	 * @param string|null $type   Override for the "type" column (default: "{name}_type")
+	 * @param string|null $id     Override for the "id" column (default: "{name}_id")
+	 * @return QueryBuilder
+	 */
+	public function morphTo($name, $type = null, $id = null) {
+		$type = $type ?: $name . '_type';
+		$id   = $id   ?: $name . '_id';
+
+		$morphClass   = $this->attributes[$type] ?? null;
+		$foreignValue = $this->attributes[$id] ?? null;
+
+		// Resolve a morph map alias back to a real class, if one is registered.
+		$relatedClass = $morphClass !== null ? static::getMorphedModel($morphClass) : null;
+
+		if ($relatedClass === null || $foreignValue === null || !class_exists($relatedClass)) {
+			// No concrete type/id on this row (or an unmapped/unknown type) —
+			// return an always-empty, but still chainable, query so callers
+			// (including with()/whereHas()) get consistent behavior instead
+			// of a null/exception.
+			$query = static::query()->whereIn($this->primaryKey, []);
+			return $query->setRelationContext('morphTo', [
+				'morphType'    => $type,
+				'morphId'      => $id,
+				'morphClass'   => $morphClass,
+				'foreignValue' => $foreignValue,
+				'related'      => static::class,
+				'unresolved'   => true,
+			]);
+		}
+
+		$relatedInstance = new $relatedClass;
+		$ownerKey = $relatedInstance->getPrimaryKey();
+
+		$query = $relatedClass::query()->where($ownerKey, $foreignValue);
+
+		return $query->setRelationContext('morphTo', [
+			'morphType'    => $type,
+			'morphId'      => $id,
+			'morphClass'   => $morphClass,
+			'ownerKey'     => $ownerKey,
+			'foreignValue' => $foreignValue,
+			'related'      => $relatedClass,
+		]);
+	}
+
+	/**
+	 * Register morph type aliases. Merges into the existing map by default;
+	 * pass $replace = true to overwrite it entirely.
+	 *
+	 * Usage:
+	 *   Model::morphMap(['post' => Post::class, 'video' => Video::class]);
+	 *
+	 * @param array<string, class-string> $map
+	 * @param bool $replace
+	 * @return void
+	 */
+	public static function morphMap(array $map, $replace = false) {
+		static::$morphMap = $replace ? $map : array_merge(static::$morphMap, $map);
+		static::$flippedMorphMap = [];
+	}
+
+	/**
+	 * Get the currently registered morph map.
+	 * @return array<string, class-string>
+	 */
+	public static function getMorphMap() {
+		return static::$morphMap;
+	}
+
+	/**
+	 * Resolve a morph "type" column value to a concrete class name — either
+	 * a registered alias (via morphMap()) or, if not aliased, the value
+	 * itself (assumed to already be a fully-qualified class name, matching
+	 * Eloquent's default un-mapped behavior).
+	 *
+	 * @param string $morphClass
+	 * @return string
+	 */
+	public static function getMorphedModel($morphClass) {
+		return static::$morphMap[$morphClass] ?? $morphClass;
+	}
+
+	/**
+	 * Get the value this model should be stored as in a morph "type" column
+	 * when it is the owning side of a polymorphic relation — the morph map
+	 * alias if this class is registered, otherwise the fully-qualified class
+	 * name (Eloquent's default behavior).
+	 *
+	 * @return string
+	 */
+	public function getMorphClass() {
+		$class = static::class;
+		if (empty(static::$flippedMorphMap)) {
+			static::$flippedMorphMap = array_flip(static::$morphMap);
+		}
+		return static::$flippedMorphMap[$class] ?? $class;
+	}
+
+	public function newFromBuilder(array $attributes) {
+		$instance = new static;
+		foreach ($attributes as $key => $value) {
+			$instance->attributes[$key] = $instance->castGet($key, $value);
+			// Set the property for the primary key if present, bypassing
+			// mass-assignment guards since this is internal DB hydration.
+			if ($key === $instance->primaryKey) {
+				$instance->setAttributeDirectly($instance->primaryKey, $value);
+			}
+		}
+		$instance->original = $instance->attributes;
+		$instance->exists = true;
+		return $instance;
+	}
+
+	/**
+	 * Remove an internal/transient attribute (e.g. a pivot-table alias column
+	 * selected only for eager-loading bookkeeping) so it does not leak into
+	 * toArray()/toJson() output. Safe to call even if the key isn't set.
+	 *
+	 * @param string $key
+	 * @return $this
+	 */
+	public function forgetAttribute($key) {
+		unset($this->attributes[$key]);
+		unset($this->original[$key]);
+		return $this;
+	}
+
+	/**
+	 * Add the given attributes to the list of appended attributes for this model.
+	 * Mirrors Eloquent's append() behavior: the attributes are appended to the
+	 * runtime list of computed attributes and will be included in toArray()/toJson().
+	 *
+	 * @param array|string $attributes
+	 * @return $this
+	 */
+	public function append($attributes) {
+		$attributes = is_array($attributes) ? $attributes : func_get_args();
+		$this->appends = array_values(array_unique(array_merge($this->appends, $attributes)));
+		return $this;
+	}
+
+	/**
+	 * Set a computed/internal attribute directly into $attributes, bypassing
+	 * the $fillable/$guarded mass-assignment guard and any set{Attr}Attribute()
+	 * mutator. Used internally by QueryBuilder::loadRelationCount() (i.e.
+	 * withCount()) to attach a "{relation}_count" integer onto each model —
+	 * a value computed by WPORM itself, not user-supplied input, so the
+	 * mass-assignment protections that guard __set() do not apply here
+	 * (the same rationale newFromBuilder() uses for hydrating real columns).
+	 * Also mirrored into $original so isDirty()/getChanges() don't report
+	 * the count as a pending change.
+	 *
+	 * @internal Framework-internal method. Do not call from application code.
+	 *
+	 * @param string $key
+	 * @param mixed $value
+	 * @return $this
+	 */
+	public function _forceSetAttribute($key, $value) {
+		$this->attributes[$key] = $value;
+		$this->original[$key] = $value;
+		return $this;
+	}
+
+	public function toArray() {
+        $attributes = [];
+        foreach ($this->attributes as $key => $value) {
+            $attributes[$key] = isset($this->casts[$key])
+                ? $this->castGet($key, $value)
+                : $value;
+        }
+        // Add already eager loaded relations only (avoid infinite loop)
+        foreach ($this->_eagerLoaded as $relation => $data) {
+            if ($data instanceof \MJ\WPORM\Collection) {
+                $attributes[$relation] = $data->toArray();
+            } elseif (is_array($data)) {
+                $attributes[$relation] = array_map(function($item) {
+                    return method_exists($item, 'toArray') ? $item->toArray() : (array)$item;
+                }, $data);
+            } elseif (is_object($data) && method_exists($data, 'toArray')) {
+                $attributes[$relation] = $data->toArray();
+            } else {
+                $attributes[$relation] = $data;
+            }
+        }
+        // Add appended attributes
+        foreach ($this->appends as $appended) {
+            $method = 'get' . Helpers::convert_to_pascal_case($appended) . 'Attribute';
+            if (method_exists($this, $method)) {
+                $attributes[$appended] = $this->$method();
+            } elseif (property_exists($this, $appended)) {
+                $attributes[$appended] = $this->$appended;
+            }
+        }
+        return $this->applyVisibility($attributes);
+    }
+
+    /**
+     * Apply $visible/$hidden (and runtime overrides) filtering to an attribute array.
+     * Mirrors Eloquent: $visible (if set) is applied first as an allow-list, then
+     * $hidden subtracts from whatever remains. Runtime overrides from makeHidden()/
+     * makeVisible() are layered on top of the model-defined lists.
+     *
+     * @param array $attributes
+     * @return array
+     */
+    protected function applyVisibility(array $attributes) {
+        $visible = !empty($this->visible) ? array_flip($this->visible) : null;
+        if ($visible !== null) {
+            $attributes = array_intersect_key($attributes, $visible);
+        }
+
+        $hidden = array_unique(array_merge($this->hidden, $this->runtimeHidden));
+        $hidden = array_diff($hidden, $this->runtimeVisible);
+
+        if (!empty($hidden)) {
+            foreach ($hidden as $key) {
+                unset($attributes[$key]);
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Get the attributes that are hidden from array/JSON output.
+     * @return array
+     */
+    public function getHidden() {
+        return $this->hidden;
+    }
+
+    /**
+     * Set the hidden attributes for the model (replaces the current list).
+     * @param array $hidden
+     * @return $this
+     */
+    public function setHidden(array $hidden) {
+        $this->hidden = $hidden;
+        return $this;
+    }
+
+    /**
+     * Get the attributes that are explicitly visible (allow-list) for array/JSON output.
+     * @return array
+     */
+    public function getVisible() {
+        return $this->visible;
+    }
+
+    /**
+     * Set the visible attributes for the model (replaces the current list).
+     * @param array $visible
+     * @return $this
+     */
+    public function setVisible(array $visible) {
+        $this->visible = $visible;
+        return $this;
+    }
+
+    /**
+     * Hide the given attribute(s) from array/JSON output for this instance,
+     * on top of whatever is already in $hidden (Eloquent-style makeHidden()).
+     * Usage: $user->makeHidden('password')->toArray();
+     *
+     * @param array|string $attributes
+     * @return $this
+     */
+    public function makeHidden($attributes) {
+        $attributes = is_array($attributes) ? $attributes : func_get_args();
+        $this->runtimeHidden = array_unique(array_merge($this->runtimeHidden, $attributes));
+        // If a previously-runtime-visible attribute is now explicitly hidden again, un-reveal it.
+        $this->runtimeVisible = array_diff($this->runtimeVisible, $attributes);
+        return $this;
+    }
+
+    /**
+     * Reveal the given attribute(s) in array/JSON output for this instance,
+     * even if they're present in $hidden (Eloquent-style makeVisible()).
+     * Usage: $user->makeVisible('password')->toArray();
+     *
+     * @param array|string $attributes
+     * @return $this
+     */
+    public function makeVisible($attributes) {
+        $attributes = is_array($attributes) ? $attributes : func_get_args();
+        $this->runtimeVisible = array_unique(array_merge($this->runtimeVisible, $attributes));
+        $this->runtimeHidden = array_diff($this->runtimeHidden, $attributes);
+        return $this;
+    }
+
+    /**
+     * Convert the model to its JSON representation, respecting $hidden/$visible.
+     *
+     * Mirrors Eloquent's behavior: if json_encode() fails (e.g. due to
+     * malformed UTF-8 in an attribute, or a NAN/INF float from a cast),
+     * a \JsonException is thrown rather than silently returning `false`,
+     * so encoding failures surface immediately instead of producing a
+     * corrupt/empty payload downstream.
+     *
+     * @param int $options json_encode() options
+     * @return string
+     * @throws \JsonException
+     */
+    public function toJson($options = 0) {
+        $json = json_encode($this->toArray(), $options);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \JsonException(
+                'Error encoding model [' . static::class . '] to JSON: ' . json_last_error_msg()
+            );
+        }
+
+        return $json;
+    }
+
+    /**
+     * Convert the model to its string representation (Eloquent-style).
+     * Allows a model to be used directly in string contexts, e.g.
+     * `echo $user;` or `"User: {$user}"`, producing the same output as
+     * `toJson()`.
+     *
+     * @return string
+     */
+    public function __toString() {
+        return $this->toJson();
+    }
+
+	public function getOriginal($key = null) {
+		return $key ? ($this->original[$key] ?? null) : array_values($this->original);
+	}
+
+	// -------------------------------------------------------------------------
+	// Event dispatching
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Fire a model lifecycle event via $dispatchesEvents + EventDispatcher.
+	 *
+	 * Dispatch order (matching Eloquent):
+	 *   1. $dispatchesEvents class mapping
+	 *   2. Global EventDispatcher::listen() listeners
+	 *   3. Closures registered via static::creating(fn), etc.
+	 *   4. Observers
+	 *
+	 * Returns false if any before-hook listener halted the event; returns the
+	 * event class name (truthy) on success; returns null if no event class
+	 * exists for the given name.
+	 *
+	 * @param string $event  Lowercase event short-name.
+	 * @return mixed
+	 */
+	public function fireModelEvent(string $event)
+	{
+		static $eventMap = [
+			'retrieved'    => \MJ\WPORM\Events\Retrieved::class,
+			'creating'     => \MJ\WPORM\Events\Creating::class,
+			'created'      => \MJ\WPORM\Events\Created::class,
+			'updating'     => \MJ\WPORM\Events\Updating::class,
+			'updated'      => \MJ\WPORM\Events\Updated::class,
+			'saving'       => \MJ\WPORM\Events\Saving::class,
+			'saved'        => \MJ\WPORM\Events\Saved::class,
+			'deleting'     => \MJ\WPORM\Events\Deleting::class,
+			'deleted'      => \MJ\WPORM\Events\Deleted::class,
+			'softDeleting' => \MJ\WPORM\Events\SoftDeleting::class,
+			'softDeleted'  => \MJ\WPORM\Events\SoftDeleted::class,
+			'restoring'    => \MJ\WPORM\Events\Restoring::class,
+			'restored'     => \MJ\WPORM\Events\Restored::class,
+		];
+
+		if (!isset($eventMap[$event])) {
+			return null;
+		}
+
+		static::boot();
+
+		$eventClass      = $eventMap[$event];
+		$observers       = static::getObservers();
+		$modelEvents     = static::getModelEvents($event);
+		$hasInstanceMethod = method_exists($this, $event);
+
+		// Fast-path: nothing registered.
+		if (!$hasInstanceMethod
+			&& empty($this->dispatchesEvents[$event])
+			&& empty(EventDispatcher::getListeners($eventClass))
+			&& empty($modelEvents)
+			&& empty($observers)
+		) {
+			return null;
+		}
+
+		// 1. Call the model's own instance method (retrieved, saving, creating, etc.)
+		if ($hasInstanceMethod) {
+			$result = $this->$event();
+			if ($result === false) {
+				return false;
+			}
+		}
+
+		// 2. Fire event through dispatcher (dispatchesEvents + global listeners)
+		$result = EventDispatcher::dispatch(new $eventClass($this));
+		if ($result === false) {
+			return false;
+		}
+
+		// 3. Call model-registered closures (static::creating(fn), etc.)
+		foreach ($modelEvents as $callback) {
+			$result = $callback($this);
+			if ($result === false) {
+				return false;
+			}
+		}
+
+		// 4. Call observers — Eloquent-style: $observer->$event($model)
+		foreach ($observers as $observer) {
+			if (is_string($observer)) {
+				if (!isset(static::$observerInstances[$observer])) {
+					static::$observerInstances[$observer] = new $observer();
+				}
+				$observer = static::$observerInstances[$observer];
+			}
+			if (method_exists($observer, $event)) {
+				$observed = $observer->$event($this);
+				if ($observed === false) {
+					return false;
+				}
+			}
+		}
+
+		return $eventClass;
+	}
+
+	public function isDirty($attribute = null) {
+		if ($attribute) {
+			$existsInOriginal = array_key_exists($attribute, $this->original);
+			$existsInAttributes = array_key_exists($attribute, $this->attributes);
+
+			if (!$existsInOriginal && !$existsInAttributes) {
+				return false;
+			}
+
+			if (!$existsInOriginal || !$existsInAttributes) {
+				return true;
+			}
+
+			return $this->attributes[$attribute] !== $this->original[$attribute];
+		}
+		return !empty($this->getChanges());
+	}
+
+	/**
+	 * Get the attributes that have been changed since last save.
+	 *
+	 * @return array
+	 */
+	public function getDirty() {
+		$dirty = [];
+		foreach ($this->attributes as $key => $value) {
+			if (!array_key_exists($key, $this->original) || $value !== $this->original[$key]) {
+				$dirty[$key] = $value;
+			}
+		}
+		return $dirty;
+	}
+
+	public function getChanges() {
+		$changes = [];
+		foreach ($this->attributes as $key => $value) {
+			if (!array_key_exists($key, $this->original) || $value !== $this->original[$key]) {
+				$changes[$key] = $value;
+			}
+		}
+		return $changes;
+	}    
+
+	/**
+	 * Pass the model instance to the given callback for side-effects, then
+	 * return the model unchanged (Eloquent-style tap()). The callback's
+	 * return value is always discarded. Designed for inline debugging,
+	 * logging, or inspection without breaking a fluent chain.
+	 *
+	 * Defined directly on Model (rather than relying on __call() to proxy
+	 * to the query builder) so it operates on THIS model instance — the
+	 * query-builder-level tap() (e.g. User::query()->tap(...)) remains
+	 * available separately and is unaffected.
+	 *
+	 * Usage:
+	 *   $user = User::create(['name' => 'Jane'])
+	 *       ->tap(fn($u) => error_log("Created user #{$u->id}"));
+	 *
+	 * @param callable $callback function(Model $model): void
+	 * @return $this
+	 */
+	public function tap(callable $callback) {
+		$callback($this);
+		return $this;
+	}
+
+	/**
+	 * Pass the model instance to the given callback and return whatever the
+	 * callback returns (Eloquent-style pipe()). Unlike tap(), the callback's
+	 * return value IS used — pipe() terminates or transforms the chain.
+	 * Useful for handing the model off to a presenter/transformer and
+	 * returning its result inline.
+	 *
+	 * Usage:
+	 *   $dto = User::find(1)->pipe(fn($u) => $userPresenter->toDto($u));
+	 *
+	 * @param callable $callback function(Model $model): mixed
+	 * @return mixed Whatever the callback returns
+	 */
+	public function pipe(callable $callback) {
+		return $callback($this);
+	}
+
+	public function offsetExists($offset): bool {
+		return isset($this->attributes[$offset]);
+	}
+
+    #[\ReturnTypeWillChange]
+	public function offsetGet($offset) {
+		return $this->__get($offset);
+	}
+
+	public function offsetSet($offset, $value): void {
+		if (!$this->isFillableAttribute($offset)) {
+			error_log(sprintf(
+				'WPORM: Mass-assignment guard blocked ArrayAccess set of "%s" on %s. '
+				. 'Add "%s" to $fillable or set $guarded to [] to allow this.',
+				$offset,
+				static::class,
+				$offset
+			));
+			return;
+		}
+		$this->setAttributeDirectly($offset, $value);
+	}
+
+	public function offsetUnset($offset): void {
+		unset($this->attributes[$offset]);
+	}
+
+    /**
+     * Query scope: Include soft-deleted records in results.
+     * Usage: Model::withTrashed()->get()
+     * @param \MJ\WPORM\QueryBuilder|null $query
+     * @return \MJ\WPORM\QueryBuilder
+     */
+    public static function withTrashed($query = null) {
+        $instance = static::getQueryModel();
+        $query = $query ?: static::query();
+        if ($instance->softDeletes) {
+            $query->withTrashed = true;
+        }
+        return $query;
+    }
+
+    /**
+     * Query scope: Only soft-deleted records.
+     * Usage: Model::onlyTrashed()->get()
+     * @param \MJ\WPORM\QueryBuilder|null $query
+     * @return \MJ\WPORM\QueryBuilder
+     */
+    public static function onlyTrashed($query = null) {
+        $instance = static::getQueryModel();
+        $query = $query ?: static::query();
+        if ($instance->softDeletes) {
+            $query->onlyTrashed = true;
+        }
+        return $query;
+    }
+
+    /**
+     * Query scope: Exclude soft-deleted records (default behavior).
+     * Usage: Model::withoutTrashed()->get()
+     * @param \MJ\WPORM\QueryBuilder|null $query
+     * @return \MJ\WPORM\QueryBuilder
+     */
+    public static function withoutTrashed($query = null) {
+        $instance = static::getQueryModel();
+        $query = $query ?: static::query();
+        if ($instance->softDeletes) {
+            $query->withTrashed = false;
+            $query->onlyTrashed = false;
+        }
+        return $query;
+    }
+
+    /**
+     * Start a query with eager loading (Eloquent-style static with()).
+     * Usage: Model::with('relation')->get(), Model::with(['rel1', 'rel2'])->first()
+     * @param array|string $relations
+     * @return \MJ\WPORM\QueryBuilder
+     */
+    public static function with($relations) {
+        return static::query()->with($relations);
+    }
+
+    /**
+     * Start a query with relationship counts (Eloquent-style static withCount()).
+     * Usage: User::withCount('posts')->get(); // each $user->posts_count
+     * @param array|string $relations
+     * @return \MJ\WPORM\QueryBuilder
+     */
+    public static function cursor(): \Generator {
+        return static::query()->cursor();
+    }
+
+    public static function withCount($relations) {
+        return static::query()->withCount($relations);
+    }
+
+    public static function withSum($relations, string $column) {
+        return static::query()->withSum($relations, $column);
+    }
+
+    public static function withAvg($relations, string $column) {
+        return static::query()->withAvg($relations, $column);
+    }
+
+    public static function withMin($relations, string $column) {
+        return static::query()->withMin($relations, $column);
+    }
+
+    public static function withMax($relations, string $column) {
+        return static::query()->withMax($relations, $column);
+    }
+
+    /**
+     * Register an observer for this model class.
+     *
+     * The observer class should define methods matching lifecycle events:
+     *   creating, created, updating, updated, saving, saved,
+     *   deleting, deleted, softDeleting, softDeleted, restoring, restored
+     *
+     * Usage:
+     *   User::observe(UserObserver::class);
+     *   User::observe(new UserObserver());
+     *
+     * @param string|object $observer  Observer class name or instance
+     * @return void
+     */
+    public static function observe($observer): void
+    {
+        $class = static::class;
+        if (is_object($observer)) {
+            static::$observers[$class][get_class($observer)] = $observer;
+        } else {
+            static::$observers[$class][$observer] = $observer;
+        }
+    }
+
+    /**
+     * Get all registered observers for this model class.
+     *
+     * @return array<string, string|object>
+     */
+    public static function getObservers(): array
+    {
+        return static::$observers[static::class] ?? [];
+    }
+
+    /**
+     * Remove all observers for this model class, or a specific one.
+     *
+     * @param string|null $observerClass  If null, removes all observers for this model.
+     * @return void
+     */
+    public static function forgetObservers(?string $observerClass = null): void
+    {
+        $class = static::class;
+        if ($observerClass === null) {
+            unset(static::$observers[$class]);
+        } else {
+            unset(static::$observers[$class][$observerClass]);
+        }
+    }
+
+    /**
+     * Remove all observers from all model classes.
+     * Useful in testing.
+     *
+     * @return void
+     */
+    public static function flushAllObservers(): void
+    {
+        static::$observers = [];
+    }
+
+    /**
+     * Get the fillable attributes for the model (Eloquent-style).
+     * @return array
+     */
+    public function getFillable()
+    {
+        return $this->fillable;
+    }
+
+    /**
+     * Conditionally add query constraints (Eloquent-style when()).
+     * Usage: Model::query()->when($condition, function($q) { ... });
+     *
+     * @param mixed $value Condition value
+     * @param callable $callback Callback if condition is truthy
+     * @param callable|null $default Callback if condition is falsy
+     * @return QueryBuilder
+     */
+    public static function when($value, callable $callback, ?callable $default = null) {
+        if ($value) {
+            $query = static::query();
+            $callback($query, $value);
+        } elseif ($default) {
+            $query = static::query();
+            $default($query, $value);
+        } else {
+            $query = static::query();
+        }
+        return $query;
+    }
+}

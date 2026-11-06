@@ -1,0 +1,14 @@
+{
+    "config": {
+        "platform": {
+            "php": "7.4.33"
+        }
+    },
+    "require": {
+        "mjkhajeh/wporm": "*",
+        "mjkhajeh/whitebox": "*",
+        "mjkhajeh/wporm-extra-casts": "*",
+        "mjkhajeh/changelog": "*",
+        "monolog/monolog": "^2.11"
+    }
+}

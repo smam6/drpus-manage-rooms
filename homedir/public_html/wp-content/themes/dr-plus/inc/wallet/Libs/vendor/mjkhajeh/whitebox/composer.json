@@ -1,0 +1,20 @@
+{
+    "name": "mjkhajeh/whitebox",
+    "description": "Tools",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "MJ\\Whitebox\\": ""
+        }
+    },
+    "authors": [
+        {
+            "name": "MohammadJafar Khajeh",
+            "email": "iron.atoms2@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    }
+}

@@ -1,0 +1,788 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: mj-whitebox\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-22 12:01+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.8.2; php-8.3.24\n"
+"X-Domain: mj-whitebox"
+
+#: Utils.php:680
+#, php-format
+msgid "%s hour"
+msgid_plural "%s hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: Utils.php:684
+#, php-format
+msgid "%s minute"
+msgid_plural "%s minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: Utils.php:688
+#, php-format
+msgid "%s second"
+msgid_plural "%s seconds"
+msgstr[0] ""
+msgstr[1] ""
+
+#: ElementorControls.php:1575
+msgid "After"
+msgstr ""
+
+#: ElementorControls/Button.php:137
+msgid "Alignment"
+msgstr ""
+
+#: Utils/Elementor.php:66
+msgid "All"
+msgstr ""
+
+#: ElementorControls.php:1603
+msgid "ASC"
+msgstr ""
+
+#: ElementorControls.php:1375 ElementorControls.php:1493
+msgid "Author"
+msgstr ""
+
+#: ElementorControls.php:895 ElementorControls.php:963
+#: ElementorControls.php:1031 ElementorControls/Slider.php:31
+#: ElementorControls/Slider.php:55 ElementorControls/Slider.php:79
+msgid "Auto"
+msgstr ""
+
+#: ElementorControls/Slider.php:98 ElementorControls/Slider.php:269
+msgid "Autoplay"
+msgstr ""
+
+#: ElementorControls/Slider.php:107 ElementorControls/Slider.php:277
+msgid "Autoplay time (s)"
+msgstr ""
+
+#: ElementorControls.php:1562
+msgid "Before"
+msgstr ""
+
+#: ElementorControls.php:467
+msgid "Border Radius"
+msgstr ""
+
+#: ElementorControls/Button.php:13
+msgid "Button settings"
+msgstr ""
+
+#: ElementorControls/Button.php:120
+msgid "Button style"
+msgstr ""
+
+#: Utils/Elementor.php:52
+msgctxt "Button style"
+msgid "Circle"
+msgstr ""
+
+#: Utils/Elementor.php:50
+msgctxt "Button style"
+msgid "Normal"
+msgstr ""
+
+#: Utils/Elementor.php:51
+msgctxt "Button style"
+msgid "Rounded"
+msgstr ""
+
+#: ElementorControls/Button.php:79
+msgid "Button type"
+msgstr ""
+
+#: Utils/Elementor.php:35
+msgctxt "Button type"
+msgid "Action"
+msgstr ""
+
+#: Utils/Elementor.php:36
+msgctxt "Button type"
+msgid "Bordered"
+msgstr ""
+
+#: Utils/Elementor.php:33
+msgctxt "Button type"
+msgid "Gray"
+msgstr ""
+
+#: Utils/Elementor.php:31
+msgctxt "Button type"
+msgid "Primary"
+msgstr ""
+
+#: Utils/Elementor.php:32
+msgctxt "Button type"
+msgid "Secondary"
+msgstr ""
+
+#: Utils/Elementor.php:34
+msgctxt "Button type"
+msgid "White"
+msgstr ""
+
+#: ElementorControls.php:1390 ElementorControls.php:1508
+msgid "Category"
+msgstr ""
+
+#: ElementorControls.php:398 ElementorControls/Button.php:145
+msgid "Center"
+msgstr ""
+
+#: ElementorControls.php:1564 ElementorControls.php:1578
+msgid "Choose"
+msgstr ""
+
+#: ElementorControls.php:420
+msgid "Color"
+msgstr ""
+
+#: ElementorControls.php:764
+msgid "Column gap (px)"
+msgstr ""
+
+#: ElementorControls.php:785
+msgid "Columns"
+msgstr ""
+
+#: Utils/Elementor.php:90
+msgid "Comment Count"
+msgstr ""
+
+#: ElementorControls.php:894 ElementorControls.php:962
+#: ElementorControls.php:1030 ElementorControls/Slider.php:30
+#: ElementorControls/Slider.php:54 ElementorControls/Slider.php:78
+msgid "Count"
+msgstr ""
+
+#: ElementorControls.php:1326
+msgid "Current Query"
+msgstr ""
+
+#: ElementorControls.php:1325 Utils/Elementor.php:72
+msgid "Custom"
+msgstr ""
+
+#: ElementorControls.php:1551 Utils/Elementor.php:87 Utils/Elementor.php:98
+msgid "Date"
+msgstr ""
+
+#: ElementorControls.php:1604
+msgid "DESC"
+msgstr ""
+
+#: ElementorControls.php:940
+msgid "Desktop column gap"
+msgstr ""
+
+#: ElementorControls.php:921
+msgid "Desktop columns"
+msgstr ""
+
+#: ElementorControls.php:931
+msgid "Desktop row gap"
+msgstr ""
+
+#: ElementorControls.php:882
+msgid "Desktop slider"
+msgstr ""
+
+#: ElementorControls.php:912 ElementorControls/Slider.php:44
+msgid "Desktop slides space"
+msgstr ""
+
+#: ElementorControls.php:890 ElementorControls/Slider.php:26
+msgid "Desktop slides type"
+msgstr ""
+
+#: ElementorControls.php:902 ElementorControls/Slider.php:35
+msgid "Desktop visible slides"
+msgstr ""
+
+#: ElementorControls.php:1460
+msgid "Disabling this option will increase the performance of the page"
+msgstr ""
+
+#: ElementorControls.php:546
+msgid "Display"
+msgstr ""
+
+#: ElementorControls.php:1088
+msgid "Display settings"
+msgstr ""
+
+#: Utils.php:1024
+msgid "div"
+msgstr ""
+
+#: ElementorControls/Button.php:111 ElementorControls/Button.php:149
+msgid "End"
+msgstr ""
+
+#: ElementorControls.php:1687
+msgid "Excludes"
+msgstr ""
+
+#: Utils/Date.php:489
+msgid "Friday"
+msgstr ""
+
+#: ElementorControls/Button.php:129
+msgid "Fullwidth"
+msgstr ""
+
+#: Utils.php:1018
+msgid "H1"
+msgstr ""
+
+#: Utils.php:1019
+msgid "H2"
+msgstr ""
+
+#: Utils.php:1020
+msgid "H3"
+msgstr ""
+
+#: Utils.php:1021
+msgid "H4"
+msgstr ""
+
+#: Utils.php:1022
+msgid "H5"
+msgstr ""
+
+#: Utils.php:1023
+msgid "H6"
+msgstr ""
+
+#: ElementorControls.php:518
+msgid "Height"
+msgstr ""
+
+#: ElementorControls/Button.php:45
+msgid "Home"
+msgstr ""
+
+#: ElementorControls.php:153 ElementorControls.php:859
+msgid "Hover"
+msgstr ""
+
+#: ElementorControls/Button.php:46
+msgid "HTML tags allowed"
+msgstr ""
+
+#: ElementorControls/Button.php:97
+msgid "Icon"
+msgstr ""
+
+#: ElementorControls/Button.php:102
+msgid "Icon Position"
+msgstr ""
+
+#: Utils/Elementor.php:95
+msgid "ID"
+msgstr ""
+
+#: ElementorControls.php:1459
+msgid "Ignore sticky posts"
+msgstr ""
+
+#: ElementorControls.php:1678
+msgid "Includes"
+msgstr ""
+
+#: ElementorControls.php:406
+msgid "Justify"
+msgstr ""
+
+#: Utils/Elementor.php:89 Utils/Elementor.php:99
+msgid "Last Modified"
+msgstr ""
+
+#: ElementorControls.php:1324
+msgid "Latests posts"
+msgstr ""
+
+#: ElementorControls.php:1324
+msgid "Latests products"
+msgstr ""
+
+#: ElementorControls.php:394
+msgid "Left"
+msgstr ""
+
+#: ElementorControls/Button.php:56
+msgid "Link"
+msgstr ""
+
+#: ElementorControls/Slider.php:146
+msgid "Loop"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:64
+msgid "Lorem"
+msgstr ""
+
+#: ElementorControls.php:1327
+msgid "Manual Selection"
+msgstr ""
+
+#: ElementorControls.php:339
+msgid "Margin"
+msgstr ""
+
+#. Name of the plugin
+msgid "MJ Whitebox"
+msgstr ""
+
+#: ElementorControls.php:1076
+msgid "Mobile column gap"
+msgstr ""
+
+#: ElementorControls.php:1057
+msgid "Mobile columns"
+msgstr ""
+
+#: ElementorControls.php:1067
+msgid "Mobile row gap"
+msgstr ""
+
+#: ElementorControls.php:1017
+msgid "Mobile slider"
+msgstr ""
+
+#: ElementorControls.php:1048 ElementorControls/Slider.php:92
+msgid "Mobile slides space"
+msgstr ""
+
+#: ElementorControls.php:1026 ElementorControls/Slider.php:74
+msgid "Mobile slides type"
+msgstr ""
+
+#: ElementorControls.php:1038 ElementorControls/Slider.php:83
+msgid "Mobile visible slides"
+msgstr ""
+
+#. Author of the plugin
+msgid "MohammadJafar Khajeh"
+msgstr ""
+
+#: Utils/Date.php:489
+msgid "Monday"
+msgstr ""
+
+#: ElementorControls/Slider.php:127
+msgid "Next arrow icon"
+msgstr ""
+
+#: ElementorControls.php:885 ElementorControls.php:952
+#: ElementorControls.php:1020 ElementorControls.php:1171
+#: ElementorControls.php:1433 ElementorControls.php:1447
+#: ElementorControls.php:1463 ElementorControls/Button.php:66
+#: ElementorControls/Button.php:74 ElementorControls/Button.php:91
+#: ElementorControls/Button.php:132 ElementorControls/Slider.php:101
+#: ElementorControls/Slider.php:120 ElementorControls/Slider.php:149
+#: ElementorControls/Slider.php:158 ElementorControls/Slider.php:272
+msgid "No"
+msgstr ""
+
+#: ElementorControls.php:1611
+msgid "No Posts Message"
+msgstr ""
+
+#: ElementorControls.php:150 ElementorControls.php:840
+msgid "Normal"
+msgstr ""
+
+#: ElementorControls.php:1155
+msgid "Offset"
+msgstr ""
+
+#: ElementorControls.php:1443
+msgid "Only instock"
+msgstr ""
+
+#: ElementorControls.php:1429
+msgid "Only on-sales"
+msgstr ""
+
+#: ElementorControls/Button.php:63
+msgid "Open in new tab"
+msgstr ""
+
+#: ElementorControls.php:1598
+msgid "Order"
+msgstr ""
+
+#: ElementorControls.php:1588
+msgid "Order By"
+msgstr ""
+
+#: Utils.php:1025
+msgid "p"
+msgstr ""
+
+#: ElementorControls.php:351
+msgid "Padding"
+msgstr ""
+
+#: ElementorControls.php:1254
+msgid "Pagination current style"
+msgstr ""
+
+#: ElementorControls.php:1308
+msgid "Pagination dots style"
+msgstr ""
+
+#: ElementorControls.php:1290
+msgid "Pagination next style"
+msgstr ""
+
+#: ElementorControls.php:1236
+msgid "Pagination number style"
+msgstr ""
+
+#: ElementorControls.php:1272
+msgid "Pagination previous style"
+msgstr ""
+
+#: ElementorControls.php:1185
+msgid "Pagination settings"
+msgstr ""
+
+#: ElementorControls.php:1219
+msgid "Pagination style"
+msgstr ""
+
+#: Utils/Elementor.php:67
+msgid "Past Day"
+msgstr ""
+
+#: Utils/Elementor.php:69
+msgid "Past Month"
+msgstr ""
+
+#: Utils/Elementor.php:70
+msgid "Past Quarter"
+msgstr ""
+
+#: Utils/Elementor.php:68
+msgid "Past Week"
+msgstr ""
+
+#: Utils/Elementor.php:71
+msgid "Past Year"
+msgstr ""
+
+#: ElementorControls.php:434
+msgid "Placeholder color"
+msgstr ""
+
+#: Utils/Elementor.php:101
+msgid "Popularity"
+msgstr ""
+
+#: ElementorControls.php:1346
+msgid "Post type"
+msgstr ""
+
+#: ElementorControls.php:1143
+msgid "Posts per page"
+msgstr ""
+
+#: ElementorControls/Slider.php:137
+msgid "Previous arrow icon"
+msgstr ""
+
+#: Utils/Elementor.php:100
+msgid "Price"
+msgstr ""
+
+#: Utils/Elementor.php:96
+msgid "Product name"
+msgstr ""
+
+#: Utils/Elementor.php:97
+msgid "Product type"
+msgstr ""
+
+#: ElementorControls.php:1337
+msgid "Query type"
+msgstr ""
+
+#: Utils/Elementor.php:91 Utils/Elementor.php:104
+msgid "Random"
+msgstr ""
+
+#: Utils/Elementor.php:102
+msgid "Rating"
+msgstr ""
+
+#: Utils/WC.php:150
+msgid "Rial"
+msgstr ""
+
+#: ElementorControls.php:402
+msgid "Right"
+msgstr ""
+
+#: ElementorControls.php:743
+msgid "Row gap (px)"
+msgstr ""
+
+#: Utils/Elementor.php:103
+msgid "Sales"
+msgstr ""
+
+#: Utils/Date.php:489
+msgid "Saturday"
+msgstr ""
+
+#: ElementorControls.php:1359 ElementorControls.php:1474
+msgid "Search & Select"
+msgstr ""
+
+#: ElementorControls/Slider.php:108 ElementorControls/Slider.php:278
+msgid "seconds"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:19
+msgid "Section title"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:124
+msgid "Section title icon style"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:108
+msgid "Section title row style"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:140
+msgid "Section title text style"
+msgstr ""
+
+#: ElementorControls.php:1475
+msgid "Select posts that you want to exclude"
+msgstr ""
+
+#: ElementorControls.php:1360
+msgid "Select posts that you want to include"
+msgstr ""
+
+#: ElementorControls.php:1375
+msgid "Seller"
+msgstr ""
+
+#: ElementorControls.php:1569
+msgid ""
+"Setting a ‘Before’ date will show all the posts published until the chosen "
+"date (inclusive)."
+msgstr ""
+
+#: ElementorControls.php:1576
+msgid ""
+"Setting an ‘After’ date will show all the posts published until the chosen "
+"date (inclusive)."
+msgstr ""
+
+#: ElementorControls.php:1674
+msgid "Settings"
+msgstr ""
+
+#: ElementorControls/Slider.php:117
+msgid "Show arrows"
+msgstr ""
+
+#: ElementorControls/Slider.php:155
+msgid "Show dots"
+msgstr ""
+
+#: ElementorControls.php:1444
+msgid "Show only instock products"
+msgstr ""
+
+#: ElementorControls.php:1430
+msgid "Show only on-sales products"
+msgstr ""
+
+#: ElementorControls.php:1167
+msgid "Show pagination"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:155 ElementorControls/Slider.php:314
+msgid "Slider arrows style"
+msgstr ""
+
+#: ElementorControls/Slider.php:345
+msgid "Slider dots wrap style"
+msgstr ""
+
+#: ElementorControls/Slider.php:167
+msgid "Slider settings"
+msgstr ""
+
+#: ElementorControls/Button.php:88
+msgid "Small button"
+msgstr ""
+
+#: Utils.php:1026
+msgid "span"
+msgstr ""
+
+#: ElementorControls/Button.php:107 ElementorControls/Button.php:141
+msgid "Start"
+msgstr ""
+
+#: Utils/Date.php:489
+msgid "Sunday"
+msgstr ""
+
+#: ElementorControls.php:1008
+msgid "Tablet column gap"
+msgstr ""
+
+#: ElementorControls.php:989
+msgid "Tablet columns"
+msgstr ""
+
+#: ElementorControls.php:999
+msgid "Tablet row gap"
+msgstr ""
+
+#: ElementorControls.php:949
+msgid "Tablet slider"
+msgstr ""
+
+#: ElementorControls.php:980 ElementorControls/Slider.php:68
+msgid "Tablet slides space"
+msgstr ""
+
+#: ElementorControls.php:958 ElementorControls/Slider.php:50
+msgid "Tablet slides type"
+msgstr ""
+
+#: ElementorControls.php:970 ElementorControls/Slider.php:59
+msgid "Tablet visible slides"
+msgstr ""
+
+#: ElementorControls.php:1408 ElementorControls.php:1526
+#: ElementorControls/SectionTitle.php:49
+msgid "Tag"
+msgstr ""
+
+#: ElementorControls/Button.php:43
+msgid "Text"
+msgstr ""
+
+#: ElementorControls.php:391
+msgid "Text align"
+msgstr ""
+
+#: Utils/Users.php:147
+msgid "This email is already exists."
+msgstr ""
+
+#: Utils/Users.php:143
+msgid "This mobile is already exists."
+msgstr ""
+
+#: Utils/Users.php:150
+msgid "This username is already exists."
+msgstr ""
+
+#: Utils/WC.php:152
+msgid "Thousand rials"
+msgstr ""
+
+#: Utils/WC.php:153
+msgid "Thousand Tomans"
+msgstr ""
+
+#: Utils/Date.php:489
+msgid "Thursday"
+msgstr ""
+
+#: Utils/Date.php:426
+msgctxt "Time slot label"
+msgid "Evening"
+msgstr ""
+
+#: Utils/Date.php:422
+msgctxt "Time slot label"
+msgid "Morning"
+msgstr ""
+
+#: Utils/Date.php:428
+msgctxt "Time slot label"
+msgid "Night"
+msgstr ""
+
+#: Utils/Date.php:424
+msgctxt "Time slot label"
+msgid "Noon"
+msgstr ""
+
+#: Utils/Elementor.php:88 ElementorControls/SectionTitle.php:62
+msgid "Title"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:56
+msgid "Title icon"
+msgstr ""
+
+#: ElementorControls/SectionTitle.php:74
+msgid "Title link"
+msgstr ""
+
+#: Utils/WC.php:151
+msgid "Toman"
+msgstr ""
+
+#: ElementorControls/Button.php:71
+msgid "Transparent button"
+msgstr ""
+
+#: Utils/Date.php:489
+msgid "Tuesday"
+msgstr ""
+
+#: ElementorControls.php:1168
+msgid ""
+"Turn off pagination if you don't need it. It can improve the page's "
+"performance."
+msgstr ""
+
+#: Utils/Date.php:489
+msgid "Wednesday"
+msgstr ""
+
+#: ElementorControls.php:501
+msgid "Width"
+msgstr ""
+
+#: ElementorControls.php:884 ElementorControls.php:951
+#: ElementorControls.php:1019 ElementorControls.php:1170
+#: ElementorControls.php:1432 ElementorControls.php:1446
+#: ElementorControls.php:1462 ElementorControls/Button.php:65
+#: ElementorControls/Button.php:73 ElementorControls/Button.php:90
+#: ElementorControls/Button.php:131 ElementorControls/Slider.php:100
+#: ElementorControls/Slider.php:119 ElementorControls/Slider.php:148
+#: ElementorControls/Slider.php:157 ElementorControls/Slider.php:271
+msgid "Yes"
+msgstr ""

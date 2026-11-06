@@ -1,0 +1,687 @@
+# WPORM Blueprint Column Types Documentation
+
+This document lists all column types supported by the `Blueprint` class in WPORM, with a title, description, and a simple usage example for each. Use these methods in your migration or schema definition to add columns to your tables.
+
+---
+
+## String Types
+
+### string($column, $length = 255)
+**Description:** Adds a variable-length string (VARCHAR) column.
+**Example:**
+```php
+$table->string('name');
+```
+
+### text($column)
+**Description:** Adds a TEXT column for long-form text.
+**Example:**
+```php
+$table->text('description');
+```
+
+### longText($column)
+**Description:** Adds a LONGTEXT column for very large text data.
+**Example:**
+```php
+$table->longText('content');
+```
+
+### mediumText($column)
+**Description:** Adds a MEDIUMTEXT column for medium-length text data.
+**Example:**
+```php
+$table->mediumText('summary');
+```
+
+### tinyText($column)
+**Description:** Adds a TINYTEXT column for small text data.
+**Example:**
+```php
+$table->tinyText('note');
+```
+
+### char($column, $length = 1)
+**Description:** Adds a fixed-length CHAR column.
+**Example:**
+```php
+$table->char('code', 4);
+```
+
+---
+
+## Integer Types
+
+### integer($column)
+**Description:** Adds an INT column.
+**Example:**
+```php
+$table->integer('age');
+```
+
+### bigInteger($column)
+**Description:** Adds a BIGINT column.
+**Example:**
+```php
+$table->bigInteger('views');
+```
+
+### smallInteger($column)
+**Description:** Adds a SMALLINT column.
+**Example:**
+```php
+$table->smallInteger('rank');
+```
+
+### mediumInteger($column)
+**Description:** Adds a MEDIUMINT column.
+**Example:**
+```php
+$table->mediumInteger('score');
+```
+
+### tinyInteger($column)
+**Description:** Adds a TINYINT column.
+**Example:**
+```php
+$table->tinyInteger('flag');
+```
+
+### unsignedInteger($column)
+**Description:** Adds an unsigned INT column.
+**Example:**
+```php
+$table->unsignedInteger('count');
+```
+
+### unsignedBigInteger($column)
+**Description:** Adds an unsigned BIGINT column.
+**Example:**
+```php
+$table->unsignedBigInteger('total');
+```
+
+### unsignedSmallInteger($column)
+**Description:** Adds an unsigned SMALLINT column.
+**Example:**
+```php
+$table->unsignedSmallInteger('level');
+```
+
+### unsignedTinyInteger($column)
+**Description:** Adds an unsigned TINYINT column.
+**Example:**
+```php
+$table->unsignedTinyInteger('status');
+```
+
+### unsignedMediumInteger($column)
+**Description:** Adds an unsigned MEDIUMINT column.
+**Example:**
+```php
+$table->unsignedMediumInteger('points');
+```
+
+---
+
+## Auto-Increment & Primary Key Types
+
+### increments($column)
+**Description:** Adds an auto-incrementing INT UNSIGNED primary key column.
+**Example:**
+```php
+$table->increments('id');
+```
+
+### bigIncrements($column)
+**Description:** Adds an auto-incrementing BIGINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->bigIncrements('id');
+```
+
+### smallIncrements($column)
+**Description:** Adds an auto-incrementing SMALLINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->smallIncrements('id');
+```
+
+### mediumIncrements($column)
+**Description:** Adds an auto-incrementing MEDIUMINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->mediumIncrements('id');
+```
+
+### tinyIncrements($column)
+**Description:** Adds an auto-incrementing TINYINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->tinyIncrements('id');
+```
+
+### unsignedBigIncrements($column)
+**Description:** Adds an auto-incrementing BIGINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->unsignedBigIncrements('id');
+```
+
+### unsignedSmallIncrements($column)
+**Description:** Adds an auto-incrementing SMALLINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->unsignedSmallIncrements('id');
+```
+
+### unsignedTinyIncrements($column)
+**Description:** Adds an auto-incrementing TINYINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->unsignedTinyIncrements('id');
+```
+
+### unsignedIntegerIncrements($column)
+**Description:** Adds an auto-incrementing INT UNSIGNED primary key column.
+**Example:**
+```php
+$table->unsignedIntegerIncrements('id');
+```
+
+### unsignedIntegerBigIncrements($column)
+**Description:** Adds an auto-incrementing BIGINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->unsignedIntegerBigIncrements('id');
+```
+
+### unsignedIntegerMediumIncrements($column)
+**Description:** Adds an auto-incrementing MEDIUMINT UNSIGNED primary key column.
+**Example:**
+```php
+$table->unsignedIntegerMediumIncrements('id');
+```
+
+---
+
+## Boolean Type
+
+### boolean($column)
+**Description:** Adds a TINYINT(1) column for boolean values.
+**Example:**
+```php
+$table->boolean('is_active');
+```
+
+---
+
+## Floating Point & Decimal Types
+
+### float($column, $precision = 8, $scale = 2)
+**Description:** Adds a FLOAT column with precision and scale.
+**Example:**
+```php
+$table->float('price', 8, 2);
+```
+
+### double($column, $precision = 16, $scale = 8)
+**Description:** Adds a DOUBLE column with precision and scale.
+**Example:**
+```php
+$table->double('amount', 16, 8);
+```
+
+### decimal($column, $precision = 16, $scale = 2)
+**Description:** Adds a DECIMAL column with precision and scale.
+**Example:**
+```php
+$table->decimal('balance', 16, 2);
+```
+
+**Note:** `precision` must be a positive integer and `scale` must be non-negative with `scale <= precision`. Invalid combinations throw `\InvalidArgumentException` at definition time rather than producing silent DDL failures at runtime.
+
+---
+
+## Date & Time Types
+
+### date($column)
+**Description:** Adds a DATE column.
+**Example:**
+```php
+$table->date('birthdate');
+```
+
+### time($column)
+**Description:** Adds a TIME column.
+**Example:**
+```php
+$table->time('start_time');
+```
+
+### datetime($column)
+**Description:** Adds a DATETIME column.
+**Example:**
+```php
+$table->datetime('created_at');
+```
+
+### datetimeTz($column)
+**Description:** Adds a DATETIME column. On MySQL/MariaDB the `WITH TIME ZONE` suffix is omitted since those drivers do not support it; timezone handling is managed at the application layer.
+**Example:**
+```php
+$table->datetimeTz('event_time');
+```
+
+### timestamp($column)
+**Description:** Adds a TIMESTAMP column.
+**Example:**
+```php
+$table->timestamp('updated_at');
+```
+
+### timestampTz($column)
+**Description:** Adds a TIMESTAMP column (timezone handled at the application layer on MySQL).
+**Example:**
+```php
+$table->timestampTz('expires_at');
+```
+
+### timestampTzWithDefault($column)
+**Description:** Adds a TIMESTAMP column with default CURRENT_TIMESTAMP (timezone handled at the application layer on MySQL).
+**Example:**
+```php
+$table->timestampTzWithDefault('created_at');
+```
+
+### timestampWithDefault($column)
+**Description:** Adds a TIMESTAMP column with default CURRENT_TIMESTAMP.
+**Example:**
+```php
+$table->timestampWithDefault('created_at');
+```
+
+### dateTimeWithDefault($column)
+**Description:** Adds a DATETIME column with default CURRENT_TIMESTAMP.
+**Example:**
+```php
+$table->dateTimeWithDefault('created_at');
+```
+
+### dateTimeTzWithDefault($column)
+**Description:** Adds a DATETIME column with default CURRENT_TIMESTAMP (timezone handled at the application layer on MySQL).
+**Example:**
+```php
+$table->dateTimeTzWithDefault('created_at');
+```
+
+### dateTimeTzWithDefaultCurrentOnUpdate($column)
+**Description:** Adds a DATETIME column with default CURRENT_TIMESTAMP and ON UPDATE CURRENT_TIMESTAMP (timezone handled at the application layer on MySQL).
+**Example:**
+```php
+$table->dateTimeTzWithDefaultCurrentOnUpdate('updated_at');
+```
+
+### dateTimeWithDefaultCurrentOnUpdate($column)
+**Description:** Adds a DATETIME column with default CURRENT_TIMESTAMP and ON UPDATE CURRENT_TIMESTAMP.
+**Example:**
+```php
+$table->dateTimeWithDefaultCurrentOnUpdate('updated_at');
+```
+
+### timeTz($column)
+**Description:** Adds a TIME column (timezone handled at the application layer on MySQL).
+**Example:**
+```php
+$table->timeTz('event_time');
+```
+
+### timeTzWithDefault($column)
+**Description:** Adds a TIME column with default CURRENT_TIMESTAMP (timezone handled at the application layer on MySQL).
+**Example:**
+```php
+$table->timeTzWithDefault('event_time');
+```
+
+### timeTzWithDefaultCurrentOnUpdate($column)
+**Description:** Adds a TIME column with default CURRENT_TIMESTAMP and ON UPDATE CURRENT_TIMESTAMP (timezone handled at the application layer on MySQL).
+**Example:**
+```php
+$table->timeTzWithDefaultCurrentOnUpdate('event_time');
+```
+
+### timeWithDefault($column)
+**Description:** Adds a TIME column with default CURRENT_TIMESTAMP.
+**Example:**
+```php
+$table->timeWithDefault('event_time');
+```
+
+### year($column)
+**Description:** Adds a YEAR column.
+**Example:**
+```php
+$table->year('graduation_year');
+```
+
+---
+
+## Binary & JSON Types
+
+### binary($column)
+**Description:** Adds a BLOB column for binary data.
+**Example:**
+```php
+$table->binary('data');
+```
+
+### binaryText($column)
+**Description:** Adds a BINARY column for binary data.
+**Example:**
+```php
+$table->binaryText('data');
+```
+
+### mediumBinaryText($column)
+**Description:** Adds a MEDIUMBLOB column for medium binary data.
+**Example:**
+```php
+$table->mediumBinaryText('data');
+```
+
+### longBinaryText($column)
+**Description:** Adds a LONGBLOB column for large binary data.
+**Example:**
+```php
+$table->longBinaryText('data');
+```
+
+### json($column)
+**Description:** Adds a JSON column.
+**Example:**
+```php
+$table->json('meta');
+```
+
+### jsonb($column)
+**Description:** Adds a JSONB column (for PostgreSQL compatibility).
+**Example:**
+```php
+$table->jsonb('meta');
+```
+
+---
+
+## Special Types
+
+### enum($column, $values)
+**Description:** Adds an ENUM column with allowed values.
+**Example:**
+```php
+$table->enum('status', ['draft', 'published', 'archived']);
+```
+
+### set($column, $values)
+**Description:** Adds a SET column with allowed values.
+**Example:**
+```php
+$table->set('tags', ['news', 'tech', 'sports']);
+```
+
+### ipAddress($column)
+**Description:** Adds a VARCHAR(45) column for IP addresses.
+**Example:**
+```php
+$table->ipAddress('ip');
+```
+
+### macAddress($column)
+**Description:** Adds a VARCHAR(17) column for MAC addresses.
+**Example:**
+```php
+$table->macAddress('mac');
+```
+
+### uuid($column)
+**Description:** Adds a CHAR(36) column for UUIDs.
+**Example:**
+```php
+$table->uuid('uuid');
+```
+
+### uuidBinary($column)
+**Description:** Adds a BINARY(16) column for binary UUIDs.
+**Example:**
+```php
+$table->uuidBinary('uuid_bin');
+```
+
+### binaryUuid($column)
+**Description:** Adds a BINARY(16) column for binary UUIDs.
+**Example:**
+```php
+$table->binaryUuid('uuid_bin');
+```
+
+### ulid($column)
+**Description:** Adds a CHAR(26) column for ULIDs.
+**Example:**
+```php
+$table->ulid('ulid');
+```
+
+### point($column)
+**Description:** Adds a POINT column for spatial data.
+**Example:**
+```php
+$table->point('location');
+```
+
+### polygon($column)
+**Description:** Adds a POLYGON column for spatial data.
+**Example:**
+```php
+$table->polygon('area');
+```
+
+### geography($column)
+**Description:** Adds a GEOGRAPHY column for spatial data.
+**Example:**
+```php
+$table->geography('region');
+```
+
+---
+
+## Foreign Key Types
+
+### foreignId($column, $refTable, $refColumn = 'id', $onDelete = 'CASCADE', $onUpdate = 'CASCADE')
+**Description:** Adds a BIGINT UNSIGNED column and a foreign key constraint.
+**Example:**
+```php
+$table->foreignId('user_id', 'users');
+```
+
+### foreignIdFor($column, $refTable, $refColumn = 'id', $onDelete = 'CASCADE', $onUpdate = 'CASCADE')
+**Description:** Alias for `foreignId()`.
+**Example:**
+```php
+$table->foreignIdFor('post_id', 'posts');
+```
+
+### foreignUlid($column, $refTable, $refColumn = 'id', $onDelete = 'CASCADE', $onUpdate = 'CASCADE')
+**Description:** Adds a CHAR(26) column and a foreign key constraint for ULIDs.
+**Example:**
+```php
+$table->foreignUlid('ulid', 'other_table');
+```
+
+### foreignUuid($column, $refTable, $refColumn = 'id', $onDelete = 'CASCADE', $onUpdate = 'CASCADE')
+**Description:** Adds a CHAR(36) column and a foreign key constraint for UUIDs.
+**Example:**
+```php
+$table->foreignUuid('uuid', 'other_table');
+```
+
+---
+
+## Helper Types
+
+### id($column = 'id')
+**Description:** Adds an auto-incrementing primary key column named 'id'.
+**Example:**
+```php
+$table->id();
+```
+
+---
+
+## Column Modifiers
+
+These methods are chained onto any column definition (the object returned by `$table->string(...)`, `$table->integer(...)`, etc.) to further configure that column.
+
+### after($column)
+**Description:** Places a new column after an existing column when using `SchemaBuilder::table()` on MySQL or MariaDB. The reference column is safely quoted in the generated `ALTER TABLE` statement. This modifier only affects table alterations; column order is not emitted in `CREATE TABLE` definitions.
+**Example:**
+```php
+$schema->table('users', function (Blueprint $table) {
+    $table->string('nickname')->nullable()->after('display_name');
+});
+```
+
+### change()
+**Description:** Modifies an existing MySQL/MariaDB column using an `ALTER TABLE ... MODIFY` statement. Define the column with its complete desired type and attributes, then chain `change()`. Every modifier that must remain — including `nullable()`, `default()`, and `autoIncrement()` — must be repeated because omitted attributes are removed. Existing indexes are not changed unless separate index commands are declared.
+**Example:**
+```php
+$schema->table('products', function (Blueprint $table) {
+    $table->string('name', 150)
+        ->nullable()
+        ->default('Unnamed product')
+        ->change();
+
+    $table->decimal('price', 12, 2)
+        ->default(0)
+        ->after('name')
+        ->change();
+});
+```
+
+Changed and newly added columns may be declared in the same `SchemaBuilder::table()` callback. Changed columns compile to `MODIFY`, new columns compile to `ADD`, and declaration order is preserved. `change()` does not perform a schema-inspection query; the declared definition is sent directly to MySQL/MariaDB.
+
+### nullable($value = true)
+**Description:** Marks the column as `NULL` (nullable). Pass `false` to explicitly force `NOT NULL`.
+**Example:**
+```php
+$table->string('middle_name')->nullable();
+```
+
+### default($value)
+**Description:** Sets a `DEFAULT` value for the column. Plain strings, ints, floats, and booleans are rendered as quoted/unquoted literals as appropriate (e.g. `'active'`, `1`, `0.5`). Raw SQL keywords/expressions — `CURRENT_TIMESTAMP`, `CURRENT_TIMESTAMP(n)`, `CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`, `NOW()`, `NULL`, `TRUE`, `FALSE`, `UUID()` (matched case-insensitively) — are detected automatically and emitted **unquoted**, so they execute as SQL rather than being stored as the literal string `'CURRENT_TIMESTAMP'`.
+**Example:**
+```php
+$table->string('status')->default('active');           // DEFAULT 'active'
+$table->integer('votes')->default(0);                   // DEFAULT 0
+$table->boolean('is_active')->default(true);             // DEFAULT 1
+$table->timestamp('created_at')->default('CURRENT_TIMESTAMP'); // DEFAULT CURRENT_TIMESTAMP (unquoted)
+$table->timestamp('updated_at')->default('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'); // unquoted
+```
+> **Note:** For the common "timestamp that defaults to (and updates with) the current time" case, prefer the dedicated shortcut column types below (e.g. `timestampWithDefault()`, `dateTimeWithDefaultCurrentOnUpdate()`) — they build the same `CURRENT_TIMESTAMP` SQL directly into the column type and need no `->default(...)` call at all. Use `->default('CURRENT_TIMESTAMP')` directly when you need it on a column type that doesn't have its own `...WithDefault()` shortcut.
+
+### autoIncrement($value = true)
+**Description:** Marks the column as `AUTO_INCREMENT`. Typically used internally by `increments()`/`bigIncrements()`/etc., but can be applied to any integer column directly.
+**Example:**
+```php
+$table->integer('seq')->autoIncrement();
+```
+
+### unique($name = null)
+**Description:** Adds a unique index for this single column (Eloquent-style chaining). For multi-column unique indexes, use the Blueprint-level `unique(['col1', 'col2'])` instead.
+**Example:**
+```php
+$table->string('email')->unique();
+$table->integer('user_id')->unique('custom_index_name');
+```
+
+---
+
+## Column Positioning
+
+### after($column, Closure $callback)
+**Description:** Adds every column declared by the callback after the given existing column. WPORM automatically positions each later column after the column declared immediately before it, preserving callback order like Eloquent. The positioning state is restored even if the callback throws an exception, so nested or subsequent schema operations are not contaminated.
+**Example:**
+```php
+$schema->table('users', function (Blueprint $table) {
+    $table->after('password', function (Blueprint $table) {
+        $table->string('address_line1');
+        $table->string('address_line2');
+        $table->string('city');
+    });
+});
+```
+
+The generated alterations place `address_line1` after `password`, `address_line2` after `address_line1`, and `city` after `address_line2`. Column positioning is supported by MySQL and MariaDB.
+
+---
+
+## Timestamps & Soft Deletes
+
+### timestamps()
+**Description:** Adds `created_at` and `updated_at` TIMESTAMP columns. Returns `$this` for fluent chaining.
+**Example:**
+```php
+$table->timestamps();
+$table->timestamps()->softDeletes(); // fluent chaining
+```
+
+### softDeletes($column = 'deleted_at')
+**Description:** Adds a nullable DATETIME column for soft deletes (Eloquent-style shortcut). Use this for enabling soft deletes on your model.
+**Example:**
+```php
+$table->softDeletes(); // Adds 'deleted_at' DATETIME NULL
+$table->softDeletes('removed_at'); // Adds 'removed_at' DATETIME NULL
+```
+
+### softDeletesTz()
+**Description:** Adds a nullable `deleted_at` TIMESTAMP WITH TIME ZONE column for soft deletes.
+**Example:**
+```php
+$table->softDeletesTz();
+```
+
+---
+
+## Indexing Methods
+
+### index($columns, $name = null)
+**Description:** Adds a regular index (KEY) for one or more columns.
+**Example:**
+```php
+$table->index('user_id');
+$table->index(['type', 'created_at']);
+```
+
+### fullText($columns, $name = null)
+**Description:** Adds a FULLTEXT index for one or more columns (MySQL only).
+**Example:**
+```php
+$table->fullText('meta');
+$table->fullText(['title', 'body']);
+```
+
+### spatialIndex($columns, $name = null)
+**Description:** Adds a SPATIAL index for one or more columns (MySQL only).
+**Example:**
+```php
+$table->spatialIndex('location');
+```
+
+### language($columns, $language, $name = null)
+**Description:** Adds a language-specific index (MySQL 8+; limited dbDelta support).
+**Example:**
+```php
+$table->language('title', 'english');
+```
+
+---
+
+For more advanced usage, see the main `Readme.md` and `Methods.md`.

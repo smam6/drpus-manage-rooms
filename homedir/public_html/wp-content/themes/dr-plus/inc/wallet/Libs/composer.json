@@ -1,0 +1,12 @@
+{
+    "config": {
+        "platform": {
+            "php": "7.4.33"
+        }
+    },
+    "require": {
+        "mjkhajeh/wporm": "*",
+        "mjkhajeh/whitebox": "*",
+        "mjkhajeh/logger": "*"
+    }
+}

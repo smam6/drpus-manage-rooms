@@ -1,0 +1,4 @@
+Coloris({
+ 	theme: 'pill',
+  	themeMode: 'auto'
+});

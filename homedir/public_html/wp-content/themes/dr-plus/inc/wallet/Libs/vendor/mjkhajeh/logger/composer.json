@@ -1,0 +1,24 @@
+{
+  "name": "mjkhajeh/logger",
+  "description": "Lightweight logger for WordPress themes and plugins.",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.4",
+    "psr/log": "^1.1"
+  },
+  "authors": [
+      {
+        "name": "MohammadJafar Khajeh",
+        "email": "iron.atoms2@gmail.com"
+    }
+  ],
+  "autoload": {
+    "files": [
+      "src/PsrLog.php"
+    ],
+    "psr-4": {
+      "MJ\\": "src/"
+    }
+  }
+}
