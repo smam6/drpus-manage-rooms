@@ -1,0 +1,36 @@
+/**
+ * Dr Plus Child Theme — Room Capacity Management (styles)
+ *
+ * Implements: spec 7.3, 7.12, 5.5.32, 5.5.33
+ * Category: 7 — Date guard & UX (RTL warning styles)
+ *
+ * @package DrPlusChild\Capacity
+ * @since   1.0.0
+ */
+
+/* Persian date-guard warning, inserted near the booking calendar (spec 7.3). */
+.drplus-capacity-date-warning {
+	direction: rtl;
+	text-align: right;
+	background: #fff8e1;
+	border: 1px solid #e0a800;
+	border-right-width: 4px;
+	color: #5f4b00;
+	border-radius: 8px;
+	padding: 10px 14px;
+	margin: 12px auto 0;
+	max-width: min(820px, 100%);
+	font-size: 0.95rem;
+	line-height: 1.9;
+}
+
+.drplus-capacity-date-warning[hidden] {
+	display: none;
+}
+
+@media screen and (max-width: 480px) {
+	.drplus-capacity-date-warning {
+		font-size: 0.875rem;
+		padding: 8px 10px;
+	}
+}
