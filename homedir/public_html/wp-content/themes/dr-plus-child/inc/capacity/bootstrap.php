@@ -102,6 +102,27 @@ add_action( 'after_switch_theme', 'drplus_child_capacity_install' );
 add_action( 'init', 'drplus_child_capacity_install', 1 );
 
 /**
+ * Remove module options when the site switches AWAY from this child theme (audit W11).
+ * The log table is intentionally kept for data retention.
+ *
+ * Implements: spec 5.5.16 (non-destructive activation), audit item W11
+ *
+ * @return void
+ */
+function drplus_child_capacity_cleanup_on_switch_away() {
+	if ( get_option( 'stylesheet' ) === 'dr-plus-child' ) {
+		return;
+	}
+	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery — option cleanup by prefix, no user input.
+	$option_names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", 'drplus_capacity_%' ) );
+	foreach ( (array) $option_names as $option_name ) {
+		delete_option( $option_name );
+	}
+}
+add_action( 'after_switch_theme', 'drplus_child_capacity_cleanup_on_switch_away', 20 );
+
+/**
  * Register the admin settings page and its save handler (spec 5.1).
  *
  * Implements: spec 5.1, 5.5.66
