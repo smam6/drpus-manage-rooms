@@ -30,6 +30,15 @@ Branch: arena/b5e90f4b-drpus-manage-rooms | Parent theme read-only | All code in
 2. Category 2 (server slot filter) vs Category 7 (client submit blocker): no overlap — different layers (AJAX response vs form submit). Confirmed.
 3. Option prefix drplus_capacity_*: grep of parent for 'drplus_capacity' returned 0 matches; existing drplus_* options are drplus_booking_product_id, drplus_sms_settings, etc. No collision.
 
+## Audit Fixes (technical debt audit, 2026-11-07)
+
+| Fix commit | Audit item | Change |
+|------------|-----------|--------|
+| 308add0a | W13 | ABSPATH guard added to functions.php |
+| 10c125e5 | W11 | drplus_capacity_* options deleted on switch-away from child theme |
+
+Residual risks documented in docs/audit-report.md: item 18 (check-then-act window before parent insert), W15 (no log TTL cron).
+
 ## Deviation log
 
 (empty — populated in phase-c-deviations.md if a deviation occurs)

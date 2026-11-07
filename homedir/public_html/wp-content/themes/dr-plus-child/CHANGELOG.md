@@ -3,6 +3,12 @@
 All notable changes to the Room Capacity module are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [1.0.1] — 2026-11-07
+
+### Fixed
+- Added ABSPATH direct-access guard to `functions.php` (audit W13).
+- Module options (`drplus_capacity_%`) are now removed when the site switches away from the child theme; log table kept for data retention (audit W11).
+
 ## [1.0.0] — 2026-11-06
 
 ### Added
