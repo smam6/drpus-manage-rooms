@@ -29,3 +29,17 @@ guaranteed. Proposed fixes (NOT applied here, feature code is out of scope for t
 2. Enforce at the database level: unique/conditional constraint so an insert that would exceed
    capacity fails and triggers a re-check/refund path.
 Raw log: `results/mock-concurrency-raw.log`.
+
+## locked-v2 mode (v1.0.1 layered fix) — MEASURED 2026-11-06/08, Node v22.22.3
+Simulates: GET_LOCK acquired before count, held across the "parent insert", released after;
+plus Layer 2 compensating rollback (re-count after insert, remove own booking if over capacity).
+
+| Test | Result | Expected | Verdict |
+|---|---|---|---|
+| T7 (1000 concurrent, one slot, capacity 2) | 2 successes / 998 rejections, finalCount=2 | 2 / 998 | **PASS** |
+| T10 (10 rounds x 1000) | 10/10 rounds exactly 2 successes | 10/10 | **PASS** |
+| T8 (10 slots x 100) | 20 total successes, 10/10 slots exactly 2 | 20 total, 10/10 | **PASS** |
+
+Regression check (§3.5): `current` mode still VIOLATES (1000/1000, 0/10 rounds), `locked` baseline
+still HELD (2/998, 10/10, 20 total) — old behavior preserved for comparison.
+Raw log: `results/mock-concurrency-raw.log`.
