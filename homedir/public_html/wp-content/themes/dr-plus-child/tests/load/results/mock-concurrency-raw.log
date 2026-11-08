@@ -1,0 +1,4 @@
+T7-mock mode=current n=1000 capacity=2 -> successes=1000 rejections=0 finalCount=1000 invariant=VIOLATED (9ms)
+T7-mock mode=locked n=1000 capacity=2 -> successes=2 rejections=998 finalCount=2 invariant=HELD (1ms)
+T8-mock mode=current 10 slots x 100 users -> slots within capacity=0/10 violations=10
+T8-mock mode=locked 10 slots x 100 users -> slots within capacity=10/10 violations=0
