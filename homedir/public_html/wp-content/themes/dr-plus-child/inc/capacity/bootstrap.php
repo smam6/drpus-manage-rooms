@@ -2,7 +2,7 @@
 /**
  * Dr Plus Child Theme — Room Capacity Management
  *
- * Implements: spec 2.1, 2.2, 3.1, 7.11, 8.6, 8.7, 8.8, 5.5.58, 5.5.59, 5.5.60, 5.5.61, 5.5.62, 5.5.63
+ * Implements: spec 2.1, 2.2, 3.1, 7.11, 8.6, 8.7, 8.8, 5.5.58, 5.5.59, 5.5.60, 5.5.61, 5.5.62, 5.5.63, 4.13, 4.14, 4.15, 4.16, 4.17
  * Category: 8 — Deployment & compatibility (final hook wiring + asset enqueue)
  *
  * @package DrPlusChild\Capacity
@@ -100,6 +100,27 @@ function drplus_child_capacity_install() {
 }
 add_action( 'after_switch_theme', 'drplus_child_capacity_install' );
 add_action( 'init', 'drplus_child_capacity_install', 1 );
+
+/**
+ * Remove module options when the site switches AWAY from this child theme (audit W11).
+ * The log table is intentionally kept for data retention.
+ *
+ * Implements: spec 5.5.16 (non-destructive activation), audit item W11
+ *
+ * @return void
+ */
+function drplus_child_capacity_cleanup_on_switch_away() {
+	if ( get_option( 'stylesheet' ) === 'dr-plus-child' ) {
+		return;
+	}
+	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery — option cleanup by prefix, no user input.
+	$option_names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", 'drplus_capacity_%' ) );
+	foreach ( (array) $option_names as $option_name ) {
+		delete_option( $option_name );
+	}
+}
+add_action( 'after_switch_theme', 'drplus_child_capacity_cleanup_on_switch_away', 20 );
 
 /**
  * Register the admin settings page and its save handler (spec 5.1).

@@ -3,6 +3,13 @@
 All notable changes to the Room Capacity module are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [1.0.1] — 2026-11-07
+
+### Fixed
+- Added ABSPATH direct-access guard to `functions.php` (audit W13).
+- Module options (`drplus_capacity_%`) are now removed when the site switches away from the child theme; log table kept for data retention (audit W11).
+- **Race condition closed (audit residual #18, specs 4.13–4.17):** a MySQL advisory lock (`GET_LOCK('drplus_cap_'.md5(slot), 5)`) is now acquired at `woocommerce_checkout_process` and held across the parent theme's booking INSERT, released on `woocommerce_checkout_order_processed` (priority 9999) or on `shutdown`. A post-insert compensating check re-counts the slot and soft-deletes + cancels this order's booking (`reason = compensating_rollback`) if capacity is exceeded. Load-test mock measured 1000/1000 overbooking before the fix; `locked-v2` mode holds exactly 2/1000 after.
+
 ## [1.0.0] — 2026-11-06
 
 ### Added

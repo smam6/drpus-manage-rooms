@@ -30,6 +30,15 @@ Branch: arena/b5e90f4b-drpus-manage-rooms | Parent theme read-only | All code in
 2. Category 2 (server slot filter) vs Category 7 (client submit blocker): no overlap — different layers (AJAX response vs form submit). Confirmed.
 3. Option prefix drplus_capacity_*: grep of parent for 'drplus_capacity' returned 0 matches; existing drplus_* options are drplus_booking_product_id, drplus_sms_settings, etc. No collision.
 
+## Audit Fixes (technical debt audit, 2026-11-07)
+
+| Fix commit | Audit item | Change |
+|------------|-----------|--------|
+| 308add0a | W13 | ABSPATH guard added to functions.php |
+| 10c125e5 | W11 | drplus_capacity_* options deleted on switch-away from child theme |
+
+Residual risks documented in docs/audit-report.md: item 18 (check-then-act window before parent insert), W15 (no log TTL cron).
+
 ## Deviation log
 
 (empty — populated in phase-c-deviations.md if a deviation occurs)
@@ -346,3 +355,14 @@ Branch: arena/b5e90f4b-drpus-manage-rooms | Parent theme read-only | All code in
 | 5.6.100 | whole module (all classes) | covered |
 
 Total: 306 specs
+
+## v1.0.1 — Race condition fix (layered locking, specs 4.13–4.17)
+
+| File | Change | Specs |
+|------|--------|-------|
+| `inc/capacity/class-capacity-lock-manager.php` | NEW — GET_LOCK/RELEASE_LOCK advisory lock manager, shutdown failsafe | 4.13, 4.14, 4.16 |
+| `inc/capacity/class-capacity-validator.php` | MODIFIED — acquire lock before count, deferred release on `woocommerce_checkout_order_processed` (9999), Layer 2 compensating rollback | 4.13, 4.14, 4.15 |
+| `inc/capacity/class-capacity-repository.php` | MODIFIED — new lock-free `count_distinct_specialists()`; `check_slot_with_lock()` kept, deprecated | 4.17 |
+| `inc/capacity/class-capacity-messages.php` | MODIFIED — new Persian strings `system_busy()`, `compensating_rollback()` | 4.13, 4.15 |
+| `inc/capacity/bootstrap.php` | MODIFIED — require lock manager; header lists 4.13–4.17 | — |
+| `tests/load/mock-server/` | NEW `locked-v2` mode simulating Layer 1 + Layer 2 | 4.13–4.15 |

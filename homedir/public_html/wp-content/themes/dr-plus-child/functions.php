@@ -1,4 +1,14 @@
 <?php
+/**
+ * Dr Plus Child Theme entry point.
+ *
+ * Implements: spec W13 (ABSPATH guard in every PHP file)
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**************************************************************************
 ***************************************************************************/
 /* DON'T REMOVE THIS LINE 👇🏻 */

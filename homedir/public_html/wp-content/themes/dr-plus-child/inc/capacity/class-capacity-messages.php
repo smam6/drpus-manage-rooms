@@ -146,4 +146,26 @@ class DrPlus_Child_Capacity_Messages {
 	public static function admin_no_clinics() {
 		return __( 'هیچ کلینیکی یافت نشد.', 'drplus-child' );
 	}
+
+	/**
+	 * System-busy message when the slot advisory lock times out (spec 4.13).
+	 *
+	 * Implements: spec 4.13, 4.6
+	 *
+	 * @return string
+	 */
+	public static function system_busy() {
+		return __( 'سیستم مشغول است. لطفاً چند لحظه بعد دوباره تلاش کنید.', 'drplus-child' );
+	}
+
+	/**
+	 * Compensating-rollback message when Layer 2 cancels an over-capacity booking (spec 4.15).
+	 *
+	 * Implements: spec 4.15
+	 *
+	 * @return string
+	 */
+	public static function compensating_rollback() {
+		return __( 'ظرفیت این ساعت هم‌زنان پر شد. لطفاً ساعت دیگری انتخاب کنید.', 'drplus-child' );
+	}
 }

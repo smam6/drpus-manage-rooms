@@ -1,0 +1,14 @@
+# mock concurrency run — mode=locked-v2 — 2026-11-08T13:16:04.319Z
+T7 mode=locked-v2 n=1000 capacity=2 -> successes=2 rejections=998 finalCount=2 invariant=HELD
+T10 round 1: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 2: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 3: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 4: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 5: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 6: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 7: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 8: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 9: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 round 10: mode=locked-v2 n=1000 -> successes=2 rejections=998 finalCount=2
+T10 mode=locked-v2: rounds with exactly 2 successes = 10/10
+T8 mode=locked-v2: 10 slots x 100 -> total successes=20, slots with exactly 2 = 10/10
