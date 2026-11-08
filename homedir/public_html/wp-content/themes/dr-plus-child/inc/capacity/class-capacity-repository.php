@@ -165,6 +165,31 @@ class DrPlus_Child_Capacity_Repository {
 	}
 
 	/**
+	 * Count distinct specialists with active in-person bookings for a slot.
+	 * No transaction, no locks — the caller is responsible for locking (spec 4.17).
+	 *
+	 * Implements: spec 1.16, 4.17
+	 *
+	 * @param string $office_id Clinic id.
+	 * @param string $date      Y-m-d.
+	 * @param string $start     Start time H:i:s.
+	 * @return int Distinct active specialist count.
+	 */
+	public static function count_distinct_specialists( string $office_id, string $date, string $start ): int {
+		global $wpdb;
+		$statuses     = self::EXCLUDED_STATUSES;
+		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+		$count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(DISTINCT specialist_id) FROM " . self::booking_table() .
+				" WHERE office_id = %s AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})",
+				array_merge( array( $office_id, $date, $start ), $statuses )
+			)
+		);
+		return (int) $count;
+	}
+
+	/**
 	 * Batch-count all hours of one day in ONE query — no N+1 (spec 1.13, 2.7, 8.6, 5.6.89).
 	 *
 	 * Implements: spec 1.13, 2.7
