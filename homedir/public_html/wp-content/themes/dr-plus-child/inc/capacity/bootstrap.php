@@ -2,7 +2,7 @@
 /**
  * Dr Plus Child Theme — Room Capacity Management
  *
- * Implements: spec 2.1, 2.2, 3.1, 7.11, 8.6, 8.7, 8.8, 5.5.58, 5.5.59, 5.5.60, 5.5.61, 5.5.62, 5.5.63
+ * Implements: spec 2.1, 2.2, 3.1, 7.11, 8.6, 8.7, 8.8, 5.5.58, 5.5.59, 5.5.60, 5.5.61, 5.5.62, 5.5.63, 4.13, 4.14, 4.15, 4.16, 4.17
  * Category: 8 — Deployment & compatibility (final hook wiring + asset enqueue)
  *
  * @package DrPlusChild\Capacity
