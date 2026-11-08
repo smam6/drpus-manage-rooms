@@ -48,6 +48,31 @@ function countBooked(slotKey) {
  * mode 'locked':  insert happens inside the lock (proposed fix).
  */
 async function book(slotKey, specialistId, capacity, mode) {
+  if (mode === 'locked-v2') {
+    // v1.0.1 Layer 1: GET_LOCK held across count AND the parent's insert.
+    const mu = mutexFor(slotKey);
+    await mu.acquire(); // SELECT GET_LOCK(..., 5)
+    let allowed, rolledBack = false;
+    try {
+      allowed = countBooked(slotKey) < capacity; // count_distinct_specialists()
+      if (allowed) {
+        // parent theme INSERT happens while the advisory lock is still held
+        if (!bookings.has(slotKey)) bookings.set(slotKey, new Set());
+        bookings.get(slotKey).add(specialistId);
+      }
+      // Layer 2: compensating check after insert — re-count, roll back own booking if over
+      if (allowed && countBooked(slotKey) > capacity) {
+        bookings.get(slotKey).delete(specialistId);
+        rolledBack = true;
+      }
+    } finally {
+      mu.release(); // RELEASE_LOCK after woocommerce_checkout_order_processed
+    }
+    if (!allowed) return { ok: false, reason: 'capacity_exceeded' };
+    if (rolledBack) return { ok: false, reason: 'compensating_rollback' };
+    return { ok: true };
+  }
+
   const mu = mutexFor(slotKey);
   await mu.acquire();
   let allowed;
