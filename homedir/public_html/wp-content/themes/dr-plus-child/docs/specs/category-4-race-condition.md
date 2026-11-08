@@ -16,3 +16,17 @@ Parent evidence base: table engine InnoDB (`mysql/aghazga1_new.sql:47066`) → `
 | 57 | 4.10 | Race test MUST fire 2 concurrent HTTP POSTs (curl_multi / parallel fetch), never sequential | test script review | VERIFIED (Section 3.6, V-C3) |
 | 58 | 4.11 | Exactly 1 of the 2 concurrent bookings MUST succeed and `{$wpdb->prefix}drplus_capacity_log` MUST get exactly 1 new row | scenario D4 assertions | VERIFIED |
 | 59 | 4.12 | If engine detection fails, default MUST be the `GET_LOCK` path (MyISAM-safe), never bare `FOR UPDATE` | failure-injection test | VERIFIED (Section 5.6 spec 97) |
+
+## Phase C — v1.0.1 Race Condition Fix (Specs 4.13–4.17)
+
+Load-test evidence (mock, 1000 concurrent): the 4.2–4.12 check-then-act design commits the
+count transaction BEFORE the parent's INSERT, so every concurrent request sees `count < capacity`
+(audit residual #18, measured: 1000/1000 successes at capacity 2). Closed by layered locking:
+
+| ID | Spec | Imperative requirement | Verification method | Status |
+|----|------|------------------------|---------------------|--------|
+| 60 | 4.13 | Validator MUST acquire `GET_LOCK('drplus_cap_'.md5(office_id\|date\|start_time), 5)` at `woocommerce_checkout_process` (priority 5) for in-person bookings; on timeout reject with Persian "system busy" notice and log `lock_failed` | locked-v2 mock T7/T10 | IMPLEMENTED — mock gate pending |
+| 61 | 4.14 | Lock MUST be released only AFTER the parent's INSERT: on `woocommerce_checkout_order_processed` priority 9999, or on rejection immediately, or on `shutdown` as failsafe — NEVER before the INSERT | code review + locked-v2 mock | IMPLEMENTED — mock gate pending |
+| 62 | 4.15 | On `woocommerce_checkout_order_processed`, re-count the slot; if count > capacity, soft-delete THIS order's booking row (`deleted=1, order_status='cancelled'`), log reason `compensating_rollback`, cancel the WC order with Persian notice | code review + mock layer-2 assertion | IMPLEMENTED — mock gate pending |
+| 63 | 4.16 | Lock names MUST be `'drplus_cap_' . md5(...)` (44 chars) — direct concatenation of office_id\|date\|time is forbidden (>64 chars limit) | unit: build_lock_name length | IMPLEMENTED — mock gate pending |
+| 64 | 4.17 | `DrPlus_Child_Capacity_Repository::count_distinct_specialists()` MUST be lock-free/transaction-free; the validator MUST call it instead of `check_slot_with_lock()` (kept, deprecated) | grep call sites | IMPLEMENTED — mock gate pending |
