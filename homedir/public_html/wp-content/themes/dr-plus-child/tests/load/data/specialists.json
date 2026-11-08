@@ -1,0 +1,1 @@
+{ "specialists": [4, 6, 10, 11, 15, 19, "<SPEC_A>", "<SPEC_B>"], "count_needed": 20, "note": "seed 20 test specialists via setup-staging.sh" }

@@ -1,0 +1,1 @@
+{ "clinics": [596, 614, 9001, 9002, 9003], "note": "replace 596/614 with real hospital post IDs; 900x are seeded by setup-staging.sh" }
