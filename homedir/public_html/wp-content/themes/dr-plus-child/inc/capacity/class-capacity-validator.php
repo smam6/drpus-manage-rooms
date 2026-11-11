@@ -10,6 +10,13 @@
  * plugins/woocommerce/includes/class-wc-checkout.php:1378 runs before
  * create_order() at :1411 and woocommerce_checkout_order_processed at :1427.
  *
+ * Booking extraction (`extract_booking_from_request`) inspects three sources in order:
+ *   1. WooCommerce Cart (`WC()->cart->get_cart()` item `is_booking` / `book_data`,
+ *      falling back from localized display `date` to unix `raw_date` and from
+ *      `start_time` to ms `raw_time`).
+ *   2. PHP Session (`$_SESSION['booking']`).
+ *   3. Request POST (`$_POST['booking_date']` or `$_POST['date']`).
+ *
  * Two-layer race fix (closes audit residual #18):
  *   Layer 1 — DrPlus_Child_Capacity_Lock_Manager::acquire() at checkout, held until
  *             woocommerce_checkout_order_processed (after the parent's INSERT) (spec 4.13, 4.14).
@@ -35,7 +42,7 @@ class DrPlus_Child_Capacity_Validator {
 	/**
 	 * Error codes as class constants (spec 3.15, 5.6.67).
 	 */
-	const ERR_CAPACITY = 'capacity_exceeded';
+	const ERR_CAPACITY     = 'capacity_exceeded';
 	const ERR_MISSING_DATE = 'missing_date';
 	const ERR_COMPENSATING = 'compensating_rollback';
 
@@ -45,21 +52,48 @@ class DrPlus_Child_Capacity_Validator {
 	const SESSION_LOCK_CONTEXT = 'drplus_capacity_lock_context';
 
 	/**
+	 * Unified checkout validator: conditional date guard + online exemption + capacity check.
+	 *
+	 * Returns early with no notices when the request/cart is not a booking order.
+	 *
+	 * @return void
+	 */
+	public static function validate_checkout(): void {
+		$booking = self::extract_booking_from_request();
+
+		// If it's not a booking at all (e.g., normal product), return early and do nothing.
+		if ( null === $booking ) {
+			return;
+		}
+
+		// If it IS a booking, but the date is missing, NOW we show the error.
+		if ( empty( $booking['date'] ) ) {
+			wc_add_notice(
+				__( 'لطفاً ابتدا تاریخ مراجعه را انتخاب کنید.', 'drplus-child' ),
+				'error'
+			);
+			self::log( $booking, 0, 0, self::ERR_MISSING_DATE );
+			return;
+		}
+
+		self::validate_booking_capacity( $booking );
+	}
+
+	/**
 	 * Priority 4: missing-date check runs before the capacity check (fail fast).
 	 *
 	 * Implements: spec 3.6, 7.7, 7.8, 7.9
 	 *
 	 * @return void
 	 */
-	public static function check_missing_date() {
-		$book = self::cart_book_data();
-		if ( null === $book ) {
+	public static function check_missing_date(): void {
+		$booking = self::extract_booking_from_request();
+		if ( null === $booking ) {
 			return; // Not a booking order.
 		}
-		$date = self::extract_date( $book );
-		if ( '' === $date ) {
+		if ( empty( $booking['date'] ) ) {
 			wc_add_notice( DrPlus_Child_Capacity_Messages::missing_date(), 'error' );
-			self::log( $book, 0, 0, self::ERR_MISSING_DATE );
+			self::log( $booking, 0, 0, self::ERR_MISSING_DATE );
 		}
 	}
 
@@ -74,15 +108,29 @@ class DrPlus_Child_Capacity_Validator {
 	 *
 	 * @return void
 	 */
-	public static function validate_capacity() {
+	public static function validate_capacity(): void {
 		if ( ! DrPlus_Child_Capacity_Service::enabled() ) {
 			return;
 		}
-		$book = self::cart_book_data();
-		if ( null === $book ) {
+		$booking = self::extract_booking_from_request();
+		if ( null === $booking || empty( $booking['date'] ) ) {
+			return; // Not a booking, or already reported by the priority-4 date check (spec 3.6).
+		}
+
+		self::validate_booking_capacity( $booking );
+	}
+
+	/**
+	 * Execute online-visit exemption, Layer 1 locking, capacity check, and deferred release setup.
+	 *
+	 * @param array $booking Normalized booking array from extract_booking_from_request().
+	 * @return void
+	 */
+	protected static function validate_booking_capacity( array $booking ): void {
+		if ( ! DrPlus_Child_Capacity_Service::enabled() ) {
 			return;
 		}
-		$office_id = isset( $book['office_id'] ) ? (string) $book['office_id'] : '';
+		$office_id = isset( $booking['office_id'] ) ? (string) $booking['office_id'] : '';
 		if ( '' === $office_id ) {
 			return;
 		}
@@ -90,18 +138,15 @@ class DrPlus_Child_Capacity_Validator {
 		if ( DrPlus_Child_Capacity_Service::is_online_visit( $office_id ) ) {
 			return; // Online visits exempt (spec 3.5).
 		}
-		$date = self::extract_date( $book );
-		if ( '' === $date ) {
-			return; // Already reported by the priority-4 date check (spec 3.6).
-		}
-		$start_time = self::extract_start_time( $book );
-		$specialist = isset( $book['specialist_id'] ) ? (int) $book['specialist_id'] : 0;
+		$date       = (string) $booking['date'];
+		$start_time = isset( $booking['start_time'] ) ? (string) $booking['start_time'] : '';
+		$specialist = isset( $booking['specialist_id'] ) ? (int) $booking['specialist_id'] : 0;
 		$capacity   = DrPlus_Child_Capacity_Service::capacity_for( $office_id );
 
 		// Layer 1: acquire the global advisory lock BEFORE counting (spec 4.13). Timeout 5s max.
 		$acquired = DrPlus_Child_Capacity_Lock_Manager::acquire( $office_id, $date, $start_time, 5 );
 		if ( ! $acquired ) {
-			self::log( $book, 0, $capacity, DrPlus_Child_Capacity_Repository::ERR_LOCK_FAILED );
+			self::log( $booking, 0, $capacity, DrPlus_Child_Capacity_Repository::ERR_LOCK_FAILED );
 			wc_add_notice( DrPlus_Child_Capacity_Messages::system_busy(), 'error' );
 			return;
 		}
@@ -112,7 +157,7 @@ class DrPlus_Child_Capacity_Validator {
 
 		if ( $count >= $capacity ) {
 			// Reject and release immediately (spec 4.14).
-			self::log( $book, $count, $capacity, self::ERR_CAPACITY );
+			self::log( $booking, $count, $capacity, self::ERR_CAPACITY );
 			// Rejection must include all available hours of the day (decision #4, spec 3.9).
 			$slots = self::day_slots_for_notice( $office_id, $date, $specialist );
 			$hours = DrPlus_Child_Capacity_Service::get_available_hours( $office_id, $date, $slots );
@@ -135,6 +180,168 @@ class DrPlus_Child_Capacity_Validator {
 				'specialist_id' => $specialist,
 			) );
 		}
+	}
+
+	/**
+	 * Extract booking details from WooCommerce Cart, PHP Session, or POST in priority order.
+	 *
+	 * Source A: WC()->cart->get_cart() -> $cart_item['book_data'] (returns immediately if date resolves).
+	 * Source B: $_SESSION['booking'] (fallback if cart check fails).
+	 * Source C: $_POST['booking_date'] / $_POST['date'] (final fallback).
+	 *
+	 * @return array{office_id:string,date:string,start_time:string,specialist_id:int}|null
+	 */
+	public static function extract_booking_from_request(): ?array {
+		$partial_booking = null;
+
+		// Source A: WooCommerce Cart.
+		if ( function_exists( 'WC' ) && WC()->cart && method_exists( WC()->cart, 'get_cart' ) ) {
+			$cart_items = WC()->cart->get_cart();
+			if ( is_iterable( $cart_items ) ) {
+				foreach ( $cart_items as $cart_item ) {
+					if ( ! is_array( $cart_item ) ) {
+						continue;
+					}
+					if ( ! empty( $cart_item['is_booking'] ) || ! empty( $cart_item['book_data'] ) ) {
+						$raw_data = $cart_item['book_data'] ?? array();
+						if ( is_object( $raw_data ) ) {
+							$raw_data = get_object_vars( $raw_data );
+						}
+						$data = is_array( $raw_data ) ? $raw_data : array();
+
+						$office_id     = isset( $data['office_id'] )
+							? (string) $data['office_id']
+							: ( isset( $data['office'] ) ? (string) $data['office'] : '' );
+						$date          = self::extract_date( $data );
+						$start_time    = self::extract_start_time( $data );
+						$specialist_id = isset( $data['specialist_id'] ) ? (int) $data['specialist_id'] : 0;
+
+						$booking = array(
+							'office_id'     => $office_id,
+							'date'          => $date,
+							'start_time'    => $start_time,
+							'specialist_id' => $specialist_id,
+						);
+
+						if ( '' !== $date ) {
+							return $booking;
+						}
+
+						if ( null === $partial_booking ) {
+							$partial_booking = $booking;
+						}
+					}
+				}
+			}
+		}
+
+		// Source B: Session (Fallback).
+		if ( isset( $_SESSION['booking'] ) && is_array( $_SESSION['booking'] ) && ! empty( $_SESSION['booking'] ) ) {
+			$session_data = $_SESSION['booking'];
+			$date         = self::extract_date( $session_data );
+
+			if ( '' !== $date ) {
+				$office_id     = isset( $session_data['office_id'] )
+					? (string) $session_data['office_id']
+					: ( isset( $session_data['office'] ) ? (string) $session_data['office'] : '' );
+				$start_time    = self::extract_start_time( $session_data );
+				$specialist_id = isset( $session_data['specialist_id'] ) ? (int) $session_data['specialist_id'] : 0;
+
+				if ( null !== $partial_booking ) {
+					return array(
+						'office_id'     => '' !== $partial_booking['office_id'] ? $partial_booking['office_id'] : $office_id,
+						'date'          => $date,
+						'start_time'    => '' !== $partial_booking['start_time'] ? $partial_booking['start_time'] : $start_time,
+						'specialist_id' => $partial_booking['specialist_id'] > 0 ? $partial_booking['specialist_id'] : $specialist_id,
+					);
+				}
+
+				return array(
+					'office_id'     => $office_id,
+					'date'          => $date,
+					'start_time'    => $start_time,
+					'specialist_id' => $specialist_id,
+				);
+			}
+		}
+
+		// Source C: POST (Fallback).
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- read-only extraction during checkout/booking validation.
+		$has_post_booking_date = isset( $_POST['booking_date'] ) && ! is_array( $_POST['booking_date'] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$has_post_date = isset( $_POST['date'] ) && ! is_array( $_POST['date'] );
+
+		if ( $has_post_booking_date || $has_post_date ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw_post_date = ( $has_post_booking_date && '' !== trim( (string) $_POST['booking_date'] ) )
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing
+				? $_POST['booking_date']
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing
+				: ( $has_post_date ? $_POST['date'] : '' );
+
+			$date = self::normalize_date_candidate( self::clean_text( $raw_post_date ) );
+
+			$post_office = '';
+			foreach ( array( 'booking_office', 'office_id', 'office' ) as $office_key ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing
+				if ( isset( $_POST[ $office_key ] ) && ! is_array( $_POST[ $office_key ] ) && '' !== (string) $_POST[ $office_key ] ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Missing
+					$post_office = self::clean_text( $_POST[ $office_key ] );
+					break;
+				}
+			}
+
+			$post_time = '';
+			foreach ( array( 'booking_time', 'start_time', 'raw_time' ) as $time_key ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing
+				if ( isset( $_POST[ $time_key ] ) && ! is_array( $_POST[ $time_key ] ) && '' !== (string) $_POST[ $time_key ] ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Missing
+					$post_time = self::normalize_time_candidate( self::clean_text( $_POST[ $time_key ] ) );
+					if ( '' !== $post_time ) {
+						break;
+					}
+				}
+			}
+
+			$post_specialist = 0;
+			foreach ( array( 'booking_specialist_id', 'specialist_id' ) as $spec_key ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing
+				if ( isset( $_POST[ $spec_key ] ) && ! is_array( $_POST[ $spec_key ] ) && '' !== (string) $_POST[ $spec_key ] ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Missing
+					$post_specialist = (int) self::clean_text( $_POST[ $spec_key ] );
+					break;
+				}
+			}
+
+			if ( '' !== $date ) {
+				if ( null !== $partial_booking ) {
+					return array(
+						'office_id'     => '' !== $partial_booking['office_id'] ? $partial_booking['office_id'] : $post_office,
+						'date'          => $date,
+						'start_time'    => '' !== $partial_booking['start_time'] ? $partial_booking['start_time'] : $post_time,
+						'specialist_id' => $partial_booking['specialist_id'] > 0 ? $partial_booking['specialist_id'] : $post_specialist,
+					);
+				}
+
+				return array(
+					'office_id'     => $post_office,
+					'date'          => $date,
+					'start_time'    => $post_time,
+					'specialist_id' => $post_specialist,
+				);
+			}
+
+			if ( null === $partial_booking && $has_post_booking_date ) {
+				$partial_booking = array(
+					'office_id'     => $post_office,
+					'date'          => '',
+					'start_time'    => $post_time,
+					'specialist_id' => $post_specialist,
+				);
+			}
+		}
+
+		return $partial_booking;
 	}
 
 	/**
@@ -244,7 +451,7 @@ class DrPlus_Child_Capacity_Validator {
 			return null;
 		}
 		foreach ( WC()->cart->get_cart() as $cart_item ) {
-			if ( ! empty( $cart_item['is_booking'] ) && ! empty( $cart_item['book_data'] ) && is_array( $cart_item['book_data'] ) ) {
+			if ( ( ! empty( $cart_item['is_booking'] ) || ! empty( $cart_item['book_data'] ) ) && ! empty( $cart_item['book_data'] ) && is_array( $cart_item['book_data'] ) ) {
 				return $cart_item['book_data'];
 			}
 		}
@@ -252,39 +459,143 @@ class DrPlus_Child_Capacity_Validator {
 	}
 
 	/**
-	 * Extract and normalize the booking date: primary `date` (Y-m-d), fallback `raw_date` (unix) (spec 3.3).
+	 * Extract and normalize the booking date.
+	 *
+	 * Checks `date` first (when already Y-m-d or unix timestamp), then falls back to
+	 * `raw_date` (unix timestamp used by Dr Plus when `date` is a localized Jalali string)
+	 * and `booking_date`.
 	 *
 	 * Implements: spec 3.3, Finding 5
 	 *
-	 * @param array $book book_data from the cart item.
+	 * @param array $book Booking payload from cart, session, or POST.
 	 * @return string Y-m-d or empty string.
 	 */
 	protected static function extract_date( $book ) {
-		if ( ! empty( $book['date'] ) ) {
-			return DrPlus_Child_Capacity_Repository::normalize_date( $book['date'] );
+		if ( ! is_array( $book ) ) {
+			return '';
 		}
-		if ( ! empty( $book['raw_date'] ) ) {
-			return DrPlus_Child_Capacity_Repository::normalize_date( $book['raw_date'] );
+		foreach ( array( 'date', 'raw_date', 'booking_date' ) as $key ) {
+			if ( isset( $book[ $key ] ) && '' !== $book[ $key ] && null !== $book[ $key ] ) {
+				$normalized = self::normalize_date_candidate( $book[ $key ] );
+				if ( '' !== $normalized ) {
+					return $normalized;
+				}
+			}
 		}
 		return '';
 	}
 
 	/**
-	 * Extract and normalize the start time: primary `start_time` (H:i:s), fallback `raw_time` (ms) (spec 3.3).
+	 * Extract and normalize the start time: primary `start_time` (H:i / H:i:s),
+	 * fallback `raw_time` / `time` (ms since midnight) (spec 3.3).
 	 *
 	 * Implements: spec 3.3, Finding 5
 	 *
-	 * @param array $book book_data from the cart item.
+	 * @param array $book Booking payload from cart, session, or POST.
 	 * @return string H:i:s or empty string.
 	 */
 	protected static function extract_start_time( $book ) {
-		if ( ! empty( $book['start_time'] ) ) {
-			return DrPlus_Child_Capacity_Repository::normalize_time( $book['start_time'] );
+		if ( ! is_array( $book ) ) {
+			return '';
 		}
-		if ( ! empty( $book['raw_time'] ) ) {
-			return DrPlus_Child_Capacity_Repository::normalize_time( $book['raw_time'] );
+		if ( ! empty( $book['start_time'] ) ) {
+			$normalized = DrPlus_Child_Capacity_Repository::normalize_time( $book['start_time'] );
+			if ( '' !== $normalized ) {
+				return $normalized;
+			}
+		}
+		foreach ( array( 'raw_time', 'time', 'booking_time' ) as $key ) {
+			if ( isset( $book[ $key ] ) && '' !== (string) $book[ $key ] ) {
+				$normalized = self::normalize_time_candidate( $book[ $key ] );
+				if ( '' !== $normalized ) {
+					return $normalized;
+				}
+			}
 		}
 		return '';
+	}
+
+	/**
+	 * Normalize a raw date candidate (Y-m-d, strtotime-compatible string, or unix timestamp in s/ms).
+	 *
+	 * Non-Gregorian display strings (e.g. "22 شهریور 1404") return '' so callers can fall back to `raw_date`.
+	 *
+	 * @param mixed $value Candidate date value.
+	 * @return string Y-m-d or empty string.
+	 */
+	protected static function normalize_date_candidate( $value ): string {
+		if ( null === $value || '' === $value || is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+		$str = trim( self::normalize_digits( (string) $value ) );
+		if ( '' === $str ) {
+			return '';
+		}
+		if ( is_numeric( $str ) ) {
+			$ts = (int) $str;
+			if ( $ts <= 0 ) {
+				return '';
+			}
+			// Convert millisecond unix timestamps to seconds.
+			if ( $ts > 100000000000 ) {
+				$ts = (int) floor( $ts / 1000 );
+			}
+			return DrPlus_Child_Capacity_Repository::normalize_date( $ts );
+		}
+		return DrPlus_Child_Capacity_Repository::normalize_date( $str );
+	}
+
+	/**
+	 * Normalize a raw time candidate (H:i[:s] or milliseconds since midnight).
+	 *
+	 * @param mixed $value Candidate time value.
+	 * @return string H:i:s or empty string.
+	 */
+	protected static function normalize_time_candidate( $value ): string {
+		if ( null === $value || '' === $value || is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+		$str = trim( self::normalize_digits( (string) $value ) );
+		if ( '' === $str ) {
+			return '';
+		}
+		if ( is_numeric( $str ) ) {
+			$seconds = (int) floor( ( (int) $str ) / 1000 );
+			return gmdate( 'H:i:s', ( ( $seconds % 86400 ) + 86400 ) % 86400 );
+		}
+		return DrPlus_Child_Capacity_Repository::normalize_time( $str );
+	}
+
+	/**
+	 * Convert Persian/Arabic numerals to ASCII digits.
+	 *
+	 * @param string $value Input string.
+	 * @return string
+	 */
+	protected static function normalize_digits( string $value ): string {
+		return strtr(
+			$value,
+			array(
+				'۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+				'۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+				'٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+				'٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+			)
+		);
+	}
+
+	/**
+	 * Sanitize a raw text input value safely.
+	 *
+	 * @param mixed $value Raw input.
+	 * @return string
+	 */
+	protected static function clean_text( $value ): string {
+		if ( is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+		$raw = function_exists( 'wp_unslash' ) ? wp_unslash( (string) $value ) : (string) $value;
+		return function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $raw ) : trim( $raw );
 	}
 
 	/**
@@ -314,17 +625,25 @@ class DrPlus_Child_Capacity_Validator {
 	 *
 	 * Implements: spec 3.8, 6.6
 	 *
-	 * @param array  $book          book_data.
+	 * @param array  $book          book_data or normalized booking array.
 	 * @param int    $count         Current distinct count.
 	 * @param int    $capacity      Capacity limit.
 	 * @param string $reason        Error code.
 	 * @return void
 	 */
 	protected static function log( $book, $count, $capacity, $reason ) {
+		$booking_date = ! empty( $book['date'] ) ? self::normalize_date_candidate( $book['date'] ) : '';
+		if ( '' === $booking_date ) {
+			$booking_date = self::extract_date( is_array( $book ) ? $book : array() );
+		}
+		$start_time = ! empty( $book['start_time'] ) ? self::normalize_time_candidate( $book['start_time'] ) : '';
+		if ( '' === $start_time ) {
+			$start_time = self::extract_start_time( is_array( $book ) ? $book : array() );
+		}
 		DrPlus_Child_Capacity_Logger::log_blocked( array(
 			'office_id'      => isset( $book['office_id'] ) ? (string) $book['office_id'] : '',
-			'booking_date'   => self::extract_date( $book ),
-			'start_time'     => self::extract_start_time( $book ),
+			'booking_date'   => $booking_date,
+			'start_time'     => $start_time,
 			'specialist_id'  => isset( $book['specialist_id'] ) ? (int) $book['specialist_id'] : 0,
 			'current_count'  => $count,
 			'capacity_limit' => $capacity,
