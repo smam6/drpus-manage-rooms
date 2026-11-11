@@ -22,28 +22,15 @@ if ( ! defined( 'DRPLUS_CAPACITY_DB_VERSION' ) ) {
 	define( 'DRPLUS_CAPACITY_DB_VERSION', '1.0.0' );
 }
 
-/**
- * Load a capacity module class file from inc/capacity/.
- *
- * Implements: spec 5.5.27, 8.2
- *
- * @param string $class_file File name without extension, e.g. 'class-capacity-repository'.
- * @return void
- */
-function drplus_child_capacity_require( $class_file ) {
-	$path = trailingslashit( get_stylesheet_directory() ) . 'inc/capacity/' . $class_file . '.php';
-	if ( file_exists( $path ) ) {
-		require_once $path;
-	}
-}
-
-drplus_child_capacity_require( 'class-capacity-installer' );
-drplus_child_capacity_require( 'class-capacity-repository' );
-drplus_child_capacity_require( 'class-capacity-service' );
-drplus_child_capacity_require( 'class-capacity-logger' );
-drplus_child_capacity_require( 'class-capacity-validator' );
-drplus_child_capacity_require( 'class-capacity-admin' );
-drplus_child_capacity_require( 'class-capacity-messages' );
+// Load capacity module classes (spec 5.5.27, 8.2).
+require_once __DIR__ . '/class-capacity-installer.php';
+require_once __DIR__ . '/class-capacity-lock-manager.php';
+require_once __DIR__ . '/class-capacity-repository.php';
+require_once __DIR__ . '/class-capacity-service.php';
+require_once __DIR__ . '/class-capacity-logger.php';
+require_once __DIR__ . '/class-capacity-validator.php';
+require_once __DIR__ . '/class-capacity-admin.php';
+require_once __DIR__ . '/class-capacity-messages.php';
 
 /**
  * Is the current request the booking page? Checks both the parent option and the shortcode (spec 5.5.58).
