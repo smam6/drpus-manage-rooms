@@ -186,6 +186,13 @@ class DrPlus_Child_Capacity_Repository {
 				array_merge( array( $office_id, $date, $start ), $statuses )
 			)
 		);
+		error_log( sprintf(
+			'[DRPLUS COUNT SQL] Query args: office=%s | date=%s | start=%s | Result: %d',
+			var_export( $office_id, true ),
+			var_export( $date, true ),
+			var_export( $start, true ),
+			(int) $count
+		) );
 		return (int) $count;
 	}
 

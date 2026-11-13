@@ -155,6 +155,17 @@ class DrPlus_Child_Capacity_Validator {
 		// post_insert_verify_and_release (after the parent's INSERT) — never before (spec 4.14).
 		$count = DrPlus_Child_Capacity_Repository::count_distinct_specialists( $office_id, $date, $start_time );
 
+		error_log( sprintf(
+			'[DRPLUS CAPACITY] office_id=%s (type: %s) | date=%s | start_time=%s | specialist_id=%s | capacity=%d | current_count=%d',
+			var_export( $booking['office_id'], true ),
+			gettype( $booking['office_id'] ),
+			var_export( $booking['date'], true ),
+			var_export( $booking['start_time'], true ),
+			var_export( $booking['specialist_id'], true ),
+			$capacity,
+			(int) $count
+		) );
+
 		if ( $count >= $capacity ) {
 			// Reject and release immediately (spec 4.14).
 			self::log( $booking, $count, $capacity, self::ERR_CAPACITY );
