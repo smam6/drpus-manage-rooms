@@ -61,34 +61,6 @@ class DrPlus_Child_Capacity_Validator {
 	protected static $capacity_rejected = false;
 
 	/**
-	 * Unified checkout validator: conditional date guard + online exemption + capacity check.
-	 *
-	 * Returns early with no notices when the request/cart is not a booking order.
-	 *
-	 * @return void
-	 */
-	public static function validate_checkout(): void {
-		$booking = self::extract_booking_from_request();
-
-		// If it's not a booking at all (e.g., normal product), return early and do nothing.
-		if ( null === $booking ) {
-			return;
-		}
-
-		// If it IS a booking, but the date is missing, NOW we show the error.
-		if ( empty( $booking['date'] ) ) {
-			wc_add_notice(
-				__( 'لطفاً ابتدا تاریخ مراجعه را انتخاب کنید.', 'drplus-child' ),
-				'error'
-			);
-			self::log( $booking, 0, 0, self::ERR_MISSING_DATE );
-			return;
-		}
-
-		self::validate_booking_capacity( $booking );
-	}
-
-	/**
 	 * Priority 4: missing-date check runs before the capacity check (fail fast).
 	 *
 	 * Implements: spec 3.6, 7.7, 7.8, 7.9
