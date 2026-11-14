@@ -81,12 +81,6 @@ class DrPlus_Child_Capacity_Service {
 	 * @return array Filtered slot list, same shape (spec 2.5).
 	 */
 	public static function filter_full_slots( $slots, $args ) {
-		error_log( sprintf(
-			'[DRPLUS FILTER FIRED] Total slots=%d | office=%s | date=%s',
-			is_array( $slots ) ? count( $slots ) : 0,
-			var_export( is_array( $args ) ? ( $args['office_id'] ?? 'NONE' ) : 'NONE', true ),
-			var_export( is_array( $args ) ? ( $args['date'] ?? 'NONE' ) : 'NONE', true )
-		) );
 		if ( ! self::enabled() || ! is_array( $slots ) ) {
 			return $slots;
 		}
