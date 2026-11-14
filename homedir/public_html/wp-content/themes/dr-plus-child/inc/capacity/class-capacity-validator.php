@@ -44,6 +44,7 @@ class DrPlus_Child_Capacity_Validator {
 	 */
 	const ERR_CAPACITY     = 'capacity_exceeded';
 	const ERR_MISSING_DATE = 'missing_date';
+	const ERR_MISSING_TIME = 'missing_time';
 	const ERR_COMPENSATING = 'compensating_rollback';
 
 	/**
@@ -141,7 +142,17 @@ class DrPlus_Child_Capacity_Validator {
 		$date       = (string) $booking['date'];
 		$start_time = isset( $booking['start_time'] ) ? (string) $booking['start_time'] : '';
 		$specialist = isset( $booking['specialist_id'] ) ? (int) $booking['specialist_id'] : 0;
-		$capacity   = DrPlus_Child_Capacity_Service::capacity_for( $office_id );
+
+		// Fail closed when the booked hour cannot be resolved.
+		// An empty H:i:s would be bound as `start_time = ''`, which matches no row, so the count
+		// would be 0 and an in-person booking on a FULL hour would be accepted (capacity bypass).
+		if ( '' === $start_time ) {
+			self::log( $booking, 0, 0, self::ERR_MISSING_TIME );
+			wc_add_notice( DrPlus_Child_Capacity_Messages::missing_time(), 'error' );
+			return;
+		}
+
+		$capacity = DrPlus_Child_Capacity_Service::capacity_for( $office_id );
 
 		// Layer 1: acquire the global advisory lock BEFORE counting (spec 4.13). Timeout 5s max.
 		$acquired = DrPlus_Child_Capacity_Lock_Manager::acquire( $office_id, $date, $start_time, 5 );
