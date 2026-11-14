@@ -22,9 +22,20 @@ class DrPlus_Child_Capacity_Service {
 
 	/**
 	 * Online visit types exempt from capacity (spec 5.6.64, decision #5).
+	 *
 	 * instant_chat_consultation is intentionally NOT in this list (decision #6).
+	 * 'consultation' is the parent theme's documented legacy alias of
+	 * phone_consultation (class-specialists-reserve.php:114,
+	 * template-booking-step-receipt.php:79), so it must be exempt too — otherwise
+	 * a legacy-tagged phone consultation would be counted against room capacity.
 	 */
 	const ONLINE_TYPES = array( 'phone_consultation', 'chat_consultation', 'video_consultation' );
+
+	/**
+	 * Legacy office ids that mean an exempt online visit. Kept separate so the
+	 * three real visit types above stay auditable against the business rule.
+	 */
+	const ONLINE_ALIASES = array( 'consultation' => 'phone_consultation' );
 
 	/**
 	 * Whether the feature is enabled (spec 2.12, 5.5.4, 5.6.95).
@@ -38,6 +49,17 @@ class DrPlus_Child_Capacity_Service {
 	}
 
 	/**
+	 * Normalize a legacy office id to its modern identifier.
+	 *
+	 * @param string $office_id Raw office/visit identifier.
+	 * @return string
+	 */
+	public static function normalize_office_id( $office_id ) {
+		$office_id = (string) $office_id;
+		return isset( self::ONLINE_ALIASES[ $office_id ] ) ? self::ONLINE_ALIASES[ $office_id ] : $office_id;
+	}
+
+	/**
 	 * Is this office id an online (exempt) visit type? (spec 2.6, 3.4, Finding 4)
 	 *
 	 * Implements: spec 2.6, 3.4, 5.5.64
@@ -47,7 +69,11 @@ class DrPlus_Child_Capacity_Service {
 	 */
 	public static function is_online_visit( $office_id ) {
 		$types = apply_filters( 'drplus_child_capacity/online_types', self::ONLINE_TYPES );
-		return in_array( (string) $office_id, array_map( 'strval', (array) $types ), true );
+		return in_array(
+			self::normalize_office_id( $office_id ),
+			array_map( 'strval', (array) $types ),
+			true
+		);
 	}
 
 	/**
