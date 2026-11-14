@@ -32,6 +32,31 @@ class DrPlus_Child_Capacity_Messages {
 	}
 
 	/**
+	 * Missing-time warning. Raised when a booking's hour cannot be resolved, so capacity can
+	 * never be verified — the checkout must not proceed silently.
+	 *
+	 * Implements: spec 3.6, 7.2, 7.8
+	 *
+	 * @return string
+	 */
+	public static function missing_time() {
+		return __( 'لطفاً ابتدا ساعت مراجعه را انتخاب کنید.', 'drplus-child' );
+	}
+
+	/**
+	 * Missing-time warning for the time step, where the user can still pick an hour.
+	 * Same meaning as missing_time(), phrased as a step instruction rather than a
+	 * checkout rejection.
+	 *
+	 * Implements: spec 7.2
+	 *
+	 * @return string
+	 */
+	public static function select_time() {
+		return __( 'برای ادامه، یکی از ساعت‌های مراجعه را انتخاب کنید.', 'drplus-child' );
+	}
+
+	/**
 	 * Capacity-exceeded message, optionally listing the day's available hours (spec 3.9, decision #4).
 	 *
 	 * Implements: spec 3.8, 3.9, 5.5.98

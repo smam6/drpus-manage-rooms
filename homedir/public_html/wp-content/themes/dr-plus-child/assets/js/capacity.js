@@ -30,6 +30,19 @@
 		});
 		$('.booking-calendar-wrap').first().after($warning);
 
+		// Second warning for the time step, next to the slot list (spec 7.3).
+		// #booking-time is a HIDDEN input, so the `required` attribute on it is
+		// ignored by native constraint validation — an empty hour would submit
+		// and only the server could catch it. Block it here first.
+		var $timeWarning = $('<div>', {
+			'class': 'drplus-capacity-date-warning',
+			'role': 'alert',
+			'aria-live': 'polite',
+			'text': drplusCapacity.i18n.noTime,
+			'hidden': true
+		});
+		$('.booking-times-wrap').first().before($timeWarning);
+
 		// Delegate the submit event: a real blocker, not a class toggle (spec 7.1, 7.6).
 		$(document).on('submit', '#booking-form', function (event) {
 			var section = $('.booking_wrap').attr('data-section');
@@ -43,6 +56,13 @@
 			if (!$('#booking-date').val()) {
 				event.preventDefault();
 				$warning.prop('hidden', false); // Persian warning (spec 7.2).
+				return;
+			}
+
+			// Hour guard: mirrors the server-side fail-closed time check (spec 7.1).
+			if (!$('#booking-time').val()) {
+				event.preventDefault();
+				$timeWarning.prop('hidden', false);
 			}
 		});
 
@@ -50,6 +70,14 @@
 		$(document).on('change', '#booking-date', function () {
 			if ($(this).val()) {
 				$warning.prop('hidden', true);
+			}
+		});
+
+		// Clear the time warning once an hour is picked. The parent fills the
+		// hidden input from a delegated click, so listen on change + click.
+		$(document).on('change click', '#booking-time', function () {
+			if ($(this).val()) {
+				$timeWarning.prop('hidden', true);
 			}
 		});
 	});

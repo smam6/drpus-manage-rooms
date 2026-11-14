@@ -38,20 +38,6 @@ class DrPlus_Child_Capacity_Repository {
 	const ERR_LOCK_FAILED = 'lock_failed';
 
 	/**
-	 * Per-request cache of computed counts (spec 1.14, 5.6.90).
-	 *
-	 * @var array<string,int>
-	 */
-	protected static $count_cache = array();
-
-	/**
-	 * Per-request cache of the detected booking-table engine (spec 4.1).
-	 *
-	 * @var string|null 'InnoDB'|'MyISAM'|other|null
-	 */
-	protected static $engine = null;
-
-	/**
 	 * Fully-qualified booking table name via dynamic prefix (spec 5.5.81).
 	 *
 	 * Implements: spec 1.1, 5.5.81
@@ -64,104 +50,178 @@ class DrPlus_Child_Capacity_Repository {
 	}
 
 	/**
-	 * Detect the booking table engine once per request (spec 4.1, 5.5.76).
+	 * Normalize a date to the Y-m-d value the parent theme stores in `{prefix}drplus_booking`.`date`.
 	 *
-	 * Implements: spec 4.1
+	 * The booking table is the source of truth for capacity counting, so this MUST apply the
+	 * same convention the parent uses when it writes the row (`date( 'Y-m-d', $timestamp )` in UTC).
+	 * `wp_date()` would shift the calendar day across the Asia/Tehran midnight boundary and make
+	 * the COUNT query miss real bookings (the capacity bypass this module had to fix).
 	 *
-	 * @return string Engine name, lowercased; 'unknown' when detection fails (spec 4.12).
-	 */
-	public static function engine() {
-		if ( null !== self::$engine ) {
-			return self::$engine;
-		}
-		global $wpdb;
-		$table = self::booking_table();
-		$row   = $wpdb->get_row( $wpdb->prepare( 'SHOW TABLE STATUS LIKE %s', $table ) );
-		if ( $row && ! empty( $row->Engine ) ) {
-			self::$engine = strtolower( $row->Engine );
-		} else {
-			// Detection failed: callers must fall back to the GET_LOCK path (spec 4.12, 5.6.97).
-			self::$engine = 'unknown';
-		}
-		return self::$engine;
-	}
-
-	/**
-	 * Normalize a date to Y-m-d. Accepts Y-m-d or unix timestamp (spec 1.3, Finding 5).
+	 * Jalali/Gregorian calendar must never leak in here: a Jalali string such as `1405-08-28`
+	 * is a syntactically valid `Y-m-d` that MySQL happily compares against real Gregorian dates,
+	 * returning 0 rows. Anything that still looks like a calendar triple in a non-Gregorian year
+	 * is rejected outright, and free text is never handed to strtotime() (a localized Jalali
+	 * string can silently resolve to a relative, wrong Gregorian date).
 	 *
-	 * Implements: spec 1.3, 3.3
+	 * Implements: spec 1.3, 3.3, Matrix C
 	 *
-	 * @param string|int $date Date string or unix timestamp.
+	 * @param string|int $date            Y-m-d, ISO-8601 timestamp, or unix timestamp.
+	 * @param bool       $treat_as_number When true, a numeric value is always a unix timestamp.
 	 * @return string Y-m-d or empty string when invalid.
 	 */
-	public static function normalize_date( $date ) {
-		if ( is_numeric( $date ) ) {
-			return wp_date( 'Y-m-d', (int) $date );
+	public static function normalize_date( $date, $treat_as_number = false ) {
+		$date = trim( (string) $date );
+		if ( '' === $date ) {
+			return '';
 		}
-		$ts = strtotime( (string) $date );
-		return $ts ? wp_date( 'Y-m-d', $ts ) : '';
+
+		// Unix timestamp in seconds or milliseconds (raw_date).
+		if ( $treat_as_number || is_numeric( $date ) ) {
+			if ( ! is_numeric( $date ) ) {
+				return ''; // Caller declared a timestamp but did not pass one.
+			}
+			$ts = (int) $date;
+			if ( $ts > 100000000000 ) {
+				$ts = (int) floor( $ts / 1000 );
+			}
+			return $ts > 0 ? gmdate( 'Y-m-d', $ts ) : '';
+		}
+
+		// Gregorian Y-m-d: reject Jalali years (1405-08-28) and impossible dates.
+		$parsed = self::parse_ymd( $date );
+		if ( null !== $parsed ) {
+			list( $year, $month, $day ) = $parsed;
+			if ( ! self::is_gregorian_date( $year, $month, $day ) ) {
+				return '';
+			}
+			return sprintf( '%04d-%02d-%02d', $year, $month, $day );
+		}
+
+		// Any other year/month/day triple (1405/08/28, 1405.08.28) is a non-Gregorian calendar: never query it.
+		if ( preg_match( '/^\d{3,4}[\/.]\d{1,2}[\/.]\d{1,2}$/', $date ) ) {
+			return '';
+		}
+
+		// ISO-8601 timestamps (the datepicker `altFormat: "X"` value can arrive as an ISO string).
+		$iso = self::parse_iso8601( $date );
+		if ( null !== $iso ) {
+			return gmdate( 'Y-m-d', $iso );
+		}
+
+		// Anything left is free text of unknown calendar origin (e.g. localized "28 آبان 1405").
+		// Never guess: callers fall back to raw_date.
+		return '';
 	}
 
 	/**
-	 * Normalize a time to H:i:s. Accepts H:i:s, H:i, or milliseconds since midnight (spec 1.4, 2.8, Finding 5).
+	 * Is this a real calendar date in the Gregorian era this module can safely query?
 	 *
-	 * Implements: spec 1.4, 2.8, 3.3
+	 * The lower bound rejects Jalali (14xx) and any other non-Gregorian year, which is what made
+	 * the capacity COUNT query miss every row.
+	 *
+	 * @param int $year  Four-digit year.
+	 * @param int $month Month 1-12.
+	 * @param int $day   Day 1-31.
+	 * @return bool
+	 */
+	public static function is_gregorian_date( $year, $month, $day ) {
+		return $year >= 1900 && checkdate( (int) $month, (int) $day, (int) $year );
+	}
+
+	/**
+	 * Parse a strict `Y-m-d` (optionally with a time part) into [year, month, day], without
+	 * letting PHP guess. Returns null when the string does not match the shape.
+	 *
+	 * @param string $date Candidate date string.
+	 * @return array{0:int,1:int,2:int}|null
+	 */
+	protected static function parse_ymd( $date ) {
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?$/', $date, $m ) ) {
+			return null;
+		}
+		return array( (int) $m[1], (int) $m[2], (int) $m[3] );
+	}
+
+	/**
+	 * Parse an ISO-8601 timestamp (the datepicker `altFormat: "X"` alt value as an ISO string).
+	 *
+	 * @param string $date Candidate string.
+	 * @return int|null Unix timestamp or null.
+	 */
+	protected static function parse_iso8601( $date ) {
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}/', $date, $m ) ) {
+			return null;
+		}
+		// Same Gregorian guard as the plain Y-m-d path.
+		if ( ! self::is_gregorian_date( (int) $m[1], (int) $m[2], (int) $m[3] ) ) {
+			return null;
+		}
+		$ts = strtotime( $date );
+		return false === $ts ? null : (int) $ts;
+	}
+
+	/**
+	 * Normalize a time to the H:i:s value stored in `{prefix}drplus_booking`.`start_time`.
+	 *
+	 * Accepts H:i:s, H:i (normalized to H:i:s), or milliseconds since midnight (`raw_time`).
+	 * Deliberately does NOT fall back to strtotime(): a bare "1405" would become "14:05:00"
+	 * and silently query the wrong hour.
+	 *
+	 * Implements: spec 1.4, 2.8, 3.3, Matrix B
 	 *
 	 * @param string|int $time Time string or ms-since-midnight (raw_time).
 	 * @return string H:i:s or empty string when invalid.
 	 */
 	public static function normalize_time( $time ) {
-		if ( is_numeric( $time ) && (int) $time >= 86400000 ) {
-			// raw_time is milliseconds since midnight (spec 3.3): convert to H:i:s.
-			$seconds = (int) floor( (int) $time / 1000 );
-			return gmdate( 'H:i:s', $seconds % 86400 );
+		$time = trim( (string) $time );
+		if ( '' === $time ) {
+			return '';
 		}
-		$ts = strtotime( '1970-01-01 ' . (string) $time );
-		return $ts ? gmdate( 'H:i:s', $ts ) : '';
+		if ( is_numeric( $time ) ) {
+			return self::time_from_milliseconds( (int) $time );
+		}
+		// Anchor an explicit HH[:MM[:SS]] value. This is what makes `15:00` match the stored `15:00:00`.
+		if ( preg_match( '/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/', $time, $m ) ) {
+			$hour   = (int) $m[1];
+			$minute = (int) $m[2];
+			$second = isset( $m[3] ) ? (int) $m[3] : 0;
+			if ( $hour > 23 || $minute > 59 || $second > 59 ) {
+				return '';
+			}
+			return sprintf( '%02d:%02d:%02d', $hour, $minute, $second );
+		}
+		// A bare number is NOT a time: strtotime() turns "1405" into 14:05:00, and a Jalali year
+		// or a leftover counter must never be mistaken for a slot.
+		return '';
 	}
 
 	/**
-	 * Build the shared WHERE fragment: deleted = 0 and excluded statuses (spec 1.1, 1.7).
+	 * Convert a milliseconds-since-midnight value (`raw_time`) to H:i:s.
 	 *
-	 * Implements: spec 1.1, 1.6, 1.7
+	 * The parent stores `raw_time` as `strtotime( '1970-01-01 ' . $start_time ) * 1000`, i.e. a
+	 * ms count in [0, 86400000). An earlier `>= 86400000` guard therefore rejected EVERY real
+	 * value (all 13 distinct values in the live dump are < 24h) and the slot could never match.
 	 *
-	 * @param string $office_id   Clinic/office id, bound as string (spec 1.2, 5.5.82).
-	 * @param string $date        Y-m-d.
-	 * @param string $start_time  H:i:s.
-	 * @return array{0:string,1:array} SQL fragment + values for $wpdb->prepare.
+	 * A value is accepted when it is a whole number of seconds within one day. Anything else
+	 * (e.g. a Jalali year "1405", a stray counter) is rejected instead of being mistaken for a slot.
+	 *
+	 * @param int $ms Milliseconds since midnight.
+	 * @return string H:i:s or empty string.
 	 */
-	protected static function slot_where( $office_id, $date, $start_time ) {
-		$statuses = self::EXCLUDED_STATUSES;
-		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
-		// office_id is tinytext: numeric clinic ids and online ids are both strings (spec 1.2).
-		$sql = "office_id = %s AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})";
-		return array( $sql, array_merge( array( $office_id, $date, $start_time ), $statuses ) );
-	}
-
-	/**
-	 * Count distinct specialists booked in one slot, display path (spec 1.5, 1.8).
-	 *
-	 * Implements: spec 1.1, 1.5, 1.7, 1.8, 1.10, 1.14
-	 *
-	 * @param string $office_id   Clinic id.
-	 * @param string $date        Y-m-d.
-	 * @param string $start_time  H:i:s.
-	 * @return int Distinct active specialist count.
-	 */
-	public static function count_slot( $office_id, $date, $start_time ) {
-		$cache_key = $office_id . '|' . $date . '|' . $start_time;
-		if ( isset( self::$count_cache[ $cache_key ] ) ) {
-			return self::$count_cache[ $cache_key ];
+	protected static function time_from_milliseconds( $ms ) {
+		$ms = (int) $ms;
+		if ( $ms <= 0 ) {
+			return '';
 		}
-		global $wpdb;
-		list( $where, $values ) = self::slot_where( $office_id, $date, $start_time );
-		$sql = $wpdb->prepare(
-			"SELECT COUNT(DISTINCT specialist_id) FROM " . self::booking_table() . " WHERE {$where}",
-			$values
-		);
-		$count = (int) $wpdb->get_var( $sql );
-		self::$count_cache[ $cache_key ] = $count;
-		return $count;
+		// A real slot is at least 00:01:00 (60000 ms) and strictly before the next midnight.
+		if ( $ms < 60000 || $ms >= 86400000 ) {
+			return '';
+		}
+		// raw_time is always a whole second converted to ms; reject anything else as noise.
+		if ( 0 !== $ms % 1000 ) {
+			return '';
+		}
+		return gmdate( 'H:i:s', ( $ms / 1000 ) % 86400 );
 	}
 
 	/**
@@ -186,13 +246,6 @@ class DrPlus_Child_Capacity_Repository {
 				array_merge( array( $office_id, $date, $start ), $statuses )
 			)
 		);
-		error_log( sprintf(
-			'[DRPLUS COUNT SQL] Query args: office=%s | date=%s | start=%s | Result: %d',
-			var_export( $office_id, true ),
-			var_export( $date, true ),
-			var_export( $start, true ),
-			(int) $count
-		) );
 		return (int) $count;
 	}
 
@@ -222,74 +275,4 @@ class DrPlus_Child_Capacity_Repository {
 		return $map;
 	}
 
-	/**
-	 * Race-safe check: count under lock and decide atomically (spec 4.2-4.12).
-	 *
-	 * InnoDB: START TRANSACTION + SELECT ... FOR UPDATE + COMMIT/ROLLBACK.
-	 * Fallback (MyISAM/unknown): GET_LOCK/RELEASE_LOCK (spec 4.5, 4.12).
-	 * The DISTINCT keyword is never combined with a row-locking clause; locked rows are counted in PHP (spec 4.4, 5.5.79).
-	 *
-	 * Implements: spec 4.2, 4.3, 4.4, 4.5, 4.6, 4.12
-	 *
-	 * @param string $office_id   Clinic id.
-	 * @param string $date        Y-m-d.
-	 * @param string $start_time  H:i:s.
-	 * @param int    $capacity    Capacity limit to compare against.
-	 * @return array{0:bool,1:int,2:string} [allowed, current_count, error_code]
-	 */
-	public static function check_slot_with_lock( $office_id, $date, $start_time, $capacity ) {
-		$engine = self::engine();
-		if ( 'innodb' === $engine ) {
-			// Rollback strategy: if anything fails after START TRANSACTION we ROLLBACK,
-			// leaving the row locks released and no partial state (spec 4.8).
-			return self::check_innodb( $office_id, $date, $start_time, $capacity );
-		}
-		return self::check_get_lock( $office_id, $date, $start_time, $capacity );
-	}
-
-	/**
-	 * InnoDB path: transactional FOR UPDATE count (spec 4.2, 4.3, 4.4).
-	 *
-	 * Implements: spec 4.2, 4.3, 4.4, 4.8
-	 *
-	 * @return array{0:bool,1:int,2:string}
-	 */
-	protected static function check_innodb( $office_id, $date, $start_time, $capacity ) {
-		global $wpdb;
-		$wpdb->query( 'START TRANSACTION' );
-		list( $where, $values ) = self::slot_where( $office_id, $date, $start_time );
-		$sql = $wpdb->prepare(
-			"SELECT specialist_id FROM " . self::booking_table() . " WHERE {$where} FOR UPDATE",
-			$values
-		);
-		$rows  = $wpdb->get_results( $sql, ARRAY_A );
-		$count = count( array_unique( wp_list_pluck( (array) $rows, 'specialist_id' ) ) );
-		if ( false === $rows ) {
-			$wpdb->query( 'ROLLBACK' );
-			return array( false, $count, self::ERR_LOCK_FAILED );
-		}
-		$allowed = $count < $capacity;
-		$wpdb->query( $allowed ? 'COMMIT' : 'ROLLBACK' );
-		return array( $allowed, $count, $allowed ? '' : 'capacity_exceeded' );
-	}
-
-	/**
-	 * GET_LOCK fallback path for MyISAM/unknown engines (spec 4.5, 4.12).
-	 *
-	 * Implements: spec 4.5, 4.6, 4.12
-	 *
-	 * @return array{0:bool,1:int,2:string}
-	 */
-	protected static function check_get_lock( $office_id, $date, $start_time, $capacity ) {
-		global $wpdb;
-		$lock = 'drplus_capacity_' . md5( $office_id . '|' . $date . '|' . $start_time );
-		$got  = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 5)', array( $lock ) ) );
-		if ( 1 !== (int) $got ) {
-			return array( false, 0, self::ERR_LOCK_FAILED );
-		}
-		$count   = self::count_slot( $office_id, $date, $start_time );
-		$allowed = $count < $capacity;
-		$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', array( $lock ) ) );
-		return array( $allowed, $count, $allowed ? '' : 'capacity_exceeded' );
-	}
 }

@@ -44,6 +44,7 @@ class DrPlus_Child_Capacity_Validator {
 	 */
 	const ERR_CAPACITY     = 'capacity_exceeded';
 	const ERR_MISSING_DATE = 'missing_date';
+	const ERR_MISSING_TIME = 'missing_time';
 	const ERR_COMPENSATING = 'compensating_rollback';
 
 	/**
@@ -52,32 +53,12 @@ class DrPlus_Child_Capacity_Validator {
 	const SESSION_LOCK_CONTEXT = 'drplus_capacity_lock_context';
 
 	/**
-	 * Unified checkout validator: conditional date guard + online exemption + capacity check.
+	 * Set once this request has rejected the checkout on capacity grounds, so a repeated
+	 * woocommerce_checkout_process pass cannot re-count without the lock (spec 4.14).
 	 *
-	 * Returns early with no notices when the request/cart is not a booking order.
-	 *
-	 * @return void
+	 * @var bool
 	 */
-	public static function validate_checkout(): void {
-		$booking = self::extract_booking_from_request();
-
-		// If it's not a booking at all (e.g., normal product), return early and do nothing.
-		if ( null === $booking ) {
-			return;
-		}
-
-		// If it IS a booking, but the date is missing, NOW we show the error.
-		if ( empty( $booking['date'] ) ) {
-			wc_add_notice(
-				__( 'لطفاً ابتدا تاریخ مراجعه را انتخاب کنید.', 'drplus-child' ),
-				'error'
-			);
-			self::log( $booking, 0, 0, self::ERR_MISSING_DATE );
-			return;
-		}
-
-		self::validate_booking_capacity( $booking );
-	}
+	protected static $capacity_rejected = false;
 
 	/**
 	 * Priority 4: missing-date check runs before the capacity check (fail fast).
@@ -112,6 +93,16 @@ class DrPlus_Child_Capacity_Validator {
 		if ( ! DrPlus_Child_Capacity_Service::enabled() ) {
 			return;
 		}
+
+		// Guard against a second capacity pass in the same request.
+		// WordPress can fire woocommerce_checkout_process more than once (some gateways and
+		// plugins re-run validation). A rejection released the lock, so a second pass would
+		// re-count WITHOUT the lock and could accept the order — the exact check-then-act race
+		// the lock exists to prevent.
+		if ( self::$capacity_rejected ) {
+			return;
+		}
+
 		$booking = self::extract_booking_from_request();
 		if ( null === $booking || empty( $booking['date'] ) ) {
 			return; // Not a booking, or already reported by the priority-4 date check (spec 3.6).
@@ -141,7 +132,17 @@ class DrPlus_Child_Capacity_Validator {
 		$date       = (string) $booking['date'];
 		$start_time = isset( $booking['start_time'] ) ? (string) $booking['start_time'] : '';
 		$specialist = isset( $booking['specialist_id'] ) ? (int) $booking['specialist_id'] : 0;
-		$capacity   = DrPlus_Child_Capacity_Service::capacity_for( $office_id );
+
+		// Fail closed when the booked hour cannot be resolved.
+		// An empty H:i:s would be bound as `start_time = ''`, which matches no row, so the count
+		// would be 0 and an in-person booking on a FULL hour would be accepted (capacity bypass).
+		if ( '' === $start_time ) {
+			self::log( $booking, 0, 0, self::ERR_MISSING_TIME );
+			wc_add_notice( DrPlus_Child_Capacity_Messages::missing_time(), 'error' );
+			return;
+		}
+
+		$capacity = DrPlus_Child_Capacity_Service::capacity_for( $office_id );
 
 		// Layer 1: acquire the global advisory lock BEFORE counting (spec 4.13). Timeout 5s max.
 		$acquired = DrPlus_Child_Capacity_Lock_Manager::acquire( $office_id, $date, $start_time, 5 );
@@ -155,19 +156,9 @@ class DrPlus_Child_Capacity_Validator {
 		// post_insert_verify_and_release (after the parent's INSERT) — never before (spec 4.14).
 		$count = DrPlus_Child_Capacity_Repository::count_distinct_specialists( $office_id, $date, $start_time );
 
-		error_log( sprintf(
-			'[DRPLUS CAPACITY] office_id=%s (type: %s) | date=%s | start_time=%s | specialist_id=%s | capacity=%d | current_count=%d',
-			var_export( $booking['office_id'], true ),
-			gettype( $booking['office_id'] ),
-			var_export( $booking['date'], true ),
-			var_export( $booking['start_time'], true ),
-			var_export( $booking['specialist_id'], true ),
-			$capacity,
-			(int) $count
-		) );
-
 		if ( $count >= $capacity ) {
 			// Reject and release immediately (spec 4.14).
+			self::$capacity_rejected = true;
 			self::log( $booking, $count, $capacity, self::ERR_CAPACITY );
 			// Rejection must include all available hours of the day (decision #4, spec 3.9).
 			$slots = self::day_slots_for_notice( $office_id, $date, $specialist );
@@ -470,13 +461,17 @@ class DrPlus_Child_Capacity_Validator {
 	}
 
 	/**
-	 * Extract and normalize the booking date.
+	 * Extract and normalize the booking date for the SQL query.
 	 *
-	 * Checks `date` first (when already Y-m-d or unix timestamp), then falls back to
-	 * `raw_date` (unix timestamp used by Dr Plus when `date` is a localized Jalali string)
-	 * and `booking_date`.
+	 * `raw_date` (unix timestamp) comes FIRST and is authoritative, because the localized `date`
+	 * key is a Persian/Jalali display string (`28 آبان 1405`) or a Jalali numeric string
+	 * (`1405-08-28`). The latter is accepted by `DateTime::createFromFormat( 'Y-m-d', ... )` and by
+	 * MySQL as a syntactically valid date, so trusting it makes the COUNT query look 300+ years in
+	 * the future and always return 0 — the capacity bypass (Matrix C).
 	 *
-	 * Implements: spec 3.3, Finding 5
+	 * Fallback order: `raw_date` → `date` (only when it is Gregorian) → `booking_date`.
+	 *
+	 * Implements: spec 3.3, Finding 5, Matrix C
 	 *
 	 * @param array $book Booking payload from cart, session, or POST.
 	 * @return string Y-m-d or empty string.
@@ -485,22 +480,39 @@ class DrPlus_Child_Capacity_Validator {
 		if ( ! is_array( $book ) ) {
 			return '';
 		}
-		foreach ( array( 'date', 'raw_date', 'booking_date' ) as $key ) {
-			if ( isset( $book[ $key ] ) && '' !== $book[ $key ] && null !== $book[ $key ] ) {
-				$normalized = self::normalize_date_candidate( $book[ $key ] );
-				if ( '' !== $normalized ) {
-					return $normalized;
-				}
+		// 1. raw_date (unix timestamp) — never localized, always Gregorian-safe.
+		if ( isset( $book['raw_date'] ) && '' !== $book['raw_date'] && null !== $book['raw_date'] ) {
+			$normalized = self::normalize_timestamp_candidate( $book['raw_date'] );
+			if ( '' !== $normalized ) {
+				return $normalized;
+			}
+		}
+		// 2. date — accepted only when it is a real Gregorian Y-m-d (Jalali 1405-08-28 is rejected).
+		if ( isset( $book['date'] ) && '' !== $book['date'] && null !== $book['date'] ) {
+			$normalized = self::normalize_date_candidate( $book['date'] );
+			if ( '' !== $normalized ) {
+				return $normalized;
+			}
+		}
+		// 3. Remaining unambiguous candidates.
+		if ( isset( $book['booking_date'] ) && '' !== $book['booking_date'] && null !== $book['booking_date'] ) {
+			$normalized = self::normalize_date_candidate( $book['booking_date'] );
+			if ( '' !== $normalized ) {
+				return $normalized;
 			}
 		}
 		return '';
 	}
 
 	/**
-	 * Extract and normalize the start time: primary `start_time` (H:i / H:i:s),
-	 * fallback `raw_time` / `time` (ms since midnight) (spec 3.3).
+	 * Extract and normalize the start time for the SQL query.
 	 *
-	 * Implements: spec 3.3, Finding 5
+	 * `raw_time` (milliseconds since midnight) comes FIRST: it maps 1:1 onto the stored `TIME`
+	 * column (`gmdate( 'H:i:s', ms / 1000 )`, verified against all 19 live rows in the SQL dump).
+	 * `start_time` is only a fallback because it is a display value that can carry a localized
+	 * format, whereas the DB always stores `HH:MM:SS`.
+	 *
+	 * Implements: spec 3.3, Finding 5, Matrix B
 	 *
 	 * @param array $book Booking payload from cart, session, or POST.
 	 * @return string H:i:s or empty string.
@@ -509,13 +521,15 @@ class DrPlus_Child_Capacity_Validator {
 		if ( ! is_array( $book ) ) {
 			return '';
 		}
-		if ( ! empty( $book['start_time'] ) ) {
-			$normalized = DrPlus_Child_Capacity_Repository::normalize_time( $book['start_time'] );
+		// 1. raw_time (ms since midnight) — matches the stored TIME column exactly.
+		if ( isset( $book['raw_time'] ) && '' !== (string) $book['raw_time'] ) {
+			$normalized = self::normalize_time_candidate( $book['raw_time'] );
 			if ( '' !== $normalized ) {
 				return $normalized;
 			}
 		}
-		foreach ( array( 'raw_time', 'time', 'booking_time' ) as $key ) {
+		// 2. time / start_time / booking_time — normalized to HH:MM:SS before the query (Matrix B).
+		foreach ( array( 'start_time', 'time', 'booking_time' ) as $key ) {
 			if ( isset( $book[ $key ] ) && '' !== (string) $book[ $key ] ) {
 				$normalized = self::normalize_time_candidate( $book[ $key ] );
 				if ( '' !== $normalized ) {
@@ -527,9 +541,11 @@ class DrPlus_Child_Capacity_Validator {
 	}
 
 	/**
-	 * Normalize a raw date candidate (Y-m-d, strtotime-compatible string, or unix timestamp in s/ms).
+	 * Normalize a date candidate (Gregorian Y-m-d, unambiguous textual date, or unix timestamp in s/ms).
 	 *
-	 * Non-Gregorian display strings (e.g. "22 شهریور 1404") return '' so callers can fall back to `raw_date`.
+	 * Jalali/Gregorian guard (Matrix C): non-Gregorian display strings ("22 شهریور 1404") and Jalali
+	 * numeric strings ("1405-08-28") return '' so callers fall back to `raw_date` instead of
+	 * querying the database with a year-1405 date.
 	 *
 	 * @param mixed $value Candidate date value.
 	 * @return string Y-m-d or empty string.
@@ -543,21 +559,41 @@ class DrPlus_Child_Capacity_Validator {
 			return '';
 		}
 		if ( is_numeric( $str ) ) {
-			$ts = (int) $str;
-			if ( $ts <= 0 ) {
-				return '';
-			}
-			// Convert millisecond unix timestamps to seconds.
-			if ( $ts > 100000000000 ) {
-				$ts = (int) floor( $ts / 1000 );
-			}
-			return DrPlus_Child_Capacity_Repository::normalize_date( $ts );
+			return self::normalize_timestamp_candidate( $str );
 		}
 		return DrPlus_Child_Capacity_Repository::normalize_date( $str );
 	}
 
 	/**
-	 * Normalize a raw time candidate (H:i[:s] or milliseconds since midnight).
+	 * Normalize a unix timestamp candidate (raw_date in seconds, or milliseconds) to a Y-m-d.
+	 *
+	 * @param mixed $value Candidate timestamp.
+	 * @return string Y-m-d or empty string.
+	 */
+	protected static function normalize_timestamp_candidate( $value ): string {
+		if ( null === $value || '' === $value || is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+		$str = trim( self::normalize_digits( (string) $value ) );
+		if ( '' === $str || ! is_numeric( $str ) ) {
+			return '';
+		}
+		$ts = (int) $str;
+		if ( $ts <= 0 ) {
+			return '';
+		}
+		// Convert millisecond unix timestamps to seconds.
+		if ( $ts > 100000000000 ) {
+			$ts = (int) floor( $ts / 1000 );
+		}
+		return DrPlus_Child_Capacity_Repository::normalize_date( $ts, true );
+	}
+
+	/**
+	 * Normalize a time candidate to HH:MM:SS.
+	 *
+	 * Numeric values are milliseconds since midnight (`raw_time`). Text values are parsed first so
+	 * `15:00` becomes `15:00:00` before it reaches the SQL query (Matrix B).
 	 *
 	 * @param mixed $value Candidate time value.
 	 * @return string H:i:s or empty string.
@@ -571,8 +607,10 @@ class DrPlus_Child_Capacity_Validator {
 			return '';
 		}
 		if ( is_numeric( $str ) ) {
-			$seconds = (int) floor( ( (int) $str ) / 1000 );
-			return gmdate( 'H:i:s', ( ( $seconds % 86400 ) + 86400 ) % 86400 );
+			// Delegates to the single source of truth for ms-since-midnight (`raw_time`).
+			// Only a whole-second value inside one day qualifies: "1405" (a Jalali year or a
+			// stray counter) must never become 00:00:01.
+			return DrPlus_Child_Capacity_Repository::normalize_time( (int) $str );
 		}
 		return DrPlus_Child_Capacity_Repository::normalize_time( $str );
 	}
