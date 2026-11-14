@@ -59,12 +59,14 @@ class DrPlus_Child_Capacity_Repository {
 	 *
 	 * Jalali/Gregorian calendar must never leak in here: a Jalali string such as `1405-08-28`
 	 * is a syntactically valid `Y-m-d` that MySQL happily compares against real Gregorian dates,
-	 * returning 0 rows.
+	 * returning 0 rows. Anything that still looks like a calendar triple in a non-Gregorian year
+	 * is rejected outright, and free text is never handed to strtotime() (a localized Jalali
+	 * string can silently resolve to a relative, wrong Gregorian date).
 	 *
 	 * Implements: spec 1.3, 3.3, Matrix C
 	 *
-	 * @param string|int $date            Date string (Y-m-d or another unambiguous calendar format) or unix timestamp.
-	 * @param bool       $treat_as_number When true, a numeric value is always a unix timestamp even if it looks like a date.
+	 * @param string|int $date            Y-m-d, ISO-8601 timestamp, or unix timestamp.
+	 * @param bool       $treat_as_number When true, a numeric value is always a unix timestamp.
 	 * @return string Y-m-d or empty string when invalid.
 	 */
 	public static function normalize_date( $date, $treat_as_number = false ) {
@@ -85,26 +87,45 @@ class DrPlus_Child_Capacity_Repository {
 			return $ts > 0 ? gmdate( 'Y-m-d', $ts ) : '';
 		}
 
-		// Already a Gregorian Y-m-d: reject Jalali years (1405-08-28) and impossible dates.
+		// Gregorian Y-m-d: reject Jalali years (1405-08-28) and impossible dates.
 		$parsed = self::parse_ymd( $date );
 		if ( null !== $parsed ) {
 			list( $year, $month, $day ) = $parsed;
-			if ( $year < 1900 || ! checkdate( $month, $day, $year ) ) {
+			if ( ! self::is_gregorian_date( $year, $month, $day ) ) {
 				return '';
 			}
 			return sprintf( '%04d-%02d-%02d', $year, $month, $day );
 		}
 
-		// ISO-8601 timestamps (the booking datepicker submits `altFormat: "X"`, which may be an ISO string).
+		// Any other year/month/day triple (1405/08/28, 1405.08.28) is a non-Gregorian calendar: never query it.
+		if ( preg_match( '/^\d{3,4}[\/.]\d{1,2}[\/.]\d{1,2}$/', $date ) ) {
+			return '';
+		}
+
+		// ISO-8601 timestamps (the datepicker `altFormat: "X"` value can arrive as an ISO string).
 		$iso = self::parse_iso8601( $date );
 		if ( null !== $iso ) {
 			return gmdate( 'Y-m-d', $iso );
 		}
 
-		// Unambiguous textual date (e.g. 2026-11-19). Localized Jalali text ("28 آبان 1405") is not parsable
-		// and correctly falls through to '' so callers can fall back to raw_date.
-		$ts = strtotime( $date );
-		return $ts ? gmdate( 'Y-m-d', $ts ) : '';
+		// Anything left is free text of unknown calendar origin (e.g. localized "28 آبان 1405").
+		// Never guess: callers fall back to raw_date.
+		return '';
+	}
+
+	/**
+	 * Is this a real calendar date in the Gregorian era this module can safely query?
+	 *
+	 * The lower bound rejects Jalali (14xx) and any other non-Gregorian year, which is what made
+	 * the capacity COUNT query miss every row.
+	 *
+	 * @param int $year  Four-digit year.
+	 * @param int $month Month 1-12.
+	 * @param int $day   Day 1-31.
+	 * @return bool
+	 */
+	public static function is_gregorian_date( $year, $month, $day ) {
+		return $year >= 1900 && checkdate( (int) $month, (int) $day, (int) $year );
 	}
 
 	/**
@@ -128,7 +149,11 @@ class DrPlus_Child_Capacity_Repository {
 	 * @return int|null Unix timestamp or null.
 	 */
 	protected static function parse_iso8601( $date ) {
-		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $date ) ) {
+		if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}/', $date, $m ) ) {
+			return null;
+		}
+		// Same Gregorian guard as the plain Y-m-d path.
+		if ( ! self::is_gregorian_date( (int) $m[1], (int) $m[2], (int) $m[3] ) ) {
 			return null;
 		}
 		$ts = strtotime( $date );
@@ -136,9 +161,13 @@ class DrPlus_Child_Capacity_Repository {
 	}
 
 	/**
-	 * Normalize a time to H:i:s. Accepts H:i:s, H:i, or milliseconds since midnight (spec 1.4, 2.8, Finding 5).
+	 * Normalize a time to the H:i:s value stored in `{prefix}drplus_booking`.`start_time`.
 	 *
-	 * Implements: spec 1.4, 2.8, 3.3
+	 * Accepts H:i:s, H:i (normalized to H:i:s), or milliseconds since midnight (`raw_time`).
+	 * Deliberately does NOT fall back to strtotime(): a bare "1405" would become "14:05:00"
+	 * and silently query the wrong hour.
+	 *
+	 * Implements: spec 1.4, 2.8, 3.3, Matrix B
 	 *
 	 * @param string|int $time Time string or ms-since-midnight (raw_time).
 	 * @return string H:i:s or empty string when invalid.
@@ -148,10 +177,8 @@ class DrPlus_Child_Capacity_Repository {
 		if ( '' === $time ) {
 			return '';
 		}
-		if ( is_numeric( $time ) && (int) $time >= 86400000 ) {
-			// raw_time is milliseconds since midnight (spec 3.3): convert to H:i:s.
-			$seconds = (int) floor( (int) $time / 1000 );
-			return gmdate( 'H:i:s', $seconds % 86400 );
+		if ( is_numeric( $time ) ) {
+			return self::time_from_milliseconds( (int) $time );
 		}
 		// Anchor an explicit HH[:MM[:SS]] value. This is what makes `15:00` match the stored `15:00:00`.
 		if ( preg_match( '/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/', $time, $m ) ) {
@@ -163,13 +190,38 @@ class DrPlus_Child_Capacity_Repository {
 			}
 			return sprintf( '%02d:%02d:%02d', $hour, $minute, $second );
 		}
-		if ( preg_match( '/^\d{1,2}$/', $time ) ) {
-			// Bare hour ("15"); never let strtotime turn "15" into an unrelated calendar date.
-			$hour = (int) $time;
-			return $hour <= 23 ? sprintf( '%02d:00:00', $hour ) : '';
+		// A bare number is NOT a time: strtotime() turns "1405" into 14:05:00, and a Jalali year
+		// or a leftover counter must never be mistaken for a slot.
+		return '';
+	}
+
+	/**
+	 * Convert a milliseconds-since-midnight value (`raw_time`) to H:i:s.
+	 *
+	 * The parent stores `raw_time` as `strtotime( '1970-01-01 ' . $start_time ) * 1000`, i.e. a
+	 * ms count in [0, 86400000). An earlier `>= 86400000` guard therefore rejected EVERY real
+	 * value (all 13 distinct values in the live dump are < 24h) and the slot could never match.
+	 *
+	 * A value is accepted when it is a whole number of seconds within one day. Anything else
+	 * (e.g. a Jalali year "1405", a stray counter) is rejected instead of being mistaken for a slot.
+	 *
+	 * @param int $ms Milliseconds since midnight.
+	 * @return string H:i:s or empty string.
+	 */
+	protected static function time_from_milliseconds( $ms ) {
+		$ms = (int) $ms;
+		if ( $ms <= 0 ) {
+			return '';
 		}
-		$ts = strtotime( '1970-01-01 ' . $time );
-		return $ts ? gmdate( 'H:i:s', $ts ) : '';
+		// A real slot is at least 00:01:00 (60000 ms) and strictly before the next midnight.
+		if ( $ms < 60000 || $ms >= 86400000 ) {
+			return '';
+		}
+		// raw_time is always a whole second converted to ms; reject anything else as noise.
+		if ( 0 !== $ms % 1000 ) {
+			return '';
+		}
+		return gmdate( 'H:i:s', ( $ms / 1000 ) % 86400 );
 	}
 
 	/**

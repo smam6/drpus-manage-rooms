@@ -605,8 +605,10 @@ class DrPlus_Child_Capacity_Validator {
 			return '';
 		}
 		if ( is_numeric( $str ) ) {
-			$seconds = (int) floor( ( (int) $str ) / 1000 );
-			return gmdate( 'H:i:s', ( ( $seconds % 86400 ) + 86400 ) % 86400 );
+			// Delegates to the single source of truth for ms-since-midnight (`raw_time`).
+			// Only a whole-second value inside one day qualifies: "1405" (a Jalali year or a
+			// stray counter) must never become 00:00:01.
+			return DrPlus_Child_Capacity_Repository::normalize_time( (int) $str );
 		}
 		return DrPlus_Child_Capacity_Repository::normalize_time( $str );
 	}
