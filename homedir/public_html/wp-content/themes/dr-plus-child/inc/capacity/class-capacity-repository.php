@@ -38,20 +38,6 @@ class DrPlus_Child_Capacity_Repository {
 	const ERR_LOCK_FAILED = 'lock_failed';
 
 	/**
-	 * Per-request cache of computed counts (spec 1.14, 5.6.90).
-	 *
-	 * @var array<string,int>
-	 */
-	protected static $count_cache = array();
-
-	/**
-	 * Per-request cache of the detected booking-table engine (spec 4.1).
-	 *
-	 * @var string|null 'InnoDB'|'MyISAM'|other|null
-	 */
-	protected static $engine = null;
-
-	/**
 	 * Fully-qualified booking table name via dynamic prefix (spec 5.5.81).
 	 *
 	 * Implements: spec 1.1, 5.5.81
@@ -61,29 +47,6 @@ class DrPlus_Child_Capacity_Repository {
 	public static function booking_table() {
 		global $wpdb;
 		return $wpdb->prefix . self::BOOKING_TABLE;
-	}
-
-	/**
-	 * Detect the booking table engine once per request (spec 4.1, 5.5.76).
-	 *
-	 * Implements: spec 4.1
-	 *
-	 * @return string Engine name, lowercased; 'unknown' when detection fails (spec 4.12).
-	 */
-	public static function engine() {
-		if ( null !== self::$engine ) {
-			return self::$engine;
-		}
-		global $wpdb;
-		$table = self::booking_table();
-		$row   = $wpdb->get_row( $wpdb->prepare( 'SHOW TABLE STATUS LIKE %s', $table ) );
-		if ( $row && ! empty( $row->Engine ) ) {
-			self::$engine = strtolower( $row->Engine );
-		} else {
-			// Detection failed: callers must fall back to the GET_LOCK path (spec 4.12, 5.6.97).
-			self::$engine = 'unknown';
-		}
-		return self::$engine;
 	}
 
 	/**
@@ -210,50 +173,6 @@ class DrPlus_Child_Capacity_Repository {
 	}
 
 	/**
-	 * Build the shared WHERE fragment: deleted = 0 and excluded statuses (spec 1.1, 1.7).
-	 *
-	 * Implements: spec 1.1, 1.6, 1.7
-	 *
-	 * @param string $office_id   Clinic/office id, bound as string (spec 1.2, 5.5.82).
-	 * @param string $date        Y-m-d.
-	 * @param string $start_time  H:i:s.
-	 * @return array{0:string,1:array} SQL fragment + values for $wpdb->prepare.
-	 */
-	protected static function slot_where( $office_id, $date, $start_time ) {
-		$statuses = self::EXCLUDED_STATUSES;
-		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
-		// office_id is tinytext: numeric clinic ids and online ids are both strings (spec 1.2).
-		$sql = "office_id = %s AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})";
-		return array( $sql, array_merge( array( $office_id, $date, $start_time ), $statuses ) );
-	}
-
-	/**
-	 * Count distinct specialists booked in one slot, display path (spec 1.5, 1.8).
-	 *
-	 * Implements: spec 1.1, 1.5, 1.7, 1.8, 1.10, 1.14
-	 *
-	 * @param string $office_id   Clinic id.
-	 * @param string $date        Y-m-d.
-	 * @param string $start_time  H:i:s.
-	 * @return int Distinct active specialist count.
-	 */
-	public static function count_slot( $office_id, $date, $start_time ) {
-		$cache_key = $office_id . '|' . $date . '|' . $start_time;
-		if ( isset( self::$count_cache[ $cache_key ] ) ) {
-			return self::$count_cache[ $cache_key ];
-		}
-		global $wpdb;
-		list( $where, $values ) = self::slot_where( $office_id, $date, $start_time );
-		$sql = $wpdb->prepare(
-			"SELECT COUNT(DISTINCT specialist_id) FROM " . self::booking_table() . " WHERE {$where}",
-			$values
-		);
-		$count = (int) $wpdb->get_var( $sql );
-		self::$count_cache[ $cache_key ] = $count;
-		return $count;
-	}
-
-	/**
 	 * Count distinct specialists with active in-person bookings for a slot.
 	 * No transaction, no locks — the caller is responsible for locking (spec 4.17).
 	 *
@@ -304,74 +223,4 @@ class DrPlus_Child_Capacity_Repository {
 		return $map;
 	}
 
-	/**
-	 * Race-safe check: count under lock and decide atomically (spec 4.2-4.12).
-	 *
-	 * InnoDB: START TRANSACTION + SELECT ... FOR UPDATE + COMMIT/ROLLBACK.
-	 * Fallback (MyISAM/unknown): GET_LOCK/RELEASE_LOCK (spec 4.5, 4.12).
-	 * The DISTINCT keyword is never combined with a row-locking clause; locked rows are counted in PHP (spec 4.4, 5.5.79).
-	 *
-	 * Implements: spec 4.2, 4.3, 4.4, 4.5, 4.6, 4.12
-	 *
-	 * @param string $office_id   Clinic id.
-	 * @param string $date        Y-m-d.
-	 * @param string $start_time  H:i:s.
-	 * @param int    $capacity    Capacity limit to compare against.
-	 * @return array{0:bool,1:int,2:string} [allowed, current_count, error_code]
-	 */
-	public static function check_slot_with_lock( $office_id, $date, $start_time, $capacity ) {
-		$engine = self::engine();
-		if ( 'innodb' === $engine ) {
-			// Rollback strategy: if anything fails after START TRANSACTION we ROLLBACK,
-			// leaving the row locks released and no partial state (spec 4.8).
-			return self::check_innodb( $office_id, $date, $start_time, $capacity );
-		}
-		return self::check_get_lock( $office_id, $date, $start_time, $capacity );
-	}
-
-	/**
-	 * InnoDB path: transactional FOR UPDATE count (spec 4.2, 4.3, 4.4).
-	 *
-	 * Implements: spec 4.2, 4.3, 4.4, 4.8
-	 *
-	 * @return array{0:bool,1:int,2:string}
-	 */
-	protected static function check_innodb( $office_id, $date, $start_time, $capacity ) {
-		global $wpdb;
-		$wpdb->query( 'START TRANSACTION' );
-		list( $where, $values ) = self::slot_where( $office_id, $date, $start_time );
-		$sql = $wpdb->prepare(
-			"SELECT specialist_id FROM " . self::booking_table() . " WHERE {$where} FOR UPDATE",
-			$values
-		);
-		$rows  = $wpdb->get_results( $sql, ARRAY_A );
-		$count = count( array_unique( wp_list_pluck( (array) $rows, 'specialist_id' ) ) );
-		if ( false === $rows ) {
-			$wpdb->query( 'ROLLBACK' );
-			return array( false, $count, self::ERR_LOCK_FAILED );
-		}
-		$allowed = $count < $capacity;
-		$wpdb->query( $allowed ? 'COMMIT' : 'ROLLBACK' );
-		return array( $allowed, $count, $allowed ? '' : 'capacity_exceeded' );
-	}
-
-	/**
-	 * GET_LOCK fallback path for MyISAM/unknown engines (spec 4.5, 4.12).
-	 *
-	 * Implements: spec 4.5, 4.6, 4.12
-	 *
-	 * @return array{0:bool,1:int,2:string}
-	 */
-	protected static function check_get_lock( $office_id, $date, $start_time, $capacity ) {
-		global $wpdb;
-		$lock = 'drplus_capacity_' . md5( $office_id . '|' . $date . '|' . $start_time );
-		$got  = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 5)', array( $lock ) ) );
-		if ( 1 !== (int) $got ) {
-			return array( false, 0, self::ERR_LOCK_FAILED );
-		}
-		$count   = self::count_slot( $office_id, $date, $start_time );
-		$allowed = $count < $capacity;
-		$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', array( $lock ) ) );
-		return array( $allowed, $count, $allowed ? '' : 'capacity_exceeded' );
-	}
 }
