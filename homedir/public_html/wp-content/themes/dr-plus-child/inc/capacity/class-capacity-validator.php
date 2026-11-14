@@ -53,6 +53,14 @@ class DrPlus_Child_Capacity_Validator {
 	const SESSION_LOCK_CONTEXT = 'drplus_capacity_lock_context';
 
 	/**
+	 * Set once this request has rejected the checkout on capacity grounds, so a repeated
+	 * woocommerce_checkout_process pass cannot re-count without the lock (spec 4.14).
+	 *
+	 * @var bool
+	 */
+	protected static $capacity_rejected = false;
+
+	/**
 	 * Unified checkout validator: conditional date guard + online exemption + capacity check.
 	 *
 	 * Returns early with no notices when the request/cart is not a booking order.
@@ -113,6 +121,16 @@ class DrPlus_Child_Capacity_Validator {
 		if ( ! DrPlus_Child_Capacity_Service::enabled() ) {
 			return;
 		}
+
+		// Guard against a second capacity pass in the same request.
+		// WordPress can fire woocommerce_checkout_process more than once (some gateways and
+		// plugins re-run validation). A rejection released the lock, so a second pass would
+		// re-count WITHOUT the lock and could accept the order — the exact check-then-act race
+		// the lock exists to prevent.
+		if ( self::$capacity_rejected ) {
+			return;
+		}
+
 		$booking = self::extract_booking_from_request();
 		if ( null === $booking || empty( $booking['date'] ) ) {
 			return; // Not a booking, or already reported by the priority-4 date check (spec 3.6).
@@ -168,6 +186,7 @@ class DrPlus_Child_Capacity_Validator {
 
 		if ( $count >= $capacity ) {
 			// Reject and release immediately (spec 4.14).
+			self::$capacity_rejected = true;
 			self::log( $booking, $count, $capacity, self::ERR_CAPACITY );
 			// Rejection must include all available hours of the day (decision #4, spec 3.9).
 			$slots = self::day_slots_for_notice( $office_id, $date, $specialist );
