@@ -38,6 +38,16 @@ class DrPlus_Child_Capacity_Repository {
 	const ERR_LOCK_FAILED = 'lock_failed';
 
 	/**
+	 * Returned by the counters when the date cannot be proven Gregorian.
+	 *
+	 * Set above the configurable ceiling (`DrPlus_Child_Capacity_Admin::MAX_CAPACITY = 99`) so
+	 * that every comparison of the form `$count >= $capacity` is TRUE, and the booking is
+	 * rejected. Failing open here would recreate the overbooking bug; failing closed on a
+	 * malformed date is the only safe direction. Never a real count.
+	 */
+	const UNRESOLVED_DATE_COUNT = 999;
+
+	/**
 	 * Fully-qualified booking table name via dynamic prefix (spec 5.5.81).
 	 *
 	 * Implements: spec 1.1, 5.5.81
@@ -236,6 +246,11 @@ class DrPlus_Child_Capacity_Repository {
 	 * @return int Distinct active specialist count.
 	 */
 	public static function count_distinct_specialists( string $office_id, string $date, string $start ): int {
+		$date = self::assert_queryable_date( $date );
+		if ( '' === $date ) {
+			return self::UNRESOLVED_DATE_COUNT;
+		}
+
 		global $wpdb;
 		$statuses     = self::EXCLUDED_STATUSES;
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
@@ -250,6 +265,59 @@ class DrPlus_Child_Capacity_Repository {
 	}
 
 	/**
+	 * Last line of defense: guarantee the value bound to `date = %s` is a real Gregorian date.
+	 *
+	 * Every caller normalizes before it gets here, so this normally passes the value through
+	 * untouched. It exists because that is an invariant held by convention, not by the type
+	 * system: a future caller (or an un-normalized third-party payload) could hand a Jalali
+	 * string straight to this public method, and `1405-08-28` is a syntactically valid Y-m-d
+	 * that MySQL compares happily against real Gregorian rows — matching nothing, returning 0,
+	 * and letting a full hour accept another booking. That is the overbooking bug.
+	 *
+	 * Deliberately NOT a converter: this layer cannot know whether `1405-08-28` is Jalali, a
+	 * typo, or a truncated timestamp, and guessing is how the original bug was introduced.
+	 * (`strtotime()` is not a Jalali converter — it has no calendar awareness and parses
+	 * "1405-08-28" as Gregorian 1405, returning the same string.) Anything that is not already
+	 * a valid Gregorian Y-m-d is refused, and the caller fails closed.
+	 *
+	 * Written in PHP 7.4 syntax: `str_starts_with()` is PHP 8.0+ and this theme declares
+	 * `Requires PHP: 7.4`, so a direct call would fatal on a 7.4 server — in the middle of the
+	 * capacity check, which is the worst possible place to throw.
+	 *
+	 * Implements: spec 1.3, 3.3, Matrix C
+	 *
+	 * @param string $date Candidate date.
+	 * @return string Valid Gregorian Y-m-d, or '' when the value must not be queried.
+	 */
+	protected static function assert_queryable_date( $date ) {
+		$date = trim( (string) $date );
+		if ( '' === $date ) {
+			return '';
+		}
+
+		// A 3- or 4-digit leading year outside the Gregorian era this site can have data for.
+		// Catches 1405-08-28, 1405-8-28, 1405/08/28 and 1405.08.28 (note: no fixed-length
+		// assumption — a `strlen() === 10` check misses the single-digit-month variants).
+		if ( preg_match( '/^(\d{3,4})[-\/.]\d{1,2}[-\/.]\d{1,2}/', $date, $m ) ) {
+			$year = (int) $m[1];
+			if ( $year < 1900 || $year > 2200 ) {
+				return '';
+			}
+		}
+
+		// Re-normalize so only a canonical, calendar-valid Gregorian Y-m-d reaches SQL.
+		$parsed = self::parse_ymd( $date );
+		if ( null === $parsed ) {
+			return '';
+		}
+		list( $year, $month, $day ) = $parsed;
+		if ( ! self::is_gregorian_date( $year, $month, $day ) ) {
+			return '';
+		}
+		return sprintf( '%04d-%02d-%02d', $year, $month, $day );
+	}
+
+	/**
 	 * Batch-count all hours of one day in ONE query — no N+1 (spec 1.13, 2.7, 8.6, 5.6.89).
 	 *
 	 * Implements: spec 1.13, 2.7
@@ -259,6 +327,15 @@ class DrPlus_Child_Capacity_Repository {
 	 * @return array<string,int> Map of 'H:i:s' => distinct specialist count.
 	 */
 	public static function count_day_slots( $office_id, $date ) {
+		$date = self::assert_queryable_date( $date );
+		if ( '' === $date ) {
+			// Cannot prove the date is Gregorian, so no count can be trusted. Return an empty
+			// map; the caller decides how to present the day. (Enforcement does not rely on
+			// this: count_distinct_specialists() returns UNRESOLVED_DATE_COUNT and the booking
+			// is refused.)
+			return array();
+		}
+
 		global $wpdb;
 		$statuses     = self::EXCLUDED_STATUSES;
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
@@ -274,5 +351,6 @@ class DrPlus_Child_Capacity_Repository {
 		}
 		return $map;
 	}
+
 
 }
