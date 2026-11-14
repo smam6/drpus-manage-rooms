@@ -487,8 +487,14 @@ class DrPlus_Child_Capacity_Validator {
 				return $normalized;
 			}
 		}
-		// 2. date — accepted only when it is a real Gregorian Y-m-d (Jalali 1405-08-28 is rejected).
+		// 2. date — accepted only when it is a real Gregorian Y-m-d.
+		// A Jalali triple (1405-08-28, 1405/08/28) is explicitly refused here so the caller sees
+		// '' and raises the "select a date" error, instead of silently falling through to a
+		// generic path that could bind the Jalali string to SQL.
 		if ( isset( $book['date'] ) && '' !== $book['date'] && null !== $book['date'] ) {
+			if ( self::looks_jalali( $book['date'] ) ) {
+				return '';
+			}
 			$normalized = self::normalize_date_candidate( $book['date'] );
 			if ( '' !== $normalized ) {
 				return $normalized;
@@ -562,6 +568,36 @@ class DrPlus_Child_Capacity_Validator {
 			return self::normalize_timestamp_candidate( $str );
 		}
 		return DrPlus_Child_Capacity_Repository::normalize_date( $str );
+	}
+
+	/**
+	 * Does this value look like a Jalali (Solar Hijri) calendar date?
+	 *
+	 * Detection only — this never converts. A Jalali date must be refused, never translated,
+	 * because a wrong conversion is indistinguishable from a working one until bookings land on
+	 * the wrong day. The legitimate source of truth is `raw_date`; callers fall back to it.
+	 *
+	 * Jalali years are currently 14xx, so a leading 3-4 digit year outside [1900, 2200] in a
+	 * year/month/day triple is the reliable signal. Persian digits are normalized first: a
+	 * `۱۴۰۵-۰۸-۲۸` string must be caught too.
+	 *
+	 * Written in PHP 7.4 syntax: `str_starts_with()` is PHP 8.0+ and this theme declares
+	 * `Requires PHP: 7.4`. Note also that no fixed-length check is used — `1405-8-28` (9 chars)
+	 * and `1405/08/28` (separator variant) must both be caught.
+	 *
+	 * @param mixed $value Candidate date value.
+	 * @return bool
+	 */
+	protected static function looks_jalali( $value ): bool {
+		if ( null === $value || is_array( $value ) || is_object( $value ) ) {
+			return false;
+		}
+		$str = trim( self::normalize_digits( (string) $value ) );
+		if ( '' === $str || ! preg_match( '/^(\d{3,4})[-\/.]\d{1,2}[-\/.]\d{1,2}/', $str, $m ) ) {
+			return false;
+		}
+		$year = (int) $m[1];
+		return $year < 1900 || $year > 2200;
 	}
 
 	/**

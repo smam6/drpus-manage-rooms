@@ -116,7 +116,12 @@ class DrPlus_Child_Capacity_Service {
 		}
 		$date = DrPlus_Child_Capacity_Repository::normalize_date( isset( $args['date'] ) ? $args['date'] : '' );
 		if ( '' === $date ) {
-			return $slots;
+			// The requested day cannot be resolved to a Gregorian date. Returning the slots
+			// unchanged would paint a full schedule as bookable and then let the customer pick
+			// an hour the validator can never verify (the server-side check refuses it, but only
+			// after the whole form is filled in). Fail closed on display too: an unresolvable
+			// day offers no hours, exactly like a day with every slot full.
+			return array();
 		}
 		$capacity = self::capacity_for( $office_id );
 		// One GROUP BY query for the whole day — no N+1 (spec 1.13, 2.7).
