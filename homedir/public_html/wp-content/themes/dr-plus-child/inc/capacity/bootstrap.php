@@ -144,6 +144,7 @@ function drplus_child_capacity_enqueue_assets() {
 		'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 		'i18n'    => array(
 			'noDate' => DrPlus_Child_Capacity_Messages::missing_date(),
+			'noTime' => DrPlus_Child_Capacity_Messages::select_time(),
 		),
 	) );
 }
