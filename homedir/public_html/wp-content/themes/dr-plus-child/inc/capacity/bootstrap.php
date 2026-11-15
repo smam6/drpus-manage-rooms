@@ -29,6 +29,7 @@ require_once __DIR__ . '/class-capacity-repository.php';
 require_once __DIR__ . '/class-capacity-service.php';
 require_once __DIR__ . '/class-capacity-logger.php';
 require_once __DIR__ . '/class-capacity-validator.php';
+require_once __DIR__ . '/class-capacity-diag.php';
 require_once __DIR__ . '/class-capacity-admin.php';
 require_once __DIR__ . '/class-capacity-messages.php';
 
@@ -74,6 +75,10 @@ function drplus_child_capacity_wire_hooks() {
 	add_action( 'woocommerce_checkout_process', array( 'DrPlus_Child_Capacity_Validator', 'validate_capacity' ), 5 );
 }
 add_action( 'init', 'drplus_child_capacity_wire_hooks', 20 );
+
+// On-demand diagnostic trace (admin only, ?drplus_diag=1). Never runs for normal visitors.
+add_action( 'init', array( 'DrPlus_Child_Capacity_Diag', 'set_cookie' ), 1 );
+add_action( 'init', array( 'DrPlus_Child_Capacity_Diag', 'init' ), 2 );
 
 /**
  * Create the log table on theme activation and on version bump (spec 6.4, 5.5.74).

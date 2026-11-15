@@ -246,8 +246,10 @@ class DrPlus_Child_Capacity_Repository {
 	 * @return int Distinct active specialist count.
 	 */
 	public static function count_distinct_specialists( string $office_id, string $date, string $start ): int {
-		$date = self::assert_queryable_date( $date );
+		$raw_date = $date;
+		$date     = self::assert_queryable_date( $date );
 		if ( '' === $date ) {
+			DrPlus_Child_Capacity_Logger::diag( 'assert_queryable_date REJECTED date: ' . wp_json_encode( $raw_date ) . ' -> returning ' . self::UNRESOLVED_DATE_COUNT . ' (no SQL issued)' );
 			return self::UNRESOLVED_DATE_COUNT;
 		}
 
