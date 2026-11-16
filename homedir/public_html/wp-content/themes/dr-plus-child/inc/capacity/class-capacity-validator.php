@@ -46,6 +46,7 @@ class DrPlus_Child_Capacity_Validator {
 	const ERR_MISSING_DATE = 'missing_date';
 	const ERR_MISSING_TIME = 'missing_time';
 	const ERR_COMPENSATING = 'compensating_rollback';
+	const ERR_SPECIALIST_CONFLICT = 'specialist_conflict';
 
 	/**
 	 * WC session key holding the deferred lock context (spec 4.14).
@@ -68,8 +69,10 @@ class DrPlus_Child_Capacity_Validator {
 	 * @return void
 	 */
 	public static function check_missing_date(): void {
+		DrPlus_Child_Capacity_Logger::diag( 'check_missing_date() ENTERED (priority 4)' );
 		$booking = self::extract_booking_from_request();
 		if ( null === $booking ) {
+			DrPlus_Child_Capacity_Logger::diag( 'check_missing_date: not a booking order' );
 			return; // Not a booking order.
 		}
 		if ( empty( $booking['date'] ) ) {
@@ -90,7 +93,10 @@ class DrPlus_Child_Capacity_Validator {
 	 * @return void
 	 */
 	public static function validate_capacity(): void {
+		DrPlus_Child_Capacity_Logger::diag( 'validate_capacity() ENTERED (woocommerce_checkout_process fired)' );
+
 		if ( ! DrPlus_Child_Capacity_Service::enabled() ) {
+			DrPlus_Child_Capacity_Logger::diag( 'EXIT: module disabled by filter drplus_child_capacity/enabled' );
 			return;
 		}
 
@@ -100,11 +106,17 @@ class DrPlus_Child_Capacity_Validator {
 		// re-count WITHOUT the lock and could accept the order — the exact check-then-act race
 		// the lock exists to prevent.
 		if ( self::$capacity_rejected ) {
+			DrPlus_Child_Capacity_Logger::diag( 'EXIT: already rejected earlier in this request (allowing a 2nd pass would re-count unlocked)' );
 			return;
 		}
 
 		$booking = self::extract_booking_from_request();
-		if ( null === $booking || empty( $booking['date'] ) ) {
+		if ( null === $booking ) {
+			DrPlus_Child_Capacity_Logger::diag( 'EXIT: extract_booking_from_request() returned NULL — this is NOT recognised as a booking cart/POST. Capacity will not be checked.' );
+			return; // Not a booking, or already reported by the priority-4 date check (spec 3.6).
+		}
+		if ( empty( $booking['date'] ) ) {
+			DrPlus_Child_Capacity_Logger::diag( 'EXIT: booking found but DATE is empty (Jalali rejected or raw_date missing) — the missing-date notice already fired.' );
 			return; // Not a booking, or already reported by the priority-4 date check (spec 3.6).
 		}
 
@@ -118,25 +130,37 @@ class DrPlus_Child_Capacity_Validator {
 	 * @return void
 	 */
 	protected static function validate_booking_capacity( array $booking ): void {
+		DrPlus_Child_Capacity_Logger::diag( 'validate_booking_capacity() payload: ' . wp_json_encode( $booking ) );
+
 		if ( ! DrPlus_Child_Capacity_Service::enabled() ) {
+			DrPlus_Child_Capacity_Logger::diag( 'EXIT: module disabled' );
 			return;
 		}
 		$office_id = isset( $booking['office_id'] ) ? (string) $booking['office_id'] : '';
 		if ( '' === $office_id ) {
+			DrPlus_Child_Capacity_Logger::diag( 'EXIT: office_id is EMPTY — cannot identify a clinic, so no capacity check. THIS IS A FAIL-OPEN PATH.' );
 			return;
 		}
 		// Visit type is inferred from office_id — book_data has no visit_type key (spec 3.4, Finding 4).
 		if ( DrPlus_Child_Capacity_Service::is_online_visit( $office_id ) ) {
+			DrPlus_Child_Capacity_Logger::diag( 'EXIT: office_id "' . $office_id . '" is treated as an ONLINE visit (exempt by design). If this was an in-person booking, the office_id is wrong.' );
 			return; // Online visits exempt (spec 3.5).
 		}
 		$date       = (string) $booking['date'];
 		$start_time = isset( $booking['start_time'] ) ? (string) $booking['start_time'] : '';
 		$specialist = isset( $booking['specialist_id'] ) ? (int) $booking['specialist_id'] : 0;
 
+		// Bug D: the DB column is TIME, so `14:00` must become `14:00:00` or the comparison
+		// silently matches nothing and the hour reads as empty. extract_start_time() already
+		// normalizes, but re-asserting here keeps the guarantee at the point of use: a future
+		// caller passing an un-normalized value gets a rejection, not a quiet bypass.
+		$start_time = DrPlus_Child_Capacity_Repository::normalize_time( $start_time );
+
 		// Fail closed when the booked hour cannot be resolved.
 		// An empty H:i:s would be bound as `start_time = ''`, which matches no row, so the count
 		// would be 0 and an in-person booking on a FULL hour would be accepted (capacity bypass).
 		if ( '' === $start_time ) {
+			DrPlus_Child_Capacity_Logger::diag( 'REJECT: start_time could not be resolved — refusing (fail-closed). raw_time=' . ( isset( $booking['raw_time'] ) ? wp_json_encode( $booking['raw_time'] ) : 'MISSING' ) );
 			self::log( $booking, 0, 0, self::ERR_MISSING_TIME );
 			wc_add_notice( DrPlus_Child_Capacity_Messages::missing_time(), 'error' );
 			return;
@@ -144,9 +168,21 @@ class DrPlus_Child_Capacity_Validator {
 
 		$capacity = DrPlus_Child_Capacity_Service::capacity_for( $office_id );
 
+		// Bug C: a specialist cannot be in two rooms at once. This is independent of room
+		// capacity — two DIFFERENT specialists fill a 2-room hour and raise the count, but the
+		// SAME specialist booking twice leaves the distinct count at 1, so the room check alone
+		// never sees it. Runs before the room count so the clearer message wins.
+		if ( DrPlus_Child_Capacity_Repository::specialist_already_booked( $specialist, $date, $start_time ) ) {
+			DrPlus_Child_Capacity_Logger::diag( 'REJECT: specialist ' . $specialist . ' already booked at ' . $date . ' ' . $start_time );
+			self::log( $booking, 0, $capacity, self::ERR_SPECIALIST_CONFLICT );
+			wc_add_notice( DrPlus_Child_Capacity_Messages::specialist_conflict(), 'error' );
+			return;
+		}
+
 		// Layer 1: acquire the global advisory lock BEFORE counting (spec 4.13). Timeout 5s max.
 		$acquired = DrPlus_Child_Capacity_Lock_Manager::acquire( $office_id, $date, $start_time, 5 );
 		if ( ! $acquired ) {
+			DrPlus_Child_Capacity_Logger::diag( 'REJECT: could not acquire lock ' . DrPlus_Child_Capacity_Lock_Manager::build_lock_name( $office_id, $date, $start_time ) );
 			self::log( $booking, 0, $capacity, DrPlus_Child_Capacity_Repository::ERR_LOCK_FAILED );
 			wc_add_notice( DrPlus_Child_Capacity_Messages::system_busy(), 'error' );
 			return;
@@ -155,6 +191,16 @@ class DrPlus_Child_Capacity_Validator {
 		// Lock is now held. It is released either here (rejection) or deferred to
 		// post_insert_verify_and_release (after the parent's INSERT) — never before (spec 4.14).
 		$count = DrPlus_Child_Capacity_Repository::count_distinct_specialists( $office_id, $date, $start_time );
+
+		DrPlus_Child_Capacity_Logger::diag( sprintf(
+			'CAPACITY CHECK -> office=%s date=%s time=%s capacity=%d current_count=%d verdict=%s',
+			$office_id,
+			$date,
+			$start_time,
+			$capacity,
+			$count,
+			( $count >= $capacity ? 'REJECT' : 'ALLOW' )
+		) );
 
 		if ( $count >= $capacity ) {
 			// Reject and release immediately (spec 4.14).
@@ -199,11 +245,13 @@ class DrPlus_Child_Capacity_Validator {
 		// Source A: WooCommerce Cart.
 		if ( function_exists( 'WC' ) && WC()->cart && method_exists( WC()->cart, 'get_cart' ) ) {
 			$cart_items = WC()->cart->get_cart();
+			DrPlus_Child_Capacity_Logger::diag( 'extract: cart has ' . ( is_iterable( $cart_items ) ? count( (array) $cart_items ) : 0 ) . ' item(s)' );
 			if ( is_iterable( $cart_items ) ) {
 				foreach ( $cart_items as $cart_item ) {
 					if ( ! is_array( $cart_item ) ) {
 						continue;
 					}
+					DrPlus_Child_Capacity_Logger::diag( 'extract: cart item keys=[' . implode( ',', array_keys( $cart_item ) ) . '] is_booking=' . ( empty( $cart_item['is_booking'] ) ? 'no' : 'yes' ) . ' has_book_data=' . ( empty( $cart_item['book_data'] ) ? 'no' : 'yes' ) );
 					if ( ! empty( $cart_item['is_booking'] ) || ! empty( $cart_item['book_data'] ) ) {
 						$raw_data = $cart_item['book_data'] ?? array();
 						if ( is_object( $raw_data ) ) {
@@ -226,6 +274,7 @@ class DrPlus_Child_Capacity_Validator {
 						);
 
 						if ( '' !== $date ) {
+							DrPlus_Child_Capacity_Logger::diag( 'SOURCE A (cart): date resolved -> ' . $date );
 							return $booking;
 						}
 
@@ -250,6 +299,7 @@ class DrPlus_Child_Capacity_Validator {
 				$specialist_id = isset( $session_data['specialist_id'] ) ? (int) $session_data['specialist_id'] : 0;
 
 				if ( null !== $partial_booking ) {
+					DrPlus_Child_Capacity_Logger::diag( 'SOURCE B (session, merged with partial cart): date resolved -> ' . $date );
 					return array(
 						'office_id'     => '' !== $partial_booking['office_id'] ? $partial_booking['office_id'] : $office_id,
 						'date'          => $date,
@@ -325,6 +375,7 @@ class DrPlus_Child_Capacity_Validator {
 					);
 				}
 
+				DrPlus_Child_Capacity_Logger::diag( 'SOURCE C (POST): date resolved -> ' . $date );
 				return array(
 					'office_id'     => $post_office,
 					'date'          => $date,
@@ -343,6 +394,7 @@ class DrPlus_Child_Capacity_Validator {
 			}
 		}
 
+		DrPlus_Child_Capacity_Logger::diag( 'extract RESULT: ' . ( null === $partial_booking ? 'NULL (no booking source matched)' : wp_json_encode( $partial_booking ) ) );
 		return $partial_booking;
 	}
 
@@ -365,8 +417,10 @@ class DrPlus_Child_Capacity_Validator {
 		}
 		$context = WC()->session->get( self::SESSION_LOCK_CONTEXT );
 		if ( ! is_array( $context ) ) {
+			DrPlus_Child_Capacity_Logger::diag( 'LAYER 2 (order_processed): NO lock context in session — validate_capacity() never reached the lock. Layer 2 has nothing to verify.' );
 			return; // No capacity lock held for this request.
 		}
+		DrPlus_Child_Capacity_Logger::diag( 'LAYER 2 (order_processed): order #' . (int) $order_id . ' context=' . wp_json_encode( $context ) );
 
 		$lock_name = DrPlus_Child_Capacity_Lock_Manager::build_lock_name(
 			$context['office_id'],
@@ -380,6 +434,8 @@ class DrPlus_Child_Capacity_Validator {
 			$context['date'],
 			$context['start_time']
 		);
+
+		DrPlus_Child_Capacity_Logger::diag( 'LAYER 2: re-count=' . $count_now . ' capacity=' . (int) $context['capacity'] . ' verdict=' . ( $count_now > (int) $context['capacity'] ? 'ROLLBACK' : 'KEEP' ) );
 
 		if ( $count_now > (int) $context['capacity'] ) {
 			// Compensating rollback — safety net, never fires when Layer 1 works (spec 4.15).

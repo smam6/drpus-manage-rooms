@@ -246,22 +246,208 @@ class DrPlus_Child_Capacity_Repository {
 	 * @return int Distinct active specialist count.
 	 */
 	public static function count_distinct_specialists( string $office_id, string $date, string $start ): int {
-		$date = self::assert_queryable_date( $date );
+		$raw_date = $date;
+		$date     = self::assert_queryable_date( $date );
 		if ( '' === $date ) {
+			DrPlus_Child_Capacity_Logger::diag( 'assert_queryable_date REJECTED date: ' . wp_json_encode( $raw_date ) . ' -> returning ' . self::UNRESOLVED_DATE_COUNT . ' (no SQL issued)' );
 			return self::UNRESOLVED_DATE_COUNT;
+		}
+
+		// Bug D: `14:00` must become `14:00:00` before it is compared to the TIME column, or the
+		// comparison matches nothing, the hour reads as empty, and the booking is allowed.
+		$raw_start = $start;
+		$start     = self::normalize_time( $start );
+		if ( '' === $start ) {
+			DrPlus_Child_Capacity_Logger::diag( 'count_distinct_specialists REJECTED unusable time ' . wp_json_encode( $raw_start ) . ' -> returning ' . self::UNRESOLVED_DATE_COUNT );
+			return self::UNRESOLVED_DATE_COUNT;
+		}
+
+		global $wpdb;
+		$statuses = self::EXCLUDED_STATUSES;
+
+		// The parent stores the SAME physical clinic under several identifiers: a numeric
+		// hospital post id (614) and one or more per-specialist UUID "custom office" ids that
+		// merely repeat that clinic's name and phone. Counting `office_id = '614'` alone misses
+		// every booking filed under a UUID, so two rooms read as empty and a third specialist is
+		// accepted. Count every identifier that resolves to the same clinic (Bug B).
+		$clinic_ids = self::resolve_clinic_identifiers( $office_id );
+		DrPlus_Child_Capacity_Logger::diag( 'clinic "' . $office_id . '" resolves to ' . count( $clinic_ids ) . ' identifier(s): ' . implode( ', ', $clinic_ids ) );
+
+		$in           = implode( ',', array_fill( 0, count( $clinic_ids ), '%s' ) );
+		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+		$count        = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(DISTINCT specialist_id) FROM " . self::booking_table() .
+				" WHERE office_id IN ({$in}) AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})",
+				array_merge( $clinic_ids, array( $date, $start ), $statuses )
+			)
+		);
+		return (int) $count;
+	}
+
+	/**
+	 * Expand one office identifier into every identifier that denotes the same physical clinic.
+	 *
+	 * WHY THIS IS NEEDED (Bug B — the "3 bookings" bug)
+	 *
+	 * `drplus_booking.office_id` holds two different kinds of value: a numeric hospital post id
+	 * (`614`) or a per-specialist "custom office" UUID
+	 * (`1b9d72ba-f2b2-4dfd-8a3c-5b0f13c5c650`). In the live data four UUIDs and post 614 all
+	 * denote the same clinic («کلینیک آغازگر», phone 09932115061). Counting the single id that
+	 * happens to be in the booking therefore lets a 2-room clinic accept a 3rd booking.
+	 *
+	 * WHY THERE IS NO AUTOMATIC JOIN (verified against the live dump — do not "fix" this by
+	 * guessing)
+	 *
+	 *  - `{prefix}drplus_specialists`.`offices` stores those UUIDs as `"type":"custom"` with no
+	 *    hospital / parent / clinic field of any kind.
+	 *  - The hospital's own entry in that same blob is `{"type":"hospital","id":"614","main":true}`
+	 *    — it carries NO name and NO phone, so it cannot be matched to a UUID by identity.
+	 *  - `{prefix}drplus_specialist_hospitals_rel` (user_id -> hospital_id) has NO row for the
+	 *    four specialists who own the UUID offices.
+	 *  - `{prefix}drplus_times.office` lists (user_id, office) pairs, but the same specialist's
+	 *    UUID is filed under a DIFFERENT hospital, so it is not a trustworthy mapping either.
+	 *  - Post 614 has no postmeta at all; its phone appears only in free-text post content,
+	 *    which is shared verbatim with ~60 other posts — useless as a key.
+	 *
+	 * So the mapping is genuinely absent from the data. Rather than guess (a wrong guess merges
+	 * two real clinics and blocks legitimate bookings), aliases come from an explicit option:
+	 *
+	 *     update_option( 'drplus_capacity_clinic_aliases', array(
+	 *         '1b9d72ba-f2b2-4dfd-8a3c-5b0f13c5c650' => '614',
+	 *         'bfafd267-63c7-4a5b-95d8-02e2690cd7aa' => '614',
+	 *     ) );
+	 *
+	 * Each id in the group is also accepted as a key so resolution works from either side. The
+	 * option is read once per request. With no option configured the behaviour is exactly the
+	 * previous one (the single id), so this can never make an existing site over-block.
+	 *
+	 * @param string $office_id Office identifier from the booking.
+	 * @return string[] Non-empty list of identifiers, always including $office_id.
+	 */
+	public static function resolve_clinic_identifiers( $office_id ) {
+		$office_id = trim( (string) $office_id );
+		if ( '' === $office_id ) {
+			return array( '' );
+		}
+
+		// normalize_to_clinic: every identifier for one physical clinic collapses to a single
+		// count set, so a clinic is never counted two ways depending on which entry point the
+		// customer happened to book through.
+		$map = self::load_clinic_aliases();
+
+		$key   = strtolower( $office_id );
+		$group = isset( $map[ $key ] ) ? $map[ $key ] : array();
+
+		$ids = array();
+		foreach ( array_merge( array( $office_id ), $group ) as $id ) {
+			$id = trim( (string) $id );
+			if ( '' !== $id && ! in_array( $id, $ids, true ) ) {
+				$ids[] = $id;
+			}
+		}
+
+		if ( count( $ids ) > 1 ) {
+			DrPlus_Child_Capacity_Logger::diag( 'clinic "' . $office_id . '" expands to: ' . implode( ', ', $ids ) );
+		}
+
+		return $ids;
+	}
+
+	/**
+	 * Build the lowercased alias => [ids] lookup from the configured option.
+	 *
+	 * Accepts either a flat map (`uuid => clinic`) or a list of groups
+	 * (`array( array( '614', 'uuid-a' ) )`), because both are natural ways to write it by hand.
+	 *
+	 * @return array<string,string[]>
+	 */
+	protected static function load_clinic_aliases() {
+		$raw = get_option( 'drplus_capacity_clinic_aliases', array() );
+		if ( ! is_array( $raw ) || empty( $raw ) ) {
+			return array();
+		}
+
+		$groups = array();
+
+		// Shape 1: list of groups.
+		if ( isset( $raw[0] ) && is_array( $raw[0] ) ) {
+			foreach ( $raw as $group ) {
+				$groups[] = array_values( array_filter( array_map( 'strval', (array) $group ), 'strlen' ) );
+			}
+		} else {
+			// Shape 2: id => clinic (or clinic => id); collect into groups by target.
+			$by_target = array();
+			foreach ( $raw as $from => $to ) {
+				$from = (string) $from;
+				$to   = is_array( $to ) ? array_map( 'strval', $to ) : array( (string) $to );
+				foreach ( $to as $target ) {
+					$by_target[ $target ][] = $from;
+				}
+			}
+			foreach ( $by_target as $target => $members ) {
+				$members[] = (string) $target;
+				$groups[]  = array_values( array_unique( $members ) );
+			}
+		}
+
+		$map = array();
+		foreach ( $groups as $group ) {
+			if ( count( $group ) < 2 ) {
+				continue;
+			}
+			foreach ( $group as $id ) {
+				$map[ strtolower( $id ) ] = $group;
+			}
+		}
+		return $map;
+	}
+
+	/**
+	 * Does this specialist already hold a booking at this exact date + hour?
+	 *
+	 * WHY THIS IS NOT COVERED BY THE ROOM COUNT (Bug C)
+	 *
+	 * Capacity is counted as COUNT(DISTINCT specialist_id). When specialist 11 books 14:00 they
+	 * occupy room 1, but the distinct count for that hour is 1. If the SAME specialist 11 books
+	 * 14:00 again the count is STILL 1, so a 2-room clinic never rejects it. The customer gets a
+	 * confirmation, the specialist cannot physically be in both, and the slot is silently wasted.
+	 *
+	 * Deliberately office-agnostic: a specialist cannot be in two rooms at once regardless of
+	 * which room is requested, so the check ignores office_id. Online consultations never reach
+	 * here (the validator returns early for them).
+	 *
+	 * FAILS CLOSED: an unresolvable specialist/date/time returns TRUE (conflict) so the booking
+	 * is refused rather than allowed through on an unverifiable slot.
+	 *
+	 * @param int    $specialist_id Specialist (post) id from the booking payload.
+	 * @param string $date          Gregorian Y-m-d.
+	 * @param string $start         Start time, normalized to H:i:s.
+	 * @return bool True when a conflicting booking exists.
+	 */
+	public static function specialist_already_booked( $specialist_id, $date, $start ) {
+		$specialist_id = (int) $specialist_id;
+		$date          = self::assert_queryable_date( $date );
+		$start         = self::normalize_time( $start );
+
+		if ( $specialist_id <= 0 || '' === $date || '' === $start ) {
+			// Cannot prove the slot, so cannot claim it is free. Report a conflict: the caller
+			// then refuses the booking instead of letting an unverifiable slot through.
+			DrPlus_Child_Capacity_Logger::diag( 'specialist_already_booked UNVERIFIABLE (specialist=' . $specialist_id . ' date=' . $date . ' time=' . $start . ') -> treating as conflict' );
+			return true;
 		}
 
 		global $wpdb;
 		$statuses     = self::EXCLUDED_STATUSES;
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
-		$count = $wpdb->get_var(
+		$conflicts    = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(DISTINCT specialist_id) FROM " . self::booking_table() .
-				" WHERE office_id = %s AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})",
-				array_merge( array( $office_id, $date, $start ), $statuses )
+				"SELECT COUNT(*) FROM " . self::booking_table() .
+				" WHERE specialist_id = %d AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})",
+				array_merge( array( $specialist_id, $date, $start ), $statuses )
 			)
 		);
-		return (int) $count;
+		return ( (int) $conflicts ) > 0;
 	}
 
 	/**
@@ -269,22 +455,10 @@ class DrPlus_Child_Capacity_Repository {
 	 *
 	 * Every caller normalizes before it gets here, so this normally passes the value through
 	 * untouched. It exists because that is an invariant held by convention, not by the type
-	 * system: a future caller (or an un-normalized third-party payload) could hand a Jalali
-	 * string straight to this public method, and `1405-08-28` is a syntactically valid Y-m-d
-	 * that MySQL compares happily against real Gregorian rows — matching nothing, returning 0,
-	 * and letting a full hour accept another booking. That is the overbooking bug.
+	 * system, and count_distinct_specialists() is public.
 	 *
 	 * Deliberately NOT a converter: this layer cannot know whether `1405-08-28` is Jalali, a
 	 * typo, or a truncated timestamp, and guessing is how the original bug was introduced.
-	 * (`strtotime()` is not a Jalali converter — it has no calendar awareness and parses
-	 * "1405-08-28" as Gregorian 1405, returning the same string.) Anything that is not already
-	 * a valid Gregorian Y-m-d is refused, and the caller fails closed.
-	 *
-	 * Written in PHP 7.4 syntax: `str_starts_with()` is PHP 8.0+ and this theme declares
-	 * `Requires PHP: 7.4`, so a direct call would fatal on a 7.4 server — in the middle of the
-	 * capacity check, which is the worst possible place to throw.
-	 *
-	 * Implements: spec 1.3, 3.3, Matrix C
 	 *
 	 * @param string $date Candidate date.
 	 * @return string Valid Gregorian Y-m-d, or '' when the value must not be queried.
@@ -337,12 +511,20 @@ class DrPlus_Child_Capacity_Repository {
 		}
 
 		global $wpdb;
-		$statuses     = self::EXCLUDED_STATUSES;
+		$statuses = self::EXCLUDED_STATUSES;
+
+		// Same clinic-alias expansion as count_distinct_specialists(): if the dropdown counted
+		// only the exact office_id it was handed, it would offer hours the validator then
+		// rejects (or hide hours that are in fact free) whenever a clinic is split across a
+		// numeric id and custom-office UUIDs (Bug B).
+		$clinic_ids = self::resolve_clinic_identifiers( $office_id );
+
+		$in           = implode( ',', array_fill( 0, count( $clinic_ids ), '%s' ) );
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
 		$sql = $wpdb->prepare(
 			"SELECT start_time, COUNT(DISTINCT specialist_id) AS cnt FROM " . self::booking_table() .
-			" WHERE office_id = %s AND `date` = %s AND deleted = 0 AND order_status NOT IN ({$placeholders}) GROUP BY start_time",
-			array_merge( array( $office_id, $date ), $statuses )
+			" WHERE office_id IN ({$in}) AND `date` = %s AND deleted = 0 AND order_status NOT IN ({$placeholders}) GROUP BY start_time",
+			array_merge( $clinic_ids, array( $date ), $statuses )
 		);
 		$rows  = $wpdb->get_results( $sql, ARRAY_A );
 		$map   = array();

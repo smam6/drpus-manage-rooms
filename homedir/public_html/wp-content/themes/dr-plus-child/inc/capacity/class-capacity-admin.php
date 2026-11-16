@@ -75,6 +75,34 @@ class DrPlus_Child_Capacity_Admin {
 		$capacities = isset( $_POST['drplus_capacity_clinic'] ) && is_array( $_POST['drplus_capacity_clinic'] )
 			? wp_unslash( $_POST['drplus_capacity_clinic'] )
 			: array();
+		// Bug B: the parent has no column linking a custom-office UUID to the clinic it belongs
+		// to, so the operator states the mapping explicitly. Stored as one option: uuid => clinic.
+		$aliases = isset( $_POST['drplus_capacity_alias'] ) && is_array( $_POST['drplus_capacity_alias'] )
+			? wp_unslash( $_POST['drplus_capacity_alias'] )
+			: array();
+		$clean_aliases = array();
+		foreach ( $aliases as $clinic_id => $raw_alias ) {
+			$clinic_id = absint( $clinic_id );
+			if ( $clinic_id < 1 ) {
+				continue;
+			}
+			// One clinic can legitimately own several UUIDs: the parent mints a NEW custom office
+			// per specialist who registers the same clinic, and the live data has four for one
+			// clinic. Accept a comma / space / newline separated list.
+			$raw_alias = strtolower( (string) $raw_alias );
+			$parts     = preg_split( '/[\s,]+/', $raw_alias, -1, PREG_SPLIT_NO_EMPTY );
+			foreach ( (array) $parts as $uuid ) {
+				$uuid = sanitize_text_field( $uuid );
+				// Only a UUID-shaped value is accepted: a numeric id here would silently merge two
+				// real hospitals, which is far worse than not resolving the alias at all.
+				if ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $uuid ) ) {
+					continue;
+				}
+				$clean_aliases[ $uuid ] = $clinic_id;
+			}
+		}
+		update_option( 'drplus_capacity_clinic_aliases', $clean_aliases, false );
+
 		$error = false;
 		foreach ( $capacities as $clinic_id => $raw ) {
 			$clinic_id = absint( $clinic_id );
@@ -109,6 +137,19 @@ class DrPlus_Child_Capacity_Admin {
 			'orderby'        => 'title',
 			'order'          => 'ASC',
 		) );
+		// Reverse the stored uuid=>clinic map so each clinic's row can show its alias.
+		$aliases_by_clinic = array();
+		$stored_aliases    = get_option( 'drplus_capacity_clinic_aliases', array() );
+		if ( is_array( $stored_aliases ) ) {
+			foreach ( $stored_aliases as $uuid => $clinic_id ) {
+				if ( ! is_array( $clinic_id ) ) {
+					$aliases_by_clinic[ (int) $clinic_id ][] = (string) $uuid;
+				}
+			}
+		}
+		foreach ( $aliases_by_clinic as $clinic_key => $uuid_list ) {
+			$aliases_by_clinic[ $clinic_key ] = implode( ', ', $uuid_list );
+		}
 		$notice = get_transient( 'drplus_capacity_admin_notice_' . get_current_user_id() );
 		if ( $notice ) {
 			delete_transient( 'drplus_capacity_admin_notice_' . get_current_user_id() );
@@ -125,6 +166,7 @@ class DrPlus_Child_Capacity_Admin {
 						<tr>
 							<th><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_col_clinic() ); ?></th>
 							<th><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_col_capacity() ); ?></th>
+						<th><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_col_alias() ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -137,10 +179,16 @@ class DrPlus_Child_Capacity_Admin {
 									name="drplus_capacity_clinic[<?php echo esc_attr( $clinic->ID ); ?>]"
 									value="<?php echo esc_attr( $current ); ?>" class="small-text">
 							</td>
+							<td>
+								<input type="text" dir="ltr" class="large-text code"
+									name="drplus_capacity_alias[<?php echo esc_attr( $clinic->ID ); ?>]"
+									value="<?php echo esc_attr( $aliases_by_clinic[ (int) $clinic->ID ] ?? '' ); ?>"
+									placeholder="uuid-1, uuid-2, …">
+							</td>
 						</tr>
 					<?php endforeach; ?>
 					<?php if ( empty( $clinics ) ) : ?>
-						<tr><td colspan="2"><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_no_clinics() ); ?></td></tr>
+						<tr><td colspan="3"><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_no_clinics() ); ?></td></tr>
 					<?php endif; ?>
 					</tbody>
 				</table>

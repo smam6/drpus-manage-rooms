@@ -82,6 +82,18 @@ $drplus_capacity_vc_checks = array(
 		'hint'   => 'Phone consultations using the legacy id are exempt, not counted as rooms.',
 	),
 	array(
+		'label'  => 'Clinic UUID aliases resolved (Bug B)',
+		'file'   => 'class-capacity-repository.php',
+		'marker' => 'normalize_to_clinic',
+		'hint'   => 'A numeric clinic id and its custom-office UUIDs are counted as ONE clinic.',
+	),
+	array(
+		'label'  => 'Specialist double-booking blocked (Bug C)',
+		'file'   => 'class-capacity-validator.php',
+		'marker' => 'ERR_SPECIALIST_CONFLICT',
+		'hint'   => 'The same specialist can no longer hold two rooms in the same hour.',
+	),
+	array(
 		'label'  => 'Debug logging REMOVED',
 		'file'   => 'class-capacity-repository.php',
 		'marker' => 'DRPLUS COUNT SQL',
