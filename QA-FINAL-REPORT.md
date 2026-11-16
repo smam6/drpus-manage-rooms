@@ -277,3 +277,57 @@ These cannot be closed offline, and I am not claiming they are:
    mitigated.
 3. **The six live scenarios.** Code correctness is established here; production confirmation
    is not.
+
+---
+
+# ADDENDUM — Dynamic capacity (future bookings only)
+
+Rule: a capacity change applies to **future** bookings only. Existing bookings are never
+cancelled or altered, and a new limit takes effect on the next booking attempt with no cache
+flush.
+
+**Verdict: no code changes were required.** `capacity_for()` reads the option on every call;
+there is no static, transient or object cache anywhere in the capacity module.
+
+## Why it is correct by construction
+
+| Check | Finding |
+|---|---|
+| Static/memo cache in the module | **None.** Only 4 statics exist: held locks, diag flag, request id, and a per-request "already rejected" guard — none of them capacity values |
+| `wp_cache_*` / transients for capacity | None (the only transient is the admin success notice text) |
+| Alias map cached | No — `load_clinic_aliases()` calls `get_option()` on every resolution |
+| Options autoloaded | Both stored with `$autoload = false`, so they are not even in the `alloptions` blob |
+| Persistent object cache drop-in (`object-cache.php`) | **Absent** on this install → `get_option()` is a real DB read per request |
+| Anything reacting to a settings change | **No** `update_option_*` / `updated_option` hook, no cron, no background job |
+| Anything that cancels existing bookings | Only `rollback_this_order()`, which is scoped to the order currently being placed |
+
+## Suite H results — 32/32, stable across 3 runs
+
+| Group | Assertions | Result |
+|---|---|---|
+| **H0 — no memoisation** | same id re-read 3× in a row sees 5, then 1, then 4; UUID path sees the change; removing/restoring an alias takes effect immediately | 7/7 |
+| **H1 — increase 2→3** | 3rd specialist rejected at 2; **allowed at 3 in the same request** | 2/2 |
+| **H2 — decrease 3→2 with 3 existing** | 4th specialist rejected before *and* after the reduction; count still reports 3 | 4/4 |
+| **H3 — no retroactive cancellation** | rejected attempt issues **0** UPDATE/INSERT; 3 rows byte-identical; all still `completed`, none soft-deleted; no `update_option_`/cron hook in the shipped source | 6/6 |
+| **H4 — 0 / empty / negative / unset / non-numeric** | all fall back to the default 2, no crash; a 0-capacity clinic still accepts a booking at the default | 6/6 |
+| **H5 — real admin save flow** | `handle_save()` → next `capacity_for()` sees the new value in the **same request**, via both the clinic id and a UUID; raising the limit lets the 4th booking through on the very next validation | 7/7 |
+
+### Sensitivity proof
+
+The suite is not passing by construction. Injecting a one-line `static $memo` cache into
+`capacity_for()` — code that does not exist in the shipped file — produces **17 failures**,
+including every H0/H5 assertion. With the shipped code: **0 failures**.
+
+### Two test bugs found and fixed during this suite
+
+- `qa_attempt()` counted the **cumulative** notice log, so a rejection in one attempt was
+  re-counted in the next and faked two failures (H1b, H2b). The code was correct.
+- A helper was placed before `<?php` and got stripped during harness assembly, producing a
+  fatal that looked like a code break.
+
+## Practical note for the operator
+
+Bookings are **counted**, not stored per capacity. Reducing capacity from 3 to 2 leaves three
+active bookings in a 2-room hour; the module reports the count as 3 and refuses any further
+booking for that hour. Nothing is cancelled, and the over-capacity state is visible rather
+than hidden. This is the requested behaviour.
