@@ -133,6 +133,138 @@ foreach ( $drplus_capacity_vc_checks as $drplus_capacity_vc_check ) {
 	);
 }
 
+/**
+ * LIVE ASSERTIONS — execute the real code, do not just look for a string in a file.
+ *
+ * The marker checks above answer "was this file replaced?". They cannot answer "does the
+ * code in it behave?" — a marker can be present in a file that fatals on load, and a partial
+ * upload can leave the marker in place while the logic is truncated. These checks call the
+ * shipped classes and assert the properties the clinic depends on, so a green page means the
+ * behaviour is correct on THIS server, not merely that a substring exists.
+ *
+ * Everything here is read-only: the alias resolver reads an option, the date guard and the
+ * time normalizer are pure. No rows are written and no booking is created.
+ */
+$drplus_capacity_vc_live = array();
+
+/**
+ * Record one live assertion.
+ *
+ * @param string $label    Human label.
+ * @param bool   $ok       Result.
+ * @param string $evidence What was actually observed.
+ */
+$drplus_capacity_vc_assert = static function ( $label, $ok, $evidence ) use ( &$drplus_capacity_vc_live, &$drplus_capacity_vc_fail ) {
+	$drplus_capacity_vc_live[] = array(
+		'label'    => $label,
+		'ok'       => (bool) $ok,
+		'evidence' => (string) $evidence,
+	);
+	if ( ! $ok ) {
+		$drplus_capacity_vc_fail++;
+	}
+};
+
+$drplus_capacity_vc_classes_ready = class_exists( 'DrPlus_Child_Capacity_Repository' )
+	&& class_exists( 'DrPlus_Child_Capacity_Validator' )
+	&& class_exists( 'DrPlus_Child_Capacity_Service' );
+
+if ( ! $drplus_capacity_vc_classes_ready ) {
+	$drplus_capacity_vc_assert( 'Capacity classes load', false, 'Repository/Validator/Service not loaded — bootstrap.php did not run' );
+} else {
+	// --- Jalali guard ---------------------------------------------------------------
+	$drplus_capacity_vc_guard = new ReflectionMethod( 'DrPlus_Child_Capacity_Repository', 'assert_queryable_date' );
+	$drplus_capacity_vc_guard->setAccessible( true );
+
+	$drplus_capacity_vc_jalali = $drplus_capacity_vc_guard->invoke( null, '1405-08-28' );
+	$drplus_capacity_vc_assert(
+		'Jalali date is refused (fail-closed)',
+		'' === $drplus_capacity_vc_jalali,
+		"assert_queryable_date('1405-08-28') returned " . var_export( $drplus_capacity_vc_jalali, true ) . " (expected '')"
+	);
+
+	$drplus_capacity_vc_persian = $drplus_capacity_vc_guard->invoke( null, '۱۴۰۵-۰۸-۲۸' );
+	$drplus_capacity_vc_assert(
+		'Jalali date in Persian digits is refused',
+		'' === $drplus_capacity_vc_persian,
+		"assert_queryable_date('۱۴۰۵-۰۸-۲۸') returned " . var_export( $drplus_capacity_vc_persian, true ) . " (expected '')"
+	);
+
+	$drplus_capacity_vc_good = $drplus_capacity_vc_guard->invoke( null, '2026-11-19' );
+	$drplus_capacity_vc_assert(
+		'A real Gregorian date passes through',
+		'2026-11-19' === $drplus_capacity_vc_good,
+		"assert_queryable_date('2026-11-19') returned " . var_export( $drplus_capacity_vc_good, true )
+	);
+
+	// --- time normalization ---------------------------------------------------------
+	$drplus_capacity_vc_time = DrPlus_Child_Capacity_Repository::normalize_time( '14:00' );
+	$drplus_capacity_vc_assert(
+		'Time 14:00 normalizes to 14:00:00',
+		'14:00:00' === $drplus_capacity_vc_time,
+		"normalize_time('14:00') returned " . var_export( $drplus_capacity_vc_time, true )
+	);
+
+	$drplus_capacity_vc_junk = DrPlus_Child_Capacity_Repository::normalize_time( '1405' );
+	$drplus_capacity_vc_assert(
+		'A bare number is not treated as a time',
+		'' === $drplus_capacity_vc_junk,
+		"normalize_time('1405') returned " . var_export( $drplus_capacity_vc_junk, true ) . " (expected '')"
+	);
+
+	// --- alias resolver -------------------------------------------------------------
+	$drplus_capacity_vc_aliases = get_option( 'drplus_capacity_clinic_aliases', array() );
+	$drplus_capacity_vc_ids     = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( '1b9d72ba-f2b2-4dfd-8a3c-5b0f13c5c650' );
+
+	if ( empty( $drplus_capacity_vc_aliases ) ) {
+		$drplus_capacity_vc_assert(
+			'Clinic alias map is configured',
+			false,
+			'Option drplus_capacity_clinic_aliases is EMPTY — a clinic split across a numeric id and custom-office UUIDs is counted separately (overbooking risk). Fill it in under Settings → ظرفیت اتاق‌ها.'
+		);
+	} else {
+		$drplus_capacity_vc_assert(
+			'Clinic alias map is configured',
+			true,
+			count( (array) $drplus_capacity_vc_aliases ) . ' alias(es) configured; probing one resolves to ' . count( $drplus_capacity_vc_ids ) . ' identifier(s)'
+		);
+
+		// Every identifier in a group must resolve to the same set, from either direction.
+		$drplus_capacity_vc_sym    = true;
+		$drplus_capacity_vc_sorted = $drplus_capacity_vc_ids;
+		sort( $drplus_capacity_vc_sorted );
+		foreach ( (array) $drplus_capacity_vc_ids as $drplus_capacity_vc_one ) {
+			$drplus_capacity_vc_back = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( $drplus_capacity_vc_one );
+			sort( $drplus_capacity_vc_back );
+			if ( $drplus_capacity_vc_back !== $drplus_capacity_vc_sorted ) {
+				$drplus_capacity_vc_sym = false;
+				break;
+			}
+		}
+		$drplus_capacity_vc_assert(
+			'Alias resolution is symmetric',
+			$drplus_capacity_vc_sym,
+			'Resolving each identifier of the group returns the same identifier set'
+		);
+
+		// Capacity must be read from the clinic, not from whichever id the booking used.
+		foreach ( (array) $drplus_capacity_vc_aliases as $drplus_capacity_vc_uuid => $drplus_capacity_vc_clinic ) {
+			if ( is_array( $drplus_capacity_vc_clinic ) ) {
+				continue;
+			}
+			$drplus_capacity_vc_uuid     = (string) $drplus_capacity_vc_uuid;
+			$drplus_capacity_vc_clinic   = (string) $drplus_capacity_vc_clinic;
+			$drplus_capacity_vc_direct   = DrPlus_Child_Capacity_Service::capacity_for( $drplus_capacity_vc_clinic );
+			$drplus_capacity_vc_via_uuid = DrPlus_Child_Capacity_Service::capacity_for( $drplus_capacity_vc_uuid );
+			$drplus_capacity_vc_assert(
+				'Capacity is identical via the clinic id and its UUID',
+				$drplus_capacity_vc_direct === $drplus_capacity_vc_via_uuid,
+				'capacity_for(' . $drplus_capacity_vc_clinic . ')=' . $drplus_capacity_vc_direct . ' vs capacity_for(' . $drplus_capacity_vc_uuid . ')=' . $drplus_capacity_vc_via_uuid
+			);
+			break;
+		}
+	}
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -169,7 +301,7 @@ foreach ( $drplus_capacity_vc_checks as $drplus_capacity_vc_check ) {
 	<?php if ( 0 === $drplus_capacity_vc_fail ) : ?>
 		<div class="banner pass">All checks passed — this server is running the fixed code.</div>
 	<?php else : ?>
-		<div class="banner fail"><?php echo (int) $drplus_capacity_vc_fail; ?> check(s) failed — this server is NOT running the fixed code. Do not trust capacity enforcement yet.</div>
+		<div class="banner fail"><?php echo (int) $drplus_capacity_vc_fail; ?> check(s) failed — either the fixed code is not being served, or it is not behaving correctly on this server. Do not trust capacity enforcement yet.</div>
 	<?php endif; ?>
 
 	<table>
@@ -195,6 +327,35 @@ foreach ( $drplus_capacity_vc_checks as $drplus_capacity_vc_check ) {
 		<?php endforeach; ?>
 		</tbody>
 	</table>
+
+	<div class="files">
+		<h2>Behaviour checks (executed on this server)</h2>
+		<table>
+			<thead>
+				<tr><th>Assertion</th><th>Observed</th><th>Result</th></tr>
+			</thead>
+			<tbody>
+			<?php if ( empty( $drplus_capacity_vc_live ) ) : ?>
+				<tr><td colspan="3">No assertions ran.</td></tr>
+			<?php endif; ?>
+			<?php foreach ( $drplus_capacity_vc_live as $drplus_capacity_vc_live_row ) : ?>
+				<tr>
+					<td><?php echo esc_html( $drplus_capacity_vc_live_row['label'] ); ?></td>
+					<td style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;color:#646970">
+						<?php echo esc_html( $drplus_capacity_vc_live_row['evidence'] ); ?>
+					</td>
+					<td>
+						<?php if ( $drplus_capacity_vc_live_row['ok'] ) : ?>
+							<span class="ok">PASS</span>
+						<?php else : ?>
+							<span class="no">FAIL</span>
+						<?php endif; ?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+	</div>
 
 	<div class="files">
 		<h2>File fingerprints</h2>
