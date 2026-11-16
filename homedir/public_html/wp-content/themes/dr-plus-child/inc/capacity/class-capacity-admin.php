@@ -83,13 +83,23 @@ class DrPlus_Child_Capacity_Admin {
 		$clean_aliases = array();
 		foreach ( $aliases as $clinic_id => $raw_alias ) {
 			$clinic_id = absint( $clinic_id );
-			$raw_alias = strtolower( trim( sanitize_text_field( (string) $raw_alias ) ) );
-			// Only a UUID-shaped value is accepted: a numeric id here would silently merge two
-			// real hospitals, which is far worse than not resolving the alias at all.
-			if ( $clinic_id < 1 || ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $raw_alias ) ) {
+			if ( $clinic_id < 1 ) {
 				continue;
 			}
-			$clean_aliases[ $raw_alias ] = $clinic_id;
+			// One clinic can legitimately own several UUIDs: the parent mints a NEW custom office
+			// per specialist who registers the same clinic, and the live data has four for one
+			// clinic. Accept a comma / space / newline separated list.
+			$raw_alias = strtolower( (string) $raw_alias );
+			$parts     = preg_split( '/[\s,]+/', $raw_alias, -1, PREG_SPLIT_NO_EMPTY );
+			foreach ( (array) $parts as $uuid ) {
+				$uuid = sanitize_text_field( $uuid );
+				// Only a UUID-shaped value is accepted: a numeric id here would silently merge two
+				// real hospitals, which is far worse than not resolving the alias at all.
+				if ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $uuid ) ) {
+					continue;
+				}
+				$clean_aliases[ $uuid ] = $clinic_id;
+			}
 		}
 		update_option( 'drplus_capacity_clinic_aliases', $clean_aliases, false );
 
@@ -133,9 +143,12 @@ class DrPlus_Child_Capacity_Admin {
 		if ( is_array( $stored_aliases ) ) {
 			foreach ( $stored_aliases as $uuid => $clinic_id ) {
 				if ( ! is_array( $clinic_id ) ) {
-					$aliases_by_clinic[ (int) $clinic_id ] = (string) $uuid;
+					$aliases_by_clinic[ (int) $clinic_id ][] = (string) $uuid;
 				}
 			}
+		}
+		foreach ( $aliases_by_clinic as $clinic_key => $uuid_list ) {
+			$aliases_by_clinic[ $clinic_key ] = implode( ', ', $uuid_list );
 		}
 		$notice = get_transient( 'drplus_capacity_admin_notice_' . get_current_user_id() );
 		if ( $notice ) {
@@ -167,10 +180,10 @@ class DrPlus_Child_Capacity_Admin {
 									value="<?php echo esc_attr( $current ); ?>" class="small-text">
 							</td>
 							<td>
-								<input type="text" dir="ltr" class="regular-text code"
+								<input type="text" dir="ltr" class="large-text code"
 									name="drplus_capacity_alias[<?php echo esc_attr( $clinic->ID ); ?>]"
 									value="<?php echo esc_attr( $aliases_by_clinic[ (int) $clinic->ID ] ?? '' ); ?>"
-									placeholder="00000000-0000-0000-0000-000000000000">
+									placeholder="uuid-1, uuid-2, …">
 							</td>
 						</tr>
 					<?php endforeach; ?>
