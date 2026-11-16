@@ -86,8 +86,26 @@ class DrPlus_Child_Capacity_Service {
 	 */
 	public static function capacity_for( $office_id ) {
 		$default = (int) apply_filters( 'drplus_child_capacity/default_capacity', DRPLUS_ROOM_CAPACITY_DEFAULT );
-		$value   = (int) get_option( 'drplus_capacity_clinic_' . $office_id, $default );
-		$value   = (int) apply_filters( 'drplus_child_capacity/per_clinic', $value, $office_id );
+
+		// The limit is saved against the clinic's post id (the settings page lists hospital
+		// posts). A booking that arrives through one of that clinic's custom-office UUIDs must
+		// get the SAME limit, otherwise the two entry points enforce different capacities:
+		// a clinic configured for 3 silently enforces 2 via a UUID, and a clinic configured for
+		// 1 would allow 2. Resolve aliases first and use the first configured value found.
+		$identifiers = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( $office_id );
+		$value       = null;
+		foreach ( $identifiers as $identifier ) {
+			$stored = get_option( 'drplus_capacity_clinic_' . $identifier, null );
+			if ( null !== $stored && '' !== $stored && false !== $stored ) {
+				$value = (int) $stored;
+				break;
+			}
+		}
+		if ( null === $value ) {
+			$value = $default;
+		}
+
+		$value = (int) apply_filters( 'drplus_child_capacity/per_clinic', $value, $office_id );
 		if ( $value < 1 ) {
 			$value = max( 1, $default );
 		}
