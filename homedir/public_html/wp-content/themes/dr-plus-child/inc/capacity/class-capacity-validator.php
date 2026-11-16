@@ -46,6 +46,7 @@ class DrPlus_Child_Capacity_Validator {
 	const ERR_MISSING_DATE = 'missing_date';
 	const ERR_MISSING_TIME = 'missing_time';
 	const ERR_COMPENSATING = 'compensating_rollback';
+	const ERR_SPECIALIST_CONFLICT = 'specialist_conflict';
 
 	/**
 	 * WC session key holding the deferred lock context (spec 4.14).
@@ -149,6 +150,12 @@ class DrPlus_Child_Capacity_Validator {
 		$start_time = isset( $booking['start_time'] ) ? (string) $booking['start_time'] : '';
 		$specialist = isset( $booking['specialist_id'] ) ? (int) $booking['specialist_id'] : 0;
 
+		// Bug D: the DB column is TIME, so `14:00` must become `14:00:00` or the comparison
+		// silently matches nothing and the hour reads as empty. extract_start_time() already
+		// normalizes, but re-asserting here keeps the guarantee at the point of use: a future
+		// caller passing an un-normalized value gets a rejection, not a quiet bypass.
+		$start_time = DrPlus_Child_Capacity_Repository::normalize_time( $start_time );
+
 		// Fail closed when the booked hour cannot be resolved.
 		// An empty H:i:s would be bound as `start_time = ''`, which matches no row, so the count
 		// would be 0 and an in-person booking on a FULL hour would be accepted (capacity bypass).
@@ -160,6 +167,17 @@ class DrPlus_Child_Capacity_Validator {
 		}
 
 		$capacity = DrPlus_Child_Capacity_Service::capacity_for( $office_id );
+
+		// Bug C: a specialist cannot be in two rooms at once. This is independent of room
+		// capacity — two DIFFERENT specialists fill a 2-room hour and raise the count, but the
+		// SAME specialist booking twice leaves the distinct count at 1, so the room check alone
+		// never sees it. Runs before the room count so the clearer message wins.
+		if ( DrPlus_Child_Capacity_Repository::specialist_already_booked( $specialist, $date, $start_time ) ) {
+			DrPlus_Child_Capacity_Logger::diag( 'REJECT: specialist ' . $specialist . ' already booked at ' . $date . ' ' . $start_time );
+			self::log( $booking, 0, $capacity, self::ERR_SPECIALIST_CONFLICT );
+			wc_add_notice( DrPlus_Child_Capacity_Messages::specialist_conflict(), 'error' );
+			return;
+		}
 
 		// Layer 1: acquire the global advisory lock BEFORE counting (spec 4.13). Timeout 5s max.
 		$acquired = DrPlus_Child_Capacity_Lock_Manager::acquire( $office_id, $date, $start_time, 5 );

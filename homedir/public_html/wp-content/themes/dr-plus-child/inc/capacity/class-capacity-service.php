@@ -167,9 +167,25 @@ class DrPlus_Child_Capacity_Service {
 				$hours[] = array(
 					'startTime' => isset( $slot['from'] ) ? $slot['from'] : '',
 					'endTime'   => isset( $slot['to'] ) ? $slot['to'] : '',
+					'order'     => $start,
 				);
 			}
 		}
+
+		// Rule 5 says "suggest the first available alternative", so the list must be ordered by
+		// real clock time. The parent's slot array is not guaranteed to arrive sorted, and a
+		// naive string sort would put 9:00 after 14:00; sort on the normalized H:i:s instead.
+		usort(
+			$hours,
+			function ( $a, $b ) {
+				return strcmp( $a['order'], $b['order'] );
+			}
+		);
+		foreach ( $hours as &$hour ) {
+			unset( $hour['order'] );
+		}
+		unset( $hour );
+
 		return $hours;
 	}
 }

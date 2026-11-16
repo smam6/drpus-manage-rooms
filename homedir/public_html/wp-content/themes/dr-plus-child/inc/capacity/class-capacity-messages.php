@@ -57,6 +57,21 @@ class DrPlus_Child_Capacity_Messages {
 	}
 
 	/**
+	 * Specialist double-booking warning.
+	 *
+	 * Raised when the SAME specialist already holds this date + hour, regardless of room
+	 * capacity: a specialist cannot be in two rooms at once, and distinct-specialist counting
+	 * cannot detect it (two bookings by one specialist leave the room count at 1).
+	 *
+	 * Implements: business rule 1, Bug C
+	 *
+	 * @return string
+	 */
+	public static function specialist_conflict() {
+		return __( 'این متخصص در این ساعت قبلاً رزرو دارد. لطفاً ساعت دیگری را انتخاب کنید.', 'drplus-child' );
+	}
+
+	/**
 	 * Capacity-exceeded message, optionally listing the day's available hours (spec 3.9, decision #4).
 	 *
 	 * Implements: spec 3.8, 3.9, 5.5.98
@@ -66,17 +81,31 @@ class DrPlus_Child_Capacity_Messages {
 	 */
 	public static function capacity_exceeded( $hours = array() ) {
 		$message = __( 'ظرفیت این ساعت تکمیل شده است. لطفاً یکی از ساعت‌های موجود در آن روز را انتخاب کنید.', 'drplus-child' );
-		if ( ! empty( $hours ) ) {
-			$times = array();
-			foreach ( $hours as $hour ) {
-				$times[] = $hour['startTime'] . ' - ' . $hour['endTime'];
-			}
+		if ( empty( $hours ) || ! is_array( $hours ) ) {
+			return $message;
+		}
+
+		// Rule 5: lead with the FIRST available alternative so the customer has an actionable
+		// next step instead of a wall of options.
+		$first = reset( $hours );
+		if ( is_array( $first ) && ! empty( $first['startTime'] ) ) {
 			$message .= ' ' . sprintf(
-				/* translators: %s: comma-separated list of available time ranges. */
-				__( 'ساعت‌های آزاد: %s', 'drplus-child' ),
-				implode( '، ', $times )
+				/* translators: %s: time of the nearest available slot, e.g. "17:00". */
+				__( 'نزدیک‌ترین ساعت آزاد: %s', 'drplus-child' ),
+				$first['startTime']
 			);
 		}
+
+		$times = array();
+		foreach ( $hours as $hour ) {
+			$times[] = $hour['startTime'] . ' - ' . $hour['endTime'];
+		}
+		$message .= ' ' . sprintf(
+			/* translators: %s: comma-separated list of available time ranges. */
+			__( 'ساعت‌های آزاد: %s', 'drplus-child' ),
+			implode( '، ', $times )
+		);
+
 		return $message;
 	}
 
@@ -134,6 +163,18 @@ class DrPlus_Child_Capacity_Messages {
 	 */
 	public static function admin_col_capacity() {
 		return __( 'ظرفیت هر ساعت (تعداد متخصص)', 'drplus-child' );
+	}
+
+	/**
+	 * Column header for the clinic alias field.
+	 *
+	 * The parent stores custom offices under a per-specialist UUID with no link back to the
+	 * clinic post, so the operator supplies that link once per clinic.
+	 *
+	 * @return string
+	 */
+	public static function admin_col_alias() {
+		return __( 'شناسه اتاق سفارشی (UUID)', 'drplus-child' );
 	}
 
 	/**
