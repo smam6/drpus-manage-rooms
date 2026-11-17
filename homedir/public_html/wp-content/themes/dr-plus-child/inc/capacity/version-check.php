@@ -407,6 +407,21 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 				: count( $drplus_capacity_vc_leaking ) . ' cancelled booking(s) still block an hour: ' . implode( ', ', array_slice( $drplus_capacity_vc_leaking, 0, 5 ) ) )
 	);
 
+	// --- the copied order_status can go stale ----------------------------------------
+	// Every count here reads {prefix}drplus_booking.order_status, which is a COPY of the
+	// WooCommerce order status, refreshed by the parent theme's ionCube-encoded listener.
+	// When that copy is not refreshed, a cancelled appointment keeps its hour blocked
+	// forever and nobody sees an error. Detect it on this site's own data.
+	$drplus_capacity_vc_sync = DrPlus_Child_Capacity_Repository::reconcile_order_statuses( false );
+	$drplus_capacity_vc_assert(
+		'Booking table agrees with WooCommerce (no silently blocked hours)',
+		0 === $drplus_capacity_vc_sync['stale'],
+		$drplus_capacity_vc_sync['stale'] > 0
+			? $drplus_capacity_vc_sync['stale'] . ' booking row(s) disagree with their order — these hours stay blocked although the appointment is gone: ' . implode( ' | ', array_slice( $drplus_capacity_vc_sync['examples'], 0, 5 ) )
+			: $drplus_capacity_vc_sync['inspected'] . ' order-linked row(s) checked — all agree with WooCommerce'
+				. ( $drplus_capacity_vc_sync['unreadable'] > 0 ? ' (' . $drplus_capacity_vc_sync['unreadable'] . ' order(s) unreadable, kept as blocking)' : '' )
+	);
+
 	// --- the false "already booked" message ------------------------------------------------
 	// A booking whose specialist id is unknown must be REFUSED but must not claim a conflict
 	// exists. Reading last_unverifiable_reason() calls the real guard, so this fails on any

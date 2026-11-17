@@ -127,6 +127,9 @@ function drplus_child_capacity_wire_admin() {
 	}
 	add_action( 'admin_menu', array( 'DrPlus_Child_Capacity_Admin', 'register_menu' ) );
 	add_action( 'admin_init', array( 'DrPlus_Child_Capacity_Admin', 'handle_save' ) );
+	// Stale-copy repair runs on the same page but a separate button, so it cannot be
+	// triggered by someone merely saving a capacity number.
+	add_action( 'admin_init', array( 'DrPlus_Child_Capacity_Admin', 'handle_sync' ) );
 }
 add_action( 'init', 'drplus_child_capacity_wire_admin', 5 );
 

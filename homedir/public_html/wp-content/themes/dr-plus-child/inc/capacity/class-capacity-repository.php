@@ -405,14 +405,39 @@ class DrPlus_Child_Capacity_Repository {
 
 		$in           = implode( ',', array_fill( 0, count( $clinic_ids ), '%s' ) );
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
-		$count        = $wpdb->get_var(
+		// Rows, not COUNT(DISTINCT ...): the copied `order_status` column is a cache of the
+		// WooCommerce order, and a stale cache row would either hide a room that is free or
+		// free a room that is taken. A single slot holds only a handful of rows, so loading
+		// them costs no more than the aggregate did, and it lets row_holds_slot() ask the
+		// order before trusting the column.
+		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT COUNT(DISTINCT specialist_id) FROM " . self::booking_table() .
+				"SELECT specialist_id, order_status, order_id FROM " . self::booking_table() .
 				" WHERE office_id IN ({$in}) AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders ),
 				array_merge( $clinic_ids, array( $date, $start ), $statuses )
-			)
+			),
+			ARRAY_A
 		);
-		return (int) $count;
+
+		$holds = array();
+		foreach ( (array) $rows as $row ) {
+			if ( self::row_holds_slot( $row ) ) {
+				$holds[] = (int) $row['specialist_id'];
+			} elseif ( isset( $row['order_id'] ) && (int) $row['order_id'] > 0 ) {
+				DrPlus_Child_Capacity_Logger::diag( sprintf(
+					'slot %s %s: specialist %d freed — order #%d no longer holds it (stale column "%s")',
+					$date,
+					$start,
+					(int) $row['specialist_id'],
+					(int) $row['order_id'],
+					isset( $row['order_status'] ) ? $row['order_status'] : ''
+				) );
+			}
+		}
+
+		// Deliberately deduplicated in PHP: COUNT(DISTINCT specialist_id) counted a specialist
+		// once even if they held two rows, and the capacity arithmetic depends on that.
+		return count( array_unique( $holds ) );
 	}
 
 	/**
@@ -898,9 +923,33 @@ class DrPlus_Child_Capacity_Repository {
 		global $wpdb;
 		$statuses     = self::EXCLUDED_STATUSES;
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
-		$sql          = "SELECT COUNT(*) FROM " . self::booking_table() .
+		// EXEMPT ONLINE VISITS MUST NOT BLOCK A ROOM.
+		//
+		// A phone/chat/video consultation never occupies a physical room, so it must not make
+		// the specialist read as "already booked" for an in-person hour — and the reverse: an
+		// in-person booking must not block the specialist from taking a call at the same time.
+		//
+		// Without this clause, `specialist_already_booked()` (which passes office_id = '' to stay
+		// room-agnostic) happily matched a `chat_consultation` row and refused a perfectly free
+		// room. That contradicts the documented rule that online visits are capacity-exempt, and
+		// it silently costs the clinic every hour a specialist happens to be taking calls.
+		$online = DrPlus_Child_Capacity_Service::virtual_office_ids();
+		$sql          = "SELECT book_id, order_status, order_id FROM " . self::booking_table() .
 			" WHERE specialist_id = %d AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
 		$bind         = array_merge( array( $specialist_id, $date, $start ), $statuses );
+
+		if ( empty( $office_id ) ) {
+			// Unscoped: every physical office is in play, so exclude the virtual ones outright.
+			$online_ph = implode( ',', array_fill( 0, count( $online ), '%s' ) );
+			$sql      .= " AND office_id NOT IN ({$online_ph})";
+			$bind      = array_merge( $bind, $online );
+		} elseif ( ! in_array( $office_id, $online, true ) ) {
+			// Scoped to a real room: a virtual-visit row is not a conflict for it. (When the
+			// requested office IS virtual, the validator has already returned early.)
+			$online_ph = implode( ',', array_fill( 0, count( $online ), '%s' ) );
+			$sql      .= " AND office_id NOT IN ({$online_ph})";
+			$bind      = array_merge( $bind, $online );
+		}
 
 		if ( '' !== $office_id ) {
 			// Same clinic-alias expansion as the capacity counters: a clinic can be booked under
@@ -912,8 +961,22 @@ class DrPlus_Child_Capacity_Repository {
 			$bind       = array_merge( $bind, $clinic_ids );
 		}
 
-		$conflicts = $wpdb->get_var( $wpdb->prepare( $sql, $bind ) );
-		return ( (int) $conflicts ) > 0;
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $bind ), ARRAY_A );
+		if ( empty( $rows ) ) {
+			return false;
+		}
+
+		// The SQL filtered on the copied column, but that column can lag behind the order.
+		// Re-check each surviving row against its order: an order cancelled in WooCommerce
+		// while the row still says "processing" must not keep this specialist locked out.
+		foreach ( (array) $rows as $row ) {
+			if ( self::row_holds_slot( $row ) ) {
+				return true;
+			}
+			DrPlus_Child_Capacity_Logger::diag( 'specialist conflict avoided: book #' . ( isset( $row['book_id'] ) ? $row['book_id'] : '?' ) . ' no longer holds the slot (order status overrides stale column "' . ( isset( $row['order_status'] ) ? $row['order_status'] : '' ) . '")' );
+		}
+
+		return false;
 	}
 
 	/**
@@ -1039,7 +1102,7 @@ class DrPlus_Child_Capacity_Repository {
 		$statuses     = self::EXCLUDED_STATUSES;
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
 
-		$sql  = "SELECT start_time FROM " . self::booking_table() .
+		$sql  = "SELECT start_time, order_status, order_id FROM " . self::booking_table() .
 			" WHERE specialist_id = %d AND `date` = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
 		$bind = array_merge( array( $specialist_id, $date ), $statuses );
 
@@ -1056,11 +1119,200 @@ class DrPlus_Child_Capacity_Repository {
 		$busy = array();
 		foreach ( (array) $rows as $row ) {
 			$key = self::normalize_time( isset( $row['start_time'] ) ? $row['start_time'] : '' );
-			if ( '' !== $key ) {
-				$busy[ $key ] = true;
+			if ( '' === $key ) {
+				continue;
 			}
+			// The copied column passed the SQL filter, but that column can be stale. Ask the
+			// order before hiding the hour: a cancelled order whose row still says "processing"
+			// would otherwise block this specialist forever, with no visible error.
+			if ( ! self::row_holds_slot( $row ) ) {
+				DrPlus_Child_Capacity_Logger::diag( sprintf(
+					'book slot %s freed: the order no longer holds it (row said "%s")',
+					$key,
+					isset( $row['order_status'] ) ? $row['order_status'] : ''
+				) );
+				continue;
+			}
+			$busy[ $key ] = true;
 		}
 		return $busy;
+	}
+
+	/**
+	 * Does this booking row still deserve to block, judged by its WOOCOMMERCE ORDER?
+	 *
+	 * WHY THIS EXISTS — the gap this module could not see
+	 *
+	 * Every count in this class reads `{prefix}drplus_booking`.`order_status`. That column is a
+	 * COPY. The authoritative status lives on the WooCommerce order, and the copy is refreshed
+	 * by the parent theme's order-status listener — which is ionCube-encoded
+	 * (`inc/SaveBookingProcess.php`) and therefore cannot be read, audited, or trusted from
+	 * here.
+	 *
+	 * A copy can go stale. When it does, the consequences are asymmetric and one direction is
+	 * far worse than the other:
+	 *
+	 *   - order cancelled, copy still `processing`  →  the hour is blocked forever. Nobody can
+	 *     book it, the specialist loses income, and no error is ever shown. This is exactly the
+	 *     «قبلاً رزرو دارد» symptom with no live booking behind it.
+	 *   - order alive, copy says cancelled  →  an overbooking hole.
+	 *
+	 * This method answers the second question from the first source: given a row, what does the
+	 * ORDER say? A row whose order is cancelled/refunded/failed/trashed does not hold a slot no
+	 * matter what the copied column says.
+	 *
+	 * Fails CLOSED in every uncertain case: no order id, an order that cannot be loaded, or a
+	 * booking with no order at all (an admin-created appointment) all keep holding the slot.
+	 * Releasing a room on a lookup failure would create the overbooking bug this module exists
+	 * to prevent.
+	 *
+	 * @param int $order_id WooCommerce order id from the booking row (0 when unattached).
+	 * @return bool True when the order is gone for good and the row must stop blocking.
+	 */
+	public static function order_releases_slot( $order_id ) {
+		$order_id = (int) $order_id;
+		if ( $order_id <= 0 ) {
+			// No order: an appointment created by an admin, or a row from before orders existed.
+			// It holds the slot — there is no second source to overrule it.
+			return false;
+		}
+
+		if ( ! function_exists( 'wc_get_order' ) ) {
+			return false;
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			// Deleted order, or WooCommerce could not build it. Unknown is not "free".
+			return false;
+		}
+
+		// WC_Order::get_status() returns the bare status (`cancelled`), never `wc-cancelled`.
+		return ! self::status_holds_slot( $order->get_status() );
+	}
+
+	/**
+	 * Row-level predicate for "this row holds a slot", considering BOTH the copied column and
+	 * the live order.
+	 *
+	 * The SQL counts cannot call into WooCommerce per row, so they use the column alone; this
+	 * method is the reconcile path used where rows are already loaded (the day-slot map, the
+	 * specialist conflict check, and the audit). Keeping the decision in one place means the
+	 * two paths cannot drift apart in the direction that matters — releasing a room that is
+	 * genuinely taken.
+	 *
+	 * @param array $row Booking row with `order_status` and `order_id`.
+	 * @return bool True when the row still occupies its slot.
+	 */
+	public static function row_holds_slot( $row ) {
+		$status = isset( $row['order_status'] ) ? $row['order_status'] : '';
+		if ( ! self::status_holds_slot( $status ) ) {
+			return false;
+		}
+		// The copied column says "active". Ask the order before believing it.
+		$order_id = isset( $row['order_id'] ) ? $row['order_id'] : 0;
+		return ! self::order_releases_slot( $order_id );
+	}
+
+	/**
+	 * Count how many rows in this site's booking table are stale — the copied `order_status`
+	 * disagrees with the WooCommerce order — and optionally repair them.
+	 *
+	 * WHY A REPAIR IS SAFE
+	 *
+	 * The order is authoritative; the column is a cache of it. Writing the order's own status
+	 * back into the column therefore cannot invent a state: it copies the truth. This does not
+	 * cancel, complete, or refund anything — it only teaches the cache what the order already
+	 * says. No customer is notified and no money moves.
+	 *
+	 * `deleted = 1` rows are skipped: they are already excluded from every count.
+	 *
+	 * @param bool $repair When true, write the order status into the stale rows.
+	 * @param int  $limit  Maximum rows to inspect (0 = no limit). Bounds a large site's runtime.
+	 * @return array {
+	 *     @type int   $inspected Rows examined.
+	 *     @type int   $stale     Rows whose column disagrees with the order.
+	 *     @type int   $repaired  Rows actually corrected (0 when $repair is false).
+	 *     @type int   $unreadable Rows whose order could not be loaded.
+	 *     @type array $examples  Up to 10 human-readable descriptions of stale rows.
+	 * }
+	 */
+	public static function reconcile_order_statuses( $repair = false, $limit = 0 ) {
+		global $wpdb;
+
+		$summary = array(
+			'inspected'  => 0,
+			'stale'      => 0,
+			'repaired'   => 0,
+			'unreadable' => 0,
+			'examples'   => array(),
+		);
+
+		if ( ! function_exists( 'wc_get_order' ) ) {
+			return $summary;
+		}
+
+		$sql = 'SELECT book_id, order_id, order_status, `date`, start_time FROM ' . self::booking_table()
+			. ' WHERE deleted = 0 AND order_id > 0 ORDER BY book_id';
+		if ( (int) $limit > 0 ) {
+			$sql .= ' LIMIT ' . (int) $limit;
+		}
+
+		$rows = $wpdb->get_results( $sql, ARRAY_A );
+		foreach ( (array) $rows as $row ) {
+			$summary['inspected']++;
+
+			$order = wc_get_order( (int) $row['order_id'] );
+			if ( ! $order ) {
+				$summary['unreadable']++;
+				continue;
+			}
+
+			$order_status = strtolower( trim( (string) $order->get_status() ) );
+			$stored       = strtolower( trim( (string) $row['order_status'] ) );
+			// Compare on the bare spelling: wc-cancelled and cancelled are the same status.
+			$stored_bare  = ( 0 === strpos( $stored, 'wc-' ) ) ? substr( $stored, 3 ) : $stored;
+
+			if ( $stored_bare === $order_status ) {
+				continue;
+			}
+
+			$summary['stale']++;
+			if ( count( $summary['examples'] ) < 10 ) {
+				$summary['examples'][] = sprintf(
+					'book #%d (order #%d): table says "%s", the order says "%s"',
+					$row['book_id'],
+					$row['order_id'],
+					$stored,
+					$order_status
+				);
+			}
+
+			if ( ! $repair ) {
+				continue;
+			}
+
+			// Write the order's status verbatim, including its wc- prefix when WooCommerce uses
+			// one for storage in this install. active_status_predicate() tolerates both.
+			$wpdb->update(
+				self::booking_table(),
+				array( 'order_status' => $order_status ),
+				array( 'book_id' => (int) $row['book_id'] ),
+				array( '%s' ),
+				array( '%d' )
+			);
+			$summary['repaired']++;
+
+			DrPlus_Child_Capacity_Logger::diag( sprintf(
+				'reconciled book #%d: "%s" -> "%s" (from order #%d)',
+				$row['book_id'],
+				$stored,
+				$order_status,
+				$row['order_id']
+			) );
+		}
+
+		return $summary;
 	}
 
 

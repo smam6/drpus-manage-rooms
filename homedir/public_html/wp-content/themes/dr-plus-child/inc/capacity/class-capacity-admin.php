@@ -64,6 +64,47 @@ class DrPlus_Child_Capacity_Admin {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Handle the "sync stale bookings" button on the settings page.
+	 *
+	 * Copies each booking row's WooCommerce order status back into
+	 * `{prefix}drplus_booking`.`order_status`. The order is authoritative and the column is a
+	 * cache, so this cannot invent a state — it only teaches the cache what the order already
+	 * says. No customer is notified, no money moves, nothing is cancelled.
+	 *
+	 * @return void
+	 */
+	public static function handle_sync() {
+		if ( ! isset( $_POST['drplus_capacity_sync_submit'] ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		check_admin_referer( self::NONCE_ACTION, self::NONCE_FIELD );
+
+		$result  = DrPlus_Child_Capacity_Repository::reconcile_order_statuses( true );
+		$message = $result['repaired'] > 0
+			? sprintf( DrPlus_Child_Capacity_Messages::admin_sync_repaired(), $result['repaired'] )
+			: DrPlus_Child_Capacity_Messages::admin_sync_nothing_to_repair();
+
+		set_transient(
+			'drplus_capacity_admin_notice_' . get_current_user_id(),
+			array( $message, 'success' ),
+			60
+		);
+
+		wp_safe_redirect( add_query_arg( 'page', self::PAGE_SLUG, admin_url( 'options-general.php' ) ) );
+		exit;
+	}
+
+	/**
+	 * Handle the settings save: nonce + capability first, then sanitize (spec 5.2, 5.4, 5.5, 5.6).
+	 *
+	 * Implements: spec 5.2, 5.4, 5.5, 5.6, 5.7, 5.9
+	 *
+	 * @return void
+	 */
 	public static function handle_save() {
 		if ( ! isset( $_POST['drplus_capacity_save_submit'] ) ) {
 			return;
@@ -112,6 +153,17 @@ class DrPlus_Child_Capacity_Admin {
 				continue; // Invalid value: not saved (spec 5.6).
 			}
 			update_option( 'drplus_capacity_clinic_' . $clinic_id, $value, false );
+
+			// Saving the clinic's own row is the operator's single source of truth for that
+			// clinic. Any per-UUID value left behind by an import or an older release would
+			// otherwise keep competing with it (capacity_for() takes the strictest, but a stale
+			// stricter value would silently enforce a limit the operator believes they changed).
+			// Clear the aliases this clinic owns so the saved number is the one that applies.
+			foreach ( (array) $clean_aliases as $alias_uuid => $alias_clinic ) {
+				if ( $alias_clinic === $clinic_id ) {
+					delete_option( 'drplus_capacity_clinic_' . $alias_uuid );
+				}
+			}
 		}
 		$notice = $error
 			? array( DrPlus_Child_Capacity_Messages::admin_save_error(), 'error' )
@@ -194,6 +246,31 @@ class DrPlus_Child_Capacity_Admin {
 				</table>
 				<?php submit_button( DrPlus_Child_Capacity_Messages::admin_save_button(), 'primary', 'drplus_capacity_save_submit' ); ?>
 			</form>
+
+			<?php
+			// Is the copied order_status still in step with WooCommerce? A stale copy keeps a
+			// cancelled appointment's hour blocked forever, with no error shown to anyone.
+			$sync = DrPlus_Child_Capacity_Repository::reconcile_order_statuses( false );
+			?>
+			<h2><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_sync_title() ); ?></h2>
+			<p><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_sync_description() ); ?></p>
+			<?php if ( 0 === $sync['stale'] ) : ?>
+				<p style="color:#1a7f37"><strong>✓ <?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_sync_clean() ); ?></strong>
+					(<?php echo esc_html( (string) $sync['inspected'] ); ?>)</p>
+			<?php else : ?>
+				<div class="notice notice-warning inline">
+					<p><strong><?php echo esc_html( (string) $sync['stale'] ); ?> <?php echo esc_html__( 'رزرو ناهم‌خوان پیدا شد — ساعت این رزروها بی‌دلیل بسته مانده است:', 'drplus-child' ); ?></strong></p>
+					<ul style="list-style:disc;padding-inline-start:20px">
+						<?php foreach ( $sync['examples'] as $example ) : ?>
+							<li><code dir="ltr"><?php echo esc_html( $example ); ?></code></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+				<form method="post" action="">
+					<?php wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD ); ?>
+					<?php submit_button( DrPlus_Child_Capacity_Messages::admin_sync_repair_button(), 'secondary', 'drplus_capacity_sync_submit', false ); ?>
+				</form>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
