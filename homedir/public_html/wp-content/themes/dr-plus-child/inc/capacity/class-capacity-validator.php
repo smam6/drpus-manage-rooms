@@ -173,9 +173,27 @@ class DrPlus_Child_Capacity_Validator {
 		// SAME specialist booking twice leaves the distinct count at 1, so the room check alone
 		// never sees it. Runs before the room count so the clearer message wins.
 		if ( DrPlus_Child_Capacity_Repository::specialist_already_booked( $specialist, $date, $start_time ) ) {
-			DrPlus_Child_Capacity_Logger::diag( 'REJECT: specialist ' . $specialist . ' already booked at ' . $date . ' ' . $start_time );
+			// Distinguish "booked at this clinic" from "booked elsewhere at the same hour".
+			// Both must be refused — a specialist cannot be in two places at once — but the
+			// customer experience differs: in the second case the hour may well still be
+			// visible in this clinic's grid (the parent's grid and our filter are both scoped
+			// per clinic), so the message must explain that the SPECIALIST is the constraint,
+			// not the room, or the customer just sees a slot that refuses to be booked.
+			$same_clinic = DrPlus_Child_Capacity_Repository::specialist_conflict_in_scope( $specialist, $date, $start_time, $office_id );
+			DrPlus_Child_Capacity_Logger::diag( sprintf(
+				'REJECT: specialist %d already booked at %s %s (same_clinic=%s)',
+				$specialist,
+				$date,
+				$start_time,
+				$same_clinic ? 'yes' : 'no — booked at another clinic'
+			) );
 			self::log( $booking, 0, $capacity, self::ERR_SPECIALIST_CONFLICT );
-			wc_add_notice( DrPlus_Child_Capacity_Messages::specialist_conflict(), 'error' );
+			wc_add_notice(
+				$same_clinic
+					? DrPlus_Child_Capacity_Messages::specialist_conflict()
+					: DrPlus_Child_Capacity_Messages::specialist_conflict_other_clinic(),
+				'error'
+			);
 			return;
 		}
 

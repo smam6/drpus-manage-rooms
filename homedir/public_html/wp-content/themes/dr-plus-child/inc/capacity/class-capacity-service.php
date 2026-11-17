@@ -144,6 +144,29 @@ class DrPlus_Child_Capacity_Service {
 		$capacity = self::capacity_for( $office_id );
 		// One GROUP BY query for the whole day — no N+1 (spec 1.13, 2.7).
 		$counts = DrPlus_Child_Capacity_Repository::count_day_slots( $office_id, $date );
+
+		// A specialist who already holds this hour cannot take it again, whatever the room
+		// count says. Distinct-specialist capacity cannot see this: one specialist booking
+		// twice leaves the count at 1, so a 2-room clinic offers the hour and then rejects it
+		// at checkout. Removing it from the grid is the fix — the customer should never be
+		// shown an hour that is guaranteed to fail (Task 2).
+		//
+		// Scoped to THIS clinic, exactly like the parent's booked-range query, so this filter
+		// never hides an hour the parent deliberately offered. A cross-clinic clash is still
+		// refused at checkout by the validator's broader rule — but that path also knows the
+		// reason and says so, instead of this filter silently disagreeing with the grid above.
+		$specialist_id = isset( $args['specialist_id'] ) ? (int) $args['specialist_id'] : 0;
+		$busy          = $specialist_id > 0
+			? DrPlus_Child_Capacity_Repository::specialist_booked_slots_for_day( $specialist_id, $date, $office_id )
+			: array();
+		if ( $specialist_id <= 0 ) {
+			// Without a specialist there is no double-booking to detect. The parent always
+			// passes specialist_id (utils-booking.php:511-516), so this is the "unknown
+			// caller" path: keep the room-capacity filtering below and say why in the log
+			// rather than silently degrading.
+			DrPlus_Child_Capacity_Logger::diag( 'filter_full_slots: no specialist_id in filter args — specialist-conflict hiding skipped, room capacity still enforced' );
+		}
+
 		$filtered = array();
 		foreach ( $slots as $slot ) {
 			if ( empty( $slot['available'] ) ) {
@@ -152,6 +175,9 @@ class DrPlus_Child_Capacity_Service {
 				continue;
 			}
 			$start = DrPlus_Child_Capacity_Repository::normalize_time( isset( $slot['from'] ) ? $slot['from'] : '' );
+			if ( isset( $busy[ $start ] ) ) {
+				continue; // Specialist already booked this hour — remove it from the grid.
+			}
 			$count = isset( $counts[ $start ] ) ? (int) $counts[ $start ] : 0;
 			if ( $count >= $capacity ) {
 				continue; // Full slot removed entirely, not disabled (spec 2.3, decision #2).
