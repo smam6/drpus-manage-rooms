@@ -224,57 +224,76 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 		"normalize_time('1405') returned " . var_export( $drplus_capacity_vc_junk, true ) . " (expected '')"
 	);
 
-	// --- alias resolver -------------------------------------------------------------
+	// --- clinic identity ------------------------------------------------------------
+	// A clinic can appear under several identifiers: the numeric hospital post id and
+	// one custom-office UUID per specialist. If those are counted separately, a 2-room
+	// clinic accepts a 3rd booking — and the slot filter offers an hour the checkout
+	// then refuses. So the question is not "is a manual map filled in?" but "does this
+	// identifier actually resolve to its siblings?".
+	//
+	// Resolution has two sources: the clinic name + phone recorded on each custom office
+	// in `drplus_specialists.offices` (automatic, works with no configuration), and the
+	// optional `drplus_capacity_clinic_aliases` option (for joins the data cannot make).
+	$drplus_capacity_vc_probe = '1b9d72ba-f2b2-4dfd-8a3c-5b0f13c5c650';
+	$drplus_capacity_vc_ids   = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( $drplus_capacity_vc_probe );
+	$drplus_capacity_vc_auto  = DrPlus_Child_Capacity_Repository::identifiers_from_office_identity( $drplus_capacity_vc_probe );
 	$drplus_capacity_vc_aliases = get_option( 'drplus_capacity_clinic_aliases', array() );
-	$drplus_capacity_vc_ids     = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( '1b9d72ba-f2b2-4dfd-8a3c-5b0f13c5c650' );
 
-	if ( empty( $drplus_capacity_vc_aliases ) ) {
-		$drplus_capacity_vc_assert(
-			'Clinic alias map is configured',
-			false,
-			'Option drplus_capacity_clinic_aliases is EMPTY — a clinic split across a numeric id and custom-office UUIDs is counted separately (overbooking risk). Fill it in under Settings → ظرفیت اتاق‌ها.'
-		);
-	} else {
-		$drplus_capacity_vc_assert(
-			'Clinic alias map is configured',
-			true,
-			count( (array) $drplus_capacity_vc_aliases ) . ' alias(es) configured; probing one resolves to ' . count( $drplus_capacity_vc_ids ) . ' identifier(s)'
-		);
+	$drplus_capacity_vc_assert(
+		'The inspection UUID resolves to more than itself',
+		count( $drplus_capacity_vc_ids ) > 1,
+		count( $drplus_capacity_vc_ids ) . ' identifier(s): ' . implode( ', ', array_slice( (array) $drplus_capacity_vc_ids, 0, 4 ) )
+		. ( count( $drplus_capacity_vc_ids ) > 4 ? ', …' : '' )
+	);
 
-		// Every identifier in a group must resolve to the same set, from either direction.
-		$drplus_capacity_vc_sym    = true;
-		$drplus_capacity_vc_sorted = $drplus_capacity_vc_ids;
-		sort( $drplus_capacity_vc_sorted );
-		foreach ( (array) $drplus_capacity_vc_ids as $drplus_capacity_vc_one ) {
-			$drplus_capacity_vc_back = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( $drplus_capacity_vc_one );
-			sort( $drplus_capacity_vc_back );
-			if ( $drplus_capacity_vc_back !== $drplus_capacity_vc_sorted ) {
-				$drplus_capacity_vc_sym = false;
-				break;
-			}
-		}
-		$drplus_capacity_vc_assert(
-			'Alias resolution is symmetric',
-			$drplus_capacity_vc_sym,
-			'Resolving each identifier of the group returns the same identifier set'
-		);
+	$drplus_capacity_vc_assert(
+		'Clinic identity is derived from the site data (no manual map needed)',
+		count( $drplus_capacity_vc_auto ) > 0,
+		count( $drplus_capacity_vc_auto ) . ' sibling identifier(s) found from the name + phone stored on the custom offices'
+	);
 
-		// Capacity must be read from the clinic, not from whichever id the booking used.
-		foreach ( (array) $drplus_capacity_vc_aliases as $drplus_capacity_vc_uuid => $drplus_capacity_vc_clinic ) {
-			if ( is_array( $drplus_capacity_vc_clinic ) ) {
-				continue;
-			}
-			$drplus_capacity_vc_uuid     = (string) $drplus_capacity_vc_uuid;
-			$drplus_capacity_vc_clinic   = (string) $drplus_capacity_vc_clinic;
-			$drplus_capacity_vc_direct   = DrPlus_Child_Capacity_Service::capacity_for( $drplus_capacity_vc_clinic );
-			$drplus_capacity_vc_via_uuid = DrPlus_Child_Capacity_Service::capacity_for( $drplus_capacity_vc_uuid );
-			$drplus_capacity_vc_assert(
-				'Capacity is identical via the clinic id and its UUID',
-				$drplus_capacity_vc_direct === $drplus_capacity_vc_via_uuid,
-				'capacity_for(' . $drplus_capacity_vc_clinic . ')=' . $drplus_capacity_vc_direct . ' vs capacity_for(' . $drplus_capacity_vc_uuid . ')=' . $drplus_capacity_vc_via_uuid
-			);
+	// Every identifier in the group must resolve back to the same set: a one-way link
+	// would let a booking filed under one id be invisible from another.
+	$drplus_capacity_vc_sym    = true;
+	$drplus_capacity_vc_sorted = $drplus_capacity_vc_ids;
+	sort( $drplus_capacity_vc_sorted );
+	foreach ( (array) $drplus_capacity_vc_ids as $drplus_capacity_vc_one ) {
+		$drplus_capacity_vc_back = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( $drplus_capacity_vc_one );
+		sort( $drplus_capacity_vc_back );
+		if ( $drplus_capacity_vc_back !== $drplus_capacity_vc_sorted ) {
+			$drplus_capacity_vc_sym = false;
 			break;
 		}
+	}
+	$drplus_capacity_vc_assert(
+		'Clinic resolution is symmetric',
+		$drplus_capacity_vc_sym,
+		'Every identifier of the group resolves to the same identifier set'
+	);
+
+	// Capacity must be the same whichever identifier the booking arrived on.
+	$drplus_capacity_vc_caps = array();
+	foreach ( (array) $drplus_capacity_vc_ids as $drplus_capacity_vc_one ) {
+		$drplus_capacity_vc_caps[ $drplus_capacity_vc_one ] = DrPlus_Child_Capacity_Service::capacity_for( $drplus_capacity_vc_one );
+	}
+	$drplus_capacity_vc_assert(
+		'Capacity is identical via every identifier of the clinic',
+		1 === count( array_unique( array_values( $drplus_capacity_vc_caps ) ) ),
+		implode( ', ', array_map(
+			static function ( $id, $cap ) {
+				return ( strlen( (string) $id ) > 14 ? substr( (string) $id, 0, 8 ) . '…' : $id ) . '=' . $cap;
+			},
+			array_keys( $drplus_capacity_vc_caps ),
+			array_values( $drplus_capacity_vc_caps )
+		) )
+	);
+
+	if ( ! empty( $drplus_capacity_vc_aliases ) ) {
+		$drplus_capacity_vc_assert(
+			'Manual alias map is also honoured',
+			true,
+			count( (array) $drplus_capacity_vc_aliases ) . ' alias(es) configured'
+		);
 	}
 
 	// --- cancelled bookings -----------------------------------------------------------------
