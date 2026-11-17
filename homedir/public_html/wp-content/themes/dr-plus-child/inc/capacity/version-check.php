@@ -341,6 +341,72 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 			: 'These no longer block (overbooking risk): ' . implode( ', ', $drplus_capacity_vc_lost )
 	);
 
+	// --- cancelled bookings: checked against THIS site's real rows -------------------
+	// The status test above proves the logic. This one proves the data: every row in
+	// this site's own booking table that is cancelled must no longer occupy its slot,
+	// unless something else genuinely still holds it. A cancelled row that keeps
+	// blocking an hour is exactly the «قبلاً رزرو دارد» complaint.
+	global $wpdb;
+	$drplus_capacity_vc_table = DrPlus_Child_Capacity_Repository::booking_table();
+	$drplus_capacity_vc_cancelled_rows = $wpdb->get_results(
+		"SELECT book_id, specialist_id, office_id, `date`, start_time
+		 FROM {$drplus_capacity_vc_table}
+		 WHERE LOWER(TRIM(order_status)) = 'cancelled' AND deleted = 0
+		 ORDER BY book_id DESC LIMIT 200",
+		ARRAY_A
+	);
+
+	$drplus_capacity_vc_leaking = array();
+	$drplus_capacity_vc_checked = 0;
+	foreach ( (array) $drplus_capacity_vc_cancelled_rows as $drplus_capacity_vc_row ) {
+		$drplus_capacity_vc_date = DrPlus_Child_Capacity_Repository::normalize_date( $drplus_capacity_vc_row['date'] );
+		if ( '' === $drplus_capacity_vc_date ) {
+			continue; // Unusable date is not a capacity fact.
+		}
+		// Anything OTHER than this cancelled row still on the slot?
+		$drplus_capacity_vc_peers = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$drplus_capacity_vc_table}
+				 WHERE office_id = %s AND `date` = %s AND start_time = %s
+				   AND deleted = 0 AND book_id <> %d
+				   AND LOWER(TRIM(order_status)) NOT IN
+				       ('cancelled','canceled','wc-cancelled','wc-canceled','refunded','wc-refunded','failed','wc-failed','trash','checkout-draft')",
+				$drplus_capacity_vc_row['office_id'],
+				$drplus_capacity_vc_date,
+				$drplus_capacity_vc_row['start_time'],
+				$drplus_capacity_vc_row['book_id']
+			)
+		);
+		if ( $drplus_capacity_vc_peers > 0 ) {
+			continue; // Another live booking legitimately holds the slot.
+		}
+		$drplus_capacity_vc_checked++;
+		$drplus_capacity_vc_count = DrPlus_Child_Capacity_Repository::count_distinct_specialists(
+			$drplus_capacity_vc_row['office_id'],
+			$drplus_capacity_vc_date,
+			$drplus_capacity_vc_row['start_time']
+		);
+		$drplus_capacity_vc_locked = DrPlus_Child_Capacity_Repository::specialist_already_booked(
+			(int) $drplus_capacity_vc_row['specialist_id'],
+			$drplus_capacity_vc_date,
+			$drplus_capacity_vc_row['start_time']
+		);
+		if ( 0 !== $drplus_capacity_vc_count || $drplus_capacity_vc_locked ) {
+			$drplus_capacity_vc_leaking[] = 'book #' . $drplus_capacity_vc_row['book_id']
+				. ' (' . $drplus_capacity_vc_date . ' ' . $drplus_capacity_vc_row['start_time'] . ')';
+		}
+	}
+
+	$drplus_capacity_vc_assert(
+		'Cancelled bookings on this site really free their hour',
+		empty( $drplus_capacity_vc_leaking ),
+		empty( $drplus_capacity_vc_cancelled_rows )
+			? 'no cancelled bookings in this database — nothing to check'
+			: ( empty( $drplus_capacity_vc_leaking )
+				? $drplus_capacity_vc_checked . ' cancelled booking(s) checked against the real table — every one released its slot'
+				: count( $drplus_capacity_vc_leaking ) . ' cancelled booking(s) still block an hour: ' . implode( ', ', array_slice( $drplus_capacity_vc_leaking, 0, 5 ) ) )
+	);
+
 	// --- the false "already booked" message ------------------------------------------------
 	// A booking whose specialist id is unknown must be REFUSED but must not claim a conflict
 	// exists. Reading last_unverifiable_reason() calls the real guard, so this fails on any
