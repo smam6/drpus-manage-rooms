@@ -29,8 +29,48 @@ class DrPlus_Child_Capacity_Repository {
 
 	/**
 	 * Statuses excluded from every count (spec 1.6, 5.6.65).
+	 *
+	 * A cancelled booking MUST NOT hold a room or a specialist's hour. Getting this list wrong
+	 * is how a customer is told «این متخصص در این ساعت قبلاً رزرو دارد» for an hour whose only
+	 * booking was cancelled — the row is still there, and if its status is not in this list it
+	 * counts as a live booking forever.
+	 *
+	 * The list carries every spelling that can reach this column, because the value is written
+	 * by hand in the parent theme (`$book->order_status = 'cancelled'`), by a cron job, and
+	 * potentially by any integration syncing WooCommerce order status into the row:
+	 *
+	 *   cancelled / canceled / wc-cancelled / wc-canceled
+	 *       The parent writes `cancelled` (utils-booking.php:789, CheckBookingStatuses.php:20).
+	 *       `canceled` is the US spelling, and the `wc-` prefix is what WooCommerce itself uses
+	 *       (`$order->get_status()` returns `cancelled`; `wc_get_order_statuses()` returns
+	 *       `wc-cancelled`). A sync that stores the WooCommerce form verbatim would otherwise
+	 *       leave the row counting as active forever.
+	 *
+	 *   refunded / wc-refunded / failed / wc-failed / trash
+	 *       The parent already treats these as non-blocking in two places — its own slot
+	 *       generator (utils-booking.php:445, `['cancelled','refunded','failed']`) and its
+	 *       cancel guard (utils-booking.php:634) — so the child must agree or the two layers
+	 *       disagree about which hours are free.
+	 *
+	 *   checkout-draft
+	 *       WooCommerce's abandoned-checkout status; no appointment was ever confirmed.
+	 *
+	 * Deliberately NOT excluded: `on-hold` and `pending`. Those still hold the slot while the
+	 * customer pays, and the parent's own cron cancels them after 30 minutes. Excluding them
+	 * would let two people hold the same hour simultaneously.
 	 */
-	const EXCLUDED_STATUSES = array( 'cancelled', 'refunded', 'failed', 'trash' );
+	const EXCLUDED_STATUSES = array(
+		'cancelled',
+		'canceled',
+		'wc-cancelled',
+		'wc-canceled',
+		'refunded',
+		'wc-refunded',
+		'failed',
+		'wc-failed',
+		'trash',
+		'checkout-draft',
+	);
 
 	/**
 	 * Error code when the row lock cannot be acquired (spec 3.15, 5.6.67).
@@ -57,6 +97,67 @@ class DrPlus_Child_Capacity_Repository {
 	public static function booking_table() {
 		global $wpdb;
 		return $wpdb->prefix . self::BOOKING_TABLE;
+	}
+
+	/**
+	 * SQL predicate that keeps only rows holding a live claim on the slot.
+	 *
+	 * WHY NOT A BARE `order_status NOT IN (...)`
+	 *
+	 * `NOT IN` is exact-match and collation-dependent. Two failure modes have already bitten
+	 * this module and neither is hypothetical:
+	 *
+	 *   1. Case. A row could hold `Cancelled` (written by an admin UI, an import, or a future
+	 *      integration). Under a case-sensitive collation that row is NOT in the list and keeps
+	 *      blocking the hour.
+	 *   2. Whitespace. `'cancelled '` — a trailing space from a CSV import or a form field —
+	 *      is a different string to MySQL and also keeps blocking.
+	 *
+	 * Both produce exactly the reported symptom: the customer is told the specialist is already
+	 * booked for an hour whose only booking was cancelled. Lowercasing and trimming inside SQL
+	 * makes the comparison match the intent ("is this booking cancelled?") rather than the
+	 * storage detail ("is this string byte-identical to one of ours?").
+	 *
+	 * `LOWER(TRIM(...))` is not index-friendly, but this predicate is applied to rows already
+	 * narrowed by an indexed (date, start_time, office_id/specialist_id) range, so the column
+	 * is never scanned on its own. That trade is deliberate: a missed cancellation locks a
+	 * patient out of a free appointment.
+	 *
+	 * @param string $placeholders Comma-separated %s placeholders, one per excluded status.
+	 * @return string SQL fragment, safe to append after "AND".
+	 */
+	protected static function active_status_predicate( $placeholders ) {
+		return "LOWER(TRIM(order_status)) NOT IN ({$placeholders})";
+	}
+
+	/**
+	 * Does this status string mean "this booking no longer holds the slot"?
+	 *
+	 * PHP-side mirror of active_status_predicate(), used where the status arrives as a value
+	 * rather than as a SQL column. Normalizes exactly the same way so the two layers cannot
+	 * disagree: trimming, lowercasing, and accepting the WooCommerce `wc-` prefix (WooCommerce
+	 * reports `wc-cancelled` via wc_get_order_statuses() but `cancelled` from
+	 * WC_Order::get_status(), and both spellings reach this codebase).
+	 *
+	 * @param string $status Raw status value.
+	 * @return bool True when the booking still occupies the room / the specialist's hour.
+	 */
+	public static function status_holds_slot( $status ) {
+		$status = strtolower( trim( (string) $status ) );
+		if ( '' === $status ) {
+			// No status recorded. Treat as holding the slot: failing open would release a
+			// room that may well be occupied, which is the overbooking bug this module exists
+			// to prevent.
+			return true;
+		}
+		if ( in_array( $status, self::EXCLUDED_STATUSES, true ) ) {
+			return false;
+		}
+		// Tolerate the WooCommerce prefix on any spelling we already exclude.
+		if ( 0 === strpos( $status, 'wc-' ) ) {
+			return ! in_array( substr( $status, 3 ), self::EXCLUDED_STATUSES, true );
+		}
+		return true;
 	}
 
 	/**
@@ -278,7 +379,7 @@ class DrPlus_Child_Capacity_Repository {
 		$count        = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(DISTINCT specialist_id) FROM " . self::booking_table() .
-				" WHERE office_id IN ({$in}) AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})",
+				" WHERE office_id IN ({$in}) AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders ),
 				array_merge( $clinic_ids, array( $date, $start ), $statuses )
 			)
 		);
@@ -426,9 +527,44 @@ class DrPlus_Child_Capacity_Repository {
 	 * @return bool True when a conflicting booking exists.
 	 */
 	public static function specialist_already_booked( $specialist_id, $date, $start ) {
+		return self::specialist_conflict_in_scope( $specialist_id, $date, $start, '' );
+	}
+
+	/**
+	 * Is this specialist busy at this hour anywhere — or, when scoped, at this clinic?
+	 *
+	 * TWO DIFFERENT QUESTIONS, AND CONFLATING THEM IS THE BUG
+	 *
+	 * The parent's own slot generator (utils-booking.php:445-457) asks "is this specialist busy
+	 * at THIS office at this hour?" — its WHERE is specialist_id AND office_id AND date. Our
+	 * filter_full_slots() runs after that and speaks for the same screen, so it must answer the
+	 * same question. When it applies a BROADER conflict rule (specialist busy anywhere), it hides
+	 * slots the parent just offered, and — worse — the checkout then rejects the same hour with
+	 * «این متخصص در این ساعت قبلاً رزرو دارد» for a booking the customer can see nowhere.
+	 *
+	 * That is exactly the reported symptom. A specialist who is booked at one clinic is not
+	 * necessarily unavailable at another (different rooms, different addresses); the parent
+	 * treats clinics as independent, and so must the display layer.
+	 *
+	 * The checkout validator keeps the broad rule on purpose (see validate_capacity): a
+	 * specialist physically cannot be in two clinics at once, so a cross-clinic clash must
+	 * still be refused. It just must not be *silent* — which is why the slot list hides it
+	 * instead of offering it. This split keeps both guarantees:
+	 *
+	 *   display  → scoped to the clinic being booked, so the grid matches the parent's grid
+	 *   checkout → clinic-agnostic, so a double-booking is impossible
+	 *
+	 * @param int    $specialist_id Specialist id.
+	 * @param string $date          Y-m-d.
+	 * @param string $start         H:i or H:i:s.
+	 * @param string $office_id     Clinic to scope to. '' = anywhere (checkout behaviour).
+	 * @return bool True when a conflicting booking exists.
+	 */
+	public static function specialist_conflict_in_scope( $specialist_id, $date, $start, $office_id = '' ) {
 		$specialist_id = (int) $specialist_id;
 		$date          = self::assert_queryable_date( $date );
 		$start         = self::normalize_time( $start );
+		$office_id     = trim( (string) $office_id );
 
 		if ( $specialist_id <= 0 || '' === $date || '' === $start ) {
 			// Cannot prove the slot, so cannot claim it is free. Report a conflict: the caller
@@ -440,13 +576,21 @@ class DrPlus_Child_Capacity_Repository {
 		global $wpdb;
 		$statuses     = self::EXCLUDED_STATUSES;
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
-		$conflicts    = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM " . self::booking_table() .
-				" WHERE specialist_id = %d AND `date` = %s AND start_time = %s AND deleted = 0 AND order_status NOT IN ({$placeholders})",
-				array_merge( array( $specialist_id, $date, $start ), $statuses )
-			)
-		);
+		$sql          = "SELECT COUNT(*) FROM " . self::booking_table() .
+			" WHERE specialist_id = %d AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
+		$bind         = array_merge( array( $specialist_id, $date, $start ), $statuses );
+
+		if ( '' !== $office_id ) {
+			// Same clinic-alias expansion as the capacity counters: a clinic can be booked under
+			// its numeric post id and under per-specialist UUIDs, and a conflict filed under one
+			// of those must be found when the customer picked the other (Bug B).
+			$clinic_ids = self::resolve_clinic_identifiers( $office_id );
+			$in         = implode( ',', array_fill( 0, count( $clinic_ids ), '%s' ) );
+			$sql       .= " AND office_id IN ({$in})";
+			$bind       = array_merge( $bind, $clinic_ids );
+		}
+
+		$conflicts = $wpdb->get_var( $wpdb->prepare( $sql, $bind ) );
 		return ( (int) $conflicts ) > 0;
 	}
 
@@ -523,7 +667,7 @@ class DrPlus_Child_Capacity_Repository {
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
 		$sql = $wpdb->prepare(
 			"SELECT start_time, COUNT(DISTINCT specialist_id) AS cnt FROM " . self::booking_table() .
-			" WHERE office_id IN ({$in}) AND `date` = %s AND deleted = 0 AND order_status NOT IN ({$placeholders}) GROUP BY start_time",
+			" WHERE office_id IN ({$in}) AND `date` = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders ) . " GROUP BY start_time",
 			array_merge( $clinic_ids, array( $date ), $statuses )
 		);
 		$rows  = $wpdb->get_results( $sql, ARRAY_A );
@@ -532,6 +676,69 @@ class DrPlus_Child_Capacity_Repository {
 			$map[ $row['start_time'] ] = (int) $row['cnt'];
 		}
 		return $map;
+	}
+
+	/**
+	 * Every hour of one day at which this specialist already holds a live booking — ONE query.
+	 *
+	 * Serves the "Select Time" grid: a slot the specialist cannot take must never be shown,
+	 * because the customer only discovers the clash after filling in the whole form.
+	 *
+	 * Scoped to the clinic being booked, matching the parent's own booked-range query
+	 * (utils-booking.php:445-457: specialist_id AND office_id AND date). Scope matters — see
+	 * specialist_conflict_in_scope() for why a cross-clinic booking must not shape this grid.
+	 *
+	 * WHY BATCHED RATHER THAN PER-SLOT
+	 *
+	 * `specialist_already_booked()` per slot would issue one query per rendered hour: a 12-hour
+	 * clinic day becomes 12 round trips on every date change, on a page the customer refreshes
+	 * while picking a time. One grouped query returns the same answer (spec 1.13, 2.7: no N+1).
+	 *
+	 * Unlike count_day_slots(), a date that cannot be proven Gregorian does NOT return an empty
+	 * map. Empty would mean "specialist is free all day" and repaint a full schedule as
+	 * bookable. The caller gets an empty map plus its own failure to act on — see
+	 * filter_full_slots(), which returns no slots at all in that case.
+	 *
+	 * @param int    $specialist_id Specialist id.
+	 * @param string $date          Y-m-d.
+	 * @param string $office_id     Clinic being booked (scope), '' = any clinic.
+	 * @return array<string,bool> Map of 'H:i:s' => true for hours the specialist already holds.
+	 */
+	public static function specialist_booked_slots_for_day( $specialist_id, $date, $office_id = '' ) {
+		$specialist_id = (int) $specialist_id;
+		$date          = self::assert_queryable_date( $date );
+		$office_id     = trim( (string) $office_id );
+
+		if ( $specialist_id <= 0 || '' === $date ) {
+			return array();
+		}
+
+		global $wpdb;
+		$statuses     = self::EXCLUDED_STATUSES;
+		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+
+		$sql  = "SELECT start_time FROM " . self::booking_table() .
+			" WHERE specialist_id = %d AND `date` = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
+		$bind = array_merge( array( $specialist_id, $date ), $statuses );
+
+		if ( '' !== $office_id ) {
+			// Same clinic-alias expansion as every other counter here: the booking may be filed
+			// under the clinic's numeric id or under a per-specialist UUID (Bug B).
+			$clinic_ids = self::resolve_clinic_identifiers( $office_id );
+			$in         = implode( ',', array_fill( 0, count( $clinic_ids ), '%s' ) );
+			$sql       .= " AND office_id IN ({$in})";
+			$bind       = array_merge( $bind, $clinic_ids );
+		}
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $bind ), ARRAY_A );
+		$busy = array();
+		foreach ( (array) $rows as $row ) {
+			$key = self::normalize_time( isset( $row['start_time'] ) ? $row['start_time'] : '' );
+			if ( '' !== $key ) {
+				$busy[ $key ] = true;
+			}
+		}
+		return $busy;
 	}
 
 

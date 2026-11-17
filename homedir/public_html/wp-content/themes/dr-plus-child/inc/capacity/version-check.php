@@ -94,6 +94,18 @@ $drplus_capacity_vc_checks = array(
 		'hint'   => 'The same specialist can no longer hold two rooms in the same hour.',
 	),
 	array(
+		'label'  => 'Cancelled bookings never hold a slot',
+		'file'   => 'class-capacity-repository.php',
+		'marker' => 'status_holds_slot',
+		'hint'   => 'Every spelling of a cancelled booking (cancelled/canceled/wc-/wrong case/trailing space) is ignored instead of blocking the hour.',
+	),
+	array(
+		'label'  => 'Booked hours hidden from the time grid',
+		'file'   => 'class-capacity-service.php',
+		'marker' => 'specialist_booked_slots_for_day',
+		'hint'   => 'A specialist already booked at an hour no longer sees that hour offered in the Select Time step.',
+	),
+	array(
 		'label'  => 'Debug logging REMOVED',
 		'file'   => 'class-capacity-repository.php',
 		'marker' => 'DRPLUS COUNT SQL',
@@ -264,6 +276,52 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 			break;
 		}
 	}
+
+	// --- cancelled bookings -----------------------------------------------------------------
+	// Pure value checks: no database access, no writes.
+	$drplus_capacity_vc_cancelled_forms = array(
+		'cancelled',
+		'canceled',
+		'wc-cancelled',
+		'wc-canceled',
+		'Cancelled',
+		'CANCELLED',
+		'  cancelled  ',
+		'refunded',
+		'failed',
+		'trash',
+		'checkout-draft',
+	);
+	$drplus_capacity_vc_leaky = array();
+	foreach ( $drplus_capacity_vc_cancelled_forms as $drplus_capacity_vc_form ) {
+		if ( DrPlus_Child_Capacity_Repository::status_holds_slot( $drplus_capacity_vc_form ) ) {
+			$drplus_capacity_vc_leaky[] = var_export( $drplus_capacity_vc_form, true );
+		}
+	}
+	$drplus_capacity_vc_assert(
+		'Every spelling of a cancelled booking releases the slot',
+		empty( $drplus_capacity_vc_leaky ),
+		empty( $drplus_capacity_vc_leaky )
+			? count( $drplus_capacity_vc_cancelled_forms ) . ' spellings tested — none of them block an hour'
+			: 'These still block an hour (a customer would see a false "already booked"): ' . implode( ', ', $drplus_capacity_vc_leaky )
+	);
+
+	// The guard must not have been weakened: these statuses still hold the slot.
+	$drplus_capacity_vc_held = array( 'completed', 'processing', 'on-hold', 'pending' );
+	$drplus_capacity_vc_lost = array();
+	foreach ( $drplus_capacity_vc_held as $drplus_capacity_vc_form ) {
+		if ( ! DrPlus_Child_Capacity_Repository::status_holds_slot( $drplus_capacity_vc_form ) ) {
+			$drplus_capacity_vc_lost[] = var_export( $drplus_capacity_vc_form, true );
+		}
+	}
+	$drplus_capacity_vc_assert(
+		'Live bookings still hold their slot (guard not weakened)',
+		empty( $drplus_capacity_vc_lost ),
+		empty( $drplus_capacity_vc_lost )
+			? 'completed / processing / on-hold / pending all still block, as they must'
+			: 'These no longer block (overbooking risk): ' . implode( ', ', $drplus_capacity_vc_lost )
+	);
+
 }
 ?>
 <!DOCTYPE html>

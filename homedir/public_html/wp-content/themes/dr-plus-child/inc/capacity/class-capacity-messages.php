@@ -72,6 +72,22 @@ class DrPlus_Child_Capacity_Messages {
 	}
 
 	/**
+	 * Specialist is busy at this hour at a DIFFERENT clinic.
+	 *
+	 * Refused for the same reason — one person, one hour — but the cause is not visible on the
+	 * screen the customer is looking at, because each clinic's grid only reflects its own
+	 * bookings. Saying "already booked in this hour" without naming the clinic reads as a bug:
+	 * the slot looked free. Naming the clinic turns it into an explanation.
+	 *
+	 * Implements: Task 2 (slot visibility vs. checkout refusal)
+	 *
+	 * @return string
+	 */
+	public static function specialist_conflict_other_clinic() {
+		return __( 'این متخصص در این ساعت در مرکز درمانی دیگری رزرو دارد. لطفاً ساعت یا مرکز دیگری را انتخاب کنید.', 'drplus-child' );
+	}
+
+	/**
 	 * Capacity-exceeded message, optionally listing the day's available hours (spec 3.9, decision #4).
 	 *
 	 * Implements: spec 3.8, 3.9, 5.5.98
