@@ -99,6 +99,13 @@ class DrPlus_Child_Capacity_Repository {
 	protected static $last_unverifiable = '';
 
 	/**
+	 * Memoised office-identity index (see office_identity_index()).
+	 *
+	 * @var array|null
+	 */
+	protected static $office_identity_index = null;
+
+	/**
 	 * Read-and-clear the reason recorded by the last specialist check.
 	 *
 	 * @return string '', 'specialist', 'date' or 'time'.
@@ -457,10 +464,33 @@ class DrPlus_Child_Capacity_Repository {
 		// normalize_to_clinic: every identifier for one physical clinic collapses to a single
 		// count set, so a clinic is never counted two ways depending on which entry point the
 		// customer happened to book through.
+		//
+		// TWO SOURCES, IN THIS ORDER (the automatic one comes first on purpose)
+		//
+		//  1. The DATA. `{prefix}drplus_specialists`.`offices` records, for every custom
+		//     office UUID, the clinic's own `name` and `phone`. Two UUIDs carrying the same
+		//     (name, phone) pair are the same physical clinic — that is what the operator
+		//     typed when they created each one. This needs no configuration and covers
+		//     every UUID, including ones created after the manual map was written.
+		//     (The column is double-encoded: a JSON string inside the value, so it has to
+		//     be decoded twice. Failing to do that is exactly why an earlier version
+		//     concluded "the mapping is absent from the data".)
+		//
+		//  2. The configured option, which can still join things the data cannot — a
+		//     custom office and the numeric hospital post for the same clinic.
+		//
+		// Both are additive: the returned list always contains $office_id, so this can
+		// never make an existing site block more than it did.
 		$map = self::load_clinic_aliases();
 
 		$key   = strtolower( $office_id );
 		$group = isset( $map[ $key ] ) ? $map[ $key ] : array();
+
+		// Union of the configured group and every identifier the data says is the same clinic.
+		$group = array_values( array_unique( array_merge(
+			(array) $group,
+			self::identifiers_from_office_identity( $office_id )
+		) ) );
 
 		$ids = array();
 		foreach ( array_merge( array( $office_id ), $group ) as $id ) {
@@ -475,6 +505,259 @@ class DrPlus_Child_Capacity_Repository {
 		}
 
 		return $ids;
+	}
+
+	/**
+	 * Every office identifier that the site's own data says belongs to the same clinic as
+	 * $office_id, derived from the (name, phone) pair recorded on each custom office.
+	 *
+	 * WHY THIS EXISTS
+	 *
+	 * When an operator adds a "custom office" for a specialist, the parent theme stores a
+	 * JSON blob in `{prefix}drplus_specialists`.`offices` keyed by a fresh UUID, and copies
+	 * the clinic name / phone / address they typed. Booking a second specialist into the
+	 * same clinic creates a SECOND UUID with an identical name and phone. Those UUIDs are
+	 * one clinic with one waiting room, but `drplus_booking.office_id` only ever holds the
+	 * one UUID that was used, so each UUID was counted as its own clinic.
+	 *
+	 * The consequence was the reported ticket: specialist 12 held a booking under UUID
+	 * `32c836b9…`, the checkout correctly refused a second one, and the grid — which only
+	 * looked at the UUID the customer was on — offered the hour anyway. The customer saw a
+	 * bookable slot that could never be booked.
+	 *
+	 * IDENTITY RULE
+	 *
+	 * Same normalized name AND same digits-only phone. Both are required: a name alone is
+	 * ambiguous (two clinics can share a name in different cities) and a phone alone is not
+	 * enough either (a shared switchboard). Requiring both keeps the join conservative,
+	 * which matters because a wrong merge blocks real bookings.
+	 *
+	 * A numeric hospital post id is included when its own `_phones` postmeta carries the
+	 * same number, which is how a UUID joins its hospital post without any configuration.
+	 *
+	 * Memoised per request: the table is small and this runs on every slot filter.
+	 *
+	 * @param string $office_id Office identifier.
+	 * @return string[] Additional identifiers (may be empty).
+	 */
+	public static function identifiers_from_office_identity( $office_id ) {
+		$office_id = trim( (string) $office_id );
+		if ( '' === $office_id ) {
+			return array();
+		}
+
+		$by_key = self::office_identity_index();
+		if ( empty( $by_key ) ) {
+			return array();
+		}
+
+		$key = strtolower( $office_id );
+		if ( ! isset( $by_key['id'][ $key ] ) ) {
+			// The identifier itself may be the numeric clinic post: resolve it through its phone.
+			$as_post = self::identity_key_for_hospital_post( $office_id );
+			if ( '' === $as_post || ! isset( $by_key[ $as_post ] ) ) {
+				return array();
+			}
+			return $by_key[ $as_post ];
+		}
+
+		$identity = $by_key['id'][ $key ];
+		return isset( $by_key[ $identity ] ) ? $by_key[ $identity ] : array();
+	}
+
+	/**
+	 * Build (once per request) the two indexes used by identifiers_from_office_identity().
+	 *
+	 *  - ['id'][lowercased identifier] => identity key
+	 *  - [identity key]                => [identifiers...]
+	 *
+	 * @return array
+	 */
+	protected static function office_identity_index() {
+		if ( null !== self::$office_identity_index ) {
+			return self::$office_identity_index;
+		}
+
+		global $wpdb;
+		self::$office_identity_index = array( 'id' => array() );
+
+		$rows = $wpdb->get_results(
+			"SELECT user_id, offices FROM " . $wpdb->prefix . "drplus_specialists",
+			ARRAY_A
+		);
+		if ( ! is_array( $rows ) ) {
+			return self::$office_identity_index;
+		}
+
+		foreach ( $rows as $row ) {
+			$offices = maybe_unserialize( isset( $row['offices'] ) ? $row['offices'] : '' );
+			// The parent stores this column DOUBLE-ENCODED (a JSON string inside the value),
+			// so a single unserialize leaves a string behind.
+			if ( is_string( $offices ) ) {
+				$decoded = json_decode( $offices, true );
+				if ( is_string( $decoded ) ) {
+					$decoded = json_decode( $decoded, true );
+				}
+				$offices = $decoded;
+			}
+			if ( ! is_array( $offices ) ) {
+				continue;
+			}
+			foreach ( $offices as $identifier => $office ) {
+				if ( ! is_array( $office ) ) {
+					continue;
+				}
+				$type = isset( $office['type'] ) ? (string) $office['type'] : '';
+				if ( 'custom' !== $type ) {
+					continue;
+				}
+				$key = self::identity_key( isset( $office['name'] ) ? $office['name'] : '', isset( $office['phone'] ) ? $office['phone'] : '' );
+				if ( '' === $key ) {
+					continue;
+				}
+				self::index_identifier( (string) $identifier, $key );
+			}
+		}
+
+		// Join numeric hospital posts to the custom offices that carry the same phone number.
+		// A hospital post stores its numbers in `_phones` meta and carries no single "name"
+		// field comparable to a custom office, so the phone is the shared key here: for every
+		// custom-office identity whose phone matches, add the post id to that same group.
+		$hospitals = $wpdb->get_results(
+			"SELECT p.ID, pm.meta_value
+			 FROM {$wpdb->posts} p
+			 INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_phones'
+			 WHERE p.post_type = 'hospital'",
+			ARRAY_A
+		);
+		foreach ( (array) $hospitals as $hospital ) {
+			$post_id = isset( $hospital['ID'] ) ? (string) $hospital['ID'] : '';
+			if ( '' === $post_id ) {
+				continue;
+			}
+			$phones = maybe_unserialize( $hospital['meta_value'] );
+			if ( is_string( $phones ) ) {
+				$phones = maybe_unserialize( $phones );
+			}
+			$wanted = array();
+			foreach ( (array) $phones as $entry ) {
+				$number = is_array( $entry ) && isset( $entry['phone'] ) ? $entry['phone'] : '';
+				$digits = self::identity_phone( $number );
+				if ( '' !== $digits ) {
+					$wanted[ $digits ] = true;
+				}
+			}
+			if ( empty( $wanted ) ) {
+				continue;
+			}
+			// Any custom-office group whose phone matches this hospital joins it.
+			foreach ( self::$office_identity_index as $identity => $members ) {
+				if ( 'id' === $identity || ! is_array( $members ) ) {
+					continue;
+				}
+				$pipe = strrpos( $identity, '|' );
+				if ( false === $pipe ) {
+					continue;
+				}
+				$phone = substr( $identity, $pipe + 1 );
+				if ( isset( $wanted[ $phone ] ) ) {
+					self::index_identifier( $post_id, $identity );
+				}
+			}
+		}
+
+		return self::$office_identity_index;
+	}
+
+	/**
+	 * Record one identifier under one identity key.
+	 *
+	 * @param string $identifier Office identifier.
+	 * @param string $key        Identity key.
+	 * @return void
+	 */
+	protected static function index_identifier( $identifier, $key ) {
+		$identifier = trim( (string) $identifier );
+		if ( '' === $identifier ) {
+			return;
+		}
+		$lower = strtolower( $identifier );
+		self::$office_identity_index['id'][ $lower ] = $key;
+		if ( ! isset( self::$office_identity_index[ $key ] ) ) {
+			self::$office_identity_index[ $key ] = array();
+		}
+		if ( ! in_array( $identifier, self::$office_identity_index[ $key ], true ) ) {
+			self::$office_identity_index[ $key ][] = $identifier;
+		}
+	}
+
+	/**
+	 * Identity key for a custom office: normalized name + digits-only phone.
+	 *
+	 * Returns '' when either half is missing, because half an identity is not an identity.
+	 *
+	 * @param string $name  Clinic name as typed by the operator.
+	 * @param string $phone Clinic phone as typed by the operator.
+	 * @return string
+	 */
+	protected static function identity_key( $name, $phone ) {
+		$name   = self::normalize_identity_text( $name );
+		$digits = self::identity_phone( $phone );
+		if ( '' === $name || '' === $digits ) {
+			return '';
+		}
+		return $name . '|' . $digits;
+	}
+
+	/**
+	 * Digits-only phone, so `025-32427870` and `02532427870` are the same number.
+	 *
+	 * @param string $phone Raw phone.
+	 * @return string
+	 */
+	protected static function identity_phone( $phone ) {
+		return preg_replace( '/\D+/', '', (string) $phone );
+	}
+
+	/**
+	 * Normalize a clinic name: trim, collapse whitespace, drop ZWNJ, lowercase.
+	 *
+	 * Persian names are frequently retyped with a different half-space (U+200C) or with
+	 * different spacing, which would otherwise defeat an exact comparison.
+	 *
+	 * @param string $text Raw name.
+	 * @return string
+	 */
+	protected static function normalize_identity_text( $text ) {
+		$text = (string) $text;
+		$text = str_replace( array( "\xE2\x80\x8C", "\u{200C}" ), '', $text );
+		$text = preg_replace( '/\s+/u', ' ', $text );
+		return function_exists( 'mb_strtolower' ) ? mb_strtolower( trim( $text ), 'UTF-8' ) : strtolower( trim( $text ) );
+	}
+
+	/**
+	 * Identity key for a numeric hospital post, from its `_phones` meta.
+	 *
+	 * @param string $post_id Hospital post id.
+	 * @return string Identity key (digits only) or ''.
+	 */
+	protected static function identity_key_for_hospital_post( $post_id ) {
+		if ( ! ctype_digit( (string) $post_id ) ) {
+			return '';
+		}
+		$index = self::office_identity_index();
+		$lower = strtolower( (string) $post_id );
+		return isset( $index['id'][ $lower ] ) ? $index['id'][ $lower ] : '';
+	}
+
+	/**
+	 * Forget the memoised office-identity index. Used by tests and after a specialist's
+	 * offices are edited in wp-admin.
+	 *
+	 * @return void
+	 */
+	public static function flush_office_identity_cache() {
+		self::$office_identity_index = null;
 	}
 
 	/**
