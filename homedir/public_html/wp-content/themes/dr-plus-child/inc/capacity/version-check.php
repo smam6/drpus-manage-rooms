@@ -322,6 +322,41 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 			: 'These no longer block (overbooking risk): ' . implode( ', ', $drplus_capacity_vc_lost )
 	);
 
+	// --- the false "already booked" message ------------------------------------------------
+	// A booking whose specialist id is unknown must be REFUSED but must not claim a conflict
+	// exists. Reading last_unverifiable_reason() calls the real guard, so this fails on any
+	// server still running the version that said "already booked" for an empty hour.
+	$drplus_capacity_vc_guard_hit = DrPlus_Child_Capacity_Repository::specialist_already_booked( 0, '2026-11-19', '14:00:00' );
+	$drplus_capacity_vc_reason     = DrPlus_Child_Capacity_Repository::last_unverifiable_reason();
+	$drplus_capacity_vc_assert(
+		'An unknown specialist is refused WITHOUT claiming a conflict',
+		$drplus_capacity_vc_guard_hit && 'specialist' === $drplus_capacity_vc_reason,
+		$drplus_capacity_vc_guard_hit
+			? ( 'specialist' === $drplus_capacity_vc_reason
+				? 'refused and reported as a missing specialist id, so the customer is told to re-select the specialist instead of hunting a booking that does not exist'
+				: 'refused, but the reason was NOT recorded as "specialist" (' . var_export( $drplus_capacity_vc_reason, true ) . ') — the false "already booked" message can still appear' )
+			: 'the guard ACCEPTED specialist_id=0 — this is an overbooking hole and must never pass'
+	);
+
+	// The rescue path: a zero id must be recoverable from ?sid= before the guard sees it.
+	$drplus_capacity_vc_rescue_ok = false;
+	$drplus_capacity_vc_rescue_msg = 'Resolved specialist id from ?sid= before the capacity guard';
+	$drplus_capacity_vc_ref = new ReflectionMethod( 'DrPlus_Child_Capacity_Validator', 'resolve_specialist_from_parent' );
+	$drplus_capacity_vc_ref->setAccessible( true );
+	$drplus_capacity_vc_prev_sid = isset( $_GET['sid'] ) ? $_GET['sid'] : null;
+	$_GET['sid'] = '1'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only probe.
+	$drplus_capacity_vc_rescued = $drplus_capacity_vc_ref->invoke( null );
+	if ( null === $drplus_capacity_vc_prev_sid ) {
+		unset( $_GET['sid'] );
+	} else {
+		$_GET['sid'] = $drplus_capacity_vc_prev_sid;
+	}
+	$drplus_capacity_vc_rescue_ok = ( 1 === (int) $drplus_capacity_vc_rescued );
+	if ( ! $drplus_capacity_vc_rescue_ok ) {
+		$drplus_capacity_vc_rescue_msg = 'resolve_specialist_from_parent() returned ' . var_export( $drplus_capacity_vc_rescued, true ) . ' for ?sid=1 — a cart without specialist_id cannot be rescued, which is the reported bug';
+	}
+	$drplus_capacity_vc_assert( 'Specialist id is recoverable when the cart omits it', $drplus_capacity_vc_rescue_ok, $drplus_capacity_vc_rescue_msg );
+
 }
 ?>
 <!DOCTYPE html>

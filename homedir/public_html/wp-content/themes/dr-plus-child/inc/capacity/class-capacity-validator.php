@@ -173,6 +173,34 @@ class DrPlus_Child_Capacity_Validator {
 		// SAME specialist booking twice leaves the distinct count at 1, so the room check alone
 		// never sees it. Runs before the room count so the clearer message wins.
 		if ( DrPlus_Child_Capacity_Repository::specialist_already_booked( $specialist, $date, $start_time ) ) {
+			// The guard also refuses when it CANNOT VERIFY (missing specialist id, unusable
+			// date, unusable time). Those must not be reported as a conflict: there is no
+			// booking to point at, and claiming one exists is what sent the customer hunting
+			// for a phantom appointment. Ask the repository which input failed.
+			$unverifiable = DrPlus_Child_Capacity_Repository::last_unverifiable_reason();
+
+			if ( '' !== $unverifiable ) {
+				DrPlus_Child_Capacity_Logger::diag( sprintf(
+					'REJECT: cannot verify the slot (missing %s) — refusing. specialist=%d date=%s time=%s office=%s',
+					$unverifiable,
+					$specialist,
+					$date,
+					$start_time,
+					$office_id
+				) );
+				self::log( $booking, 0, $capacity, self::ERR_SPECIALIST_CONFLICT );
+				// A missing specialist means the page lost track of WHO is being booked, which
+				// the customer fixes by going back a step — not by picking another hour, which
+				// would fail identically for every hour.
+				wc_add_notice(
+					'specialist' === $unverifiable
+						? DrPlus_Child_Capacity_Messages::missing_specialist()
+						: DrPlus_Child_Capacity_Messages::unverifiable_slot(),
+					'error'
+				);
+				return;
+			}
+
 			// Distinguish "booked at this clinic" from "booked elsewhere at the same hour".
 			// Both must be refused — a specialist cannot be in two places at once — but the
 			// customer experience differs: in the second case the hour may well still be
@@ -293,7 +321,11 @@ class DrPlus_Child_Capacity_Validator {
 
 						if ( '' !== $date ) {
 							DrPlus_Child_Capacity_Logger::diag( 'SOURCE A (cart): date resolved -> ' . $date );
-							return $booking;
+							// Source D lives here too, not only after Source C: this early return is
+							// the NORMAL path when the cart carries a date, so a cart item without
+							// `specialist_id` used to leave this function with 0 and never reach
+							// any rescue. That is the exact shape of the reported bug.
+							return self::rescue_specialist( $booking, 'A (cart)' );
 						}
 
 						if ( null === $partial_booking ) {
@@ -318,20 +350,20 @@ class DrPlus_Child_Capacity_Validator {
 
 				if ( null !== $partial_booking ) {
 					DrPlus_Child_Capacity_Logger::diag( 'SOURCE B (session, merged with partial cart): date resolved -> ' . $date );
-					return array(
+					return self::rescue_specialist( array(
 						'office_id'     => '' !== $partial_booking['office_id'] ? $partial_booking['office_id'] : $office_id,
 						'date'          => $date,
 						'start_time'    => '' !== $partial_booking['start_time'] ? $partial_booking['start_time'] : $start_time,
 						'specialist_id' => $partial_booking['specialist_id'] > 0 ? $partial_booking['specialist_id'] : $specialist_id,
-					);
+					), 'B (session)' );
 				}
 
-				return array(
+				return self::rescue_specialist( array(
 					'office_id'     => $office_id,
 					'date'          => $date,
 					'start_time'    => $start_time,
 					'specialist_id' => $specialist_id,
-				);
+				), 'B (session)' );
 			}
 		}
 
@@ -385,21 +417,21 @@ class DrPlus_Child_Capacity_Validator {
 
 			if ( '' !== $date ) {
 				if ( null !== $partial_booking ) {
-					return array(
+					return self::rescue_specialist( array(
 						'office_id'     => '' !== $partial_booking['office_id'] ? $partial_booking['office_id'] : $post_office,
 						'date'          => $date,
 						'start_time'    => '' !== $partial_booking['start_time'] ? $partial_booking['start_time'] : $post_time,
 						'specialist_id' => $partial_booking['specialist_id'] > 0 ? $partial_booking['specialist_id'] : $post_specialist,
-					);
+					), 'C (POST)' );
 				}
 
 				DrPlus_Child_Capacity_Logger::diag( 'SOURCE C (POST): date resolved -> ' . $date );
-				return array(
+				return self::rescue_specialist( array(
 					'office_id'     => $post_office,
 					'date'          => $date,
 					'start_time'    => $post_time,
 					'specialist_id' => $post_specialist,
-				);
+				), 'C (POST)' );
 			}
 
 			if ( null === $partial_booking && $has_post_booking_date ) {
@@ -414,6 +446,83 @@ class DrPlus_Child_Capacity_Validator {
 
 		DrPlus_Child_Capacity_Logger::diag( 'extract RESULT: ' . ( null === $partial_booking ? 'NULL (no booking source matched)' : wp_json_encode( $partial_booking ) ) );
 		return $partial_booking;
+	}
+
+	/**
+	 * Fill in a missing specialist id before the booking leaves extraction.
+	 *
+	 * WHY EVERY RETURN ROUTES THROUGH HERE (the "booked when it is not" bug)
+	 *
+	 * Every source above can legitimately fail to find a specialist id: a cart item kept from
+	 * an older session has no `specialist_id` key, a POST body omits the hidden field, or the
+	 * field arrives as "abc". The extracted booking then carries specialist_id = 0.
+	 *
+	 * Downstream, 0 is not "unknown" — specialist_already_booked() refuses it as unverifiable.
+	 * The customer was told «این متخصص در این ساعت قبلاً رزرو دارد» for an hour with literally
+	 * zero bookings, and EVERY slot failed the same way, so the whole day looked booked.
+	 *
+	 * This helper must sit on ALL FOUR return paths. An earlier attempt placed it only after
+	 * Source C, which never ran for the common case (cart with a date, no specialist id),
+	 * because Source A returns early. The bug survived that attempt; the placement is the fix.
+	 *
+	 * Failing closed on a missing id is still right — but only when the id truly cannot be
+	 * learned. The parent already knows the specialist, so ask it first.
+	 *
+	 * @param array  $booking Extracted booking.
+	 * @param string $source  Which source produced it, for the log.
+	 * @return array Booking with specialist_id recovered when possible.
+	 */
+	protected static function rescue_specialist( array $booking, $source ) {
+		if ( isset( $booking['specialist_id'] ) && (int) $booking['specialist_id'] > 0 ) {
+			return $booking; // Nothing to rescue.
+		}
+
+		$rescued = self::resolve_specialist_from_parent();
+		if ( $rescued > 0 ) {
+			$booking['specialist_id'] = $rescued;
+			DrPlus_Child_Capacity_Logger::diag( 'SOURCE D: recovered specialist_id=' . $rescued . ' from the parent while reading ' . $source );
+		} else {
+			DrPlus_Child_Capacity_Logger::diag( 'SOURCE D: specialist_id still 0 after ' . $source . ' — no sid, no booking session. The guard will refuse and say so (missing_specialist).' );
+		}
+
+		return $booking;
+	}
+
+	/**
+	 * Ask the parent theme which specialist this booking is for.
+	 *
+	 * Reads the same two places the parent reads (utils-booking.php:137-143): the `sid` query
+	 * argument and the booking session. Deliberately does NOT invent an id from the cart,
+	 * because a cart may hold several bookings.
+	 *
+	 * @return int Specialist id, or 0 when genuinely unknown.
+	 */
+	protected static function resolve_specialist_from_parent() {
+		// The parent's own accessor, when the theme is loaded. Wrapped because this module
+		// must stay loadable outside a full WordPress request (unit tests, CLI).
+		if ( class_exists( 'DrPlus\\Utils\\Booking' ) && method_exists( 'DrPlus\\Utils\\Booking', 'get_specialist' ) ) {
+			$from_parent = \DrPlus\Utils\Booking::get_specialist( true );
+			if ( (int) $from_parent > 0 ) {
+				return (int) $from_parent;
+			}
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only id lookup.
+		if ( isset( $_GET['sid'] ) && ! is_array( $_GET['sid'] ) ) {
+			$sid = (int) self::clean_text( $_GET['sid'] );
+			if ( $sid > 0 ) {
+				return $sid;
+			}
+		}
+
+		if ( isset( $_SESSION['booking']['specialist_id'] ) ) {
+			$sid = (int) $_SESSION['booking']['specialist_id'];
+			if ( $sid > 0 ) {
+				return $sid;
+			}
+		}
+
+		return 0;
 	}
 
 	/**
