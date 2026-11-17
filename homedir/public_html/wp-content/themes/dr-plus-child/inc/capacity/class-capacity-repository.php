@@ -88,6 +88,28 @@ class DrPlus_Child_Capacity_Repository {
 	const UNRESOLVED_DATE_COUNT = 999;
 
 	/**
+	 * Which input made the last specialist check unverifiable: '', 'specialist', 'date' or 'time'.
+	 *
+	 * A refusal must name its own cause. Reporting "specialist already booked" when the real
+	 * problem is a missing specialist id sends the customer looking for a booking that does not
+	 * exist, and sends the operator looking in the database instead of at the form.
+	 *
+	 * @var string
+	 */
+	protected static $last_unverifiable = '';
+
+	/**
+	 * Read-and-clear the reason recorded by the last specialist check.
+	 *
+	 * @return string '', 'specialist', 'date' or 'time'.
+	 */
+	public static function last_unverifiable_reason() {
+		$reason                  = self::$last_unverifiable;
+		self::$last_unverifiable = '';
+		return $reason;
+	}
+
+	/**
 	 * Fully-qualified booking table name via dynamic prefix (spec 5.5.81).
 	 *
 	 * Implements: spec 1.1, 5.5.81
@@ -567,11 +589,28 @@ class DrPlus_Child_Capacity_Repository {
 		$office_id     = trim( (string) $office_id );
 
 		if ( $specialist_id <= 0 || '' === $date || '' === $start ) {
-			// Cannot prove the slot, so cannot claim it is free. Report a conflict: the caller
-			// then refuses the booking instead of letting an unverifiable slot through.
-			DrPlus_Child_Capacity_Logger::diag( 'specialist_already_booked UNVERIFIABLE (specialist=' . $specialist_id . ' date=' . $date . ' time=' . $start . ') -> treating as conflict' );
+			// Cannot prove the slot, so it must not be booked. But "I cannot verify this" is
+			// NOT the same as "this specialist already has a booking", and saying the latter
+			// when the table is empty is a lie the customer cannot act on.
+			//
+			// This is exactly the reported bug: a booking arrived with specialist_id = 0, the
+			// old code returned TRUE here, and the customer was told «این متخصص در این ساعت
+			// قبلاً رزرو دارد» for an hour with zero bookings. Every slot on the page failed
+			// the same way, so the whole day looked booked.
+			//
+			// Still refuse — returning FALSE would let an unverifiable slot through, which is
+			// the overbooking bug this module exists to prevent. The difference is that the
+			// caller must now describe the real problem. last_unverifiable_reason() carries
+			// which input was missing so the validator can pick an honest message.
+			self::$last_unverifiable = ( $specialist_id <= 0 )
+				? 'specialist'
+				: ( '' === $date ? 'date' : 'time' );
+
+			DrPlus_Child_Capacity_Logger::diag( 'specialist_already_booked UNVERIFIABLE (specialist=' . $specialist_id . ' date=' . $date . ' time=' . $start . ') reason=' . self::$last_unverifiable . ' -> refusing, but NOT reporting a conflict' );
 			return true;
 		}
+
+		self::$last_unverifiable = '';
 
 		global $wpdb;
 		$statuses     = self::EXCLUDED_STATUSES;

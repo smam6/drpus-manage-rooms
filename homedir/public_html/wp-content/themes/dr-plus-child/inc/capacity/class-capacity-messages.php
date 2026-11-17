@@ -88,6 +88,32 @@ class DrPlus_Child_Capacity_Messages {
 	}
 
 	/**
+	 * The page could not determine WHICH specialist is being booked.
+	 *
+	 * MUST NEVER say "this specialist already has a booking". There is no booking — the id is
+	 * simply missing, so every hour of every day would be refused, and the customer would keep
+	 * trying different times against a phantom appointment. The actionable instruction is to
+	 * go back and re-select the specialist.
+	 *
+	 * @return string
+	 */
+	public static function missing_specialist() {
+		return __( 'متخصص این نوبت مشخص نشد. لطفاً به مرحله قبل برگردید و دوباره متخصص را انتخاب کنید. اگر تکرار شد، از مرورگر دیگری وارد شوید.', 'drplus-child' );
+	}
+
+	/**
+	 * A general "cannot verify this slot" refusal, used when the date or hour is unusable.
+	 *
+	 * Distinct from missing_date()/missing_time(), which are raised earlier by the date and
+	 * time guards. This one means the value was present but could not be interpreted.
+	 *
+	 * @return string
+	 */
+	public static function unverifiable_slot() {
+		return __( 'زمان یا تاریخ این نوبت قابل بررسی نیست. لطفاً مرحله انتخاب تاریخ و ساعت را دوباره انجام دهید.', 'drplus-child' );
+	}
+
+	/**
 	 * Capacity-exceeded message, optionally listing the day's available hours (spec 3.9, decision #4).
 	 *
 	 * Implements: spec 3.8, 3.9, 5.5.98
