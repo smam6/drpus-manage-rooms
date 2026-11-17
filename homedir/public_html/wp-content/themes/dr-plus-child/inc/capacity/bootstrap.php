@@ -19,7 +19,7 @@ if ( ! defined( 'DRPLUS_ROOM_CAPACITY_DEFAULT' ) ) {
 }
 
 if ( ! defined( 'DRPLUS_CAPACITY_DB_VERSION' ) ) {
-	define( 'DRPLUS_CAPACITY_DB_VERSION', '1.0.0' );
+	define( 'DRPLUS_CAPACITY_DB_VERSION', '1.0.1' );
 }
 
 // Load capacity module classes (spec 5.5.27, 8.2).
