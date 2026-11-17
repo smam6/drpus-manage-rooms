@@ -26,6 +26,12 @@ class DrPlus_Child_Capacity_Installer {
 	const LOG_TABLE = 'drplus_capacity_log';
 
 	/**
+	 * Slot-lock table name without prefix. Used only when the database engine
+	 * has no server-side advisory locks (every engine except MySQL/MariaDB).
+	 */
+	const LOCK_TABLE = 'drplus_capacity_lock';
+
+	/**
 	 * Option key storing the installed schema version (spec 5.5.74).
 	 */
 	const VERSION_OPTION = 'drplus_capacity_db_version';
@@ -43,6 +49,16 @@ class DrPlus_Child_Capacity_Installer {
 	}
 
 	/**
+	 * Fully-qualified slot-lock table name.
+	 *
+	 * @return string
+	 */
+	public static function lock_table() {
+		global $wpdb;
+		return $wpdb->prefix . self::LOCK_TABLE;
+	}
+
+	/**
 	 * Maybe create or upgrade the log table. Idempotent (spec 6.5).
 	 *
 	 * Implements: spec 6.4, 6.5, 5.5.74, 5.5.75
@@ -55,6 +71,7 @@ class DrPlus_Child_Capacity_Installer {
 			return true;
 		}
 		self::create_table();
+		self::create_lock_table();
 		if ( self::table_exists() ) {
 			update_option( self::VERSION_OPTION, DRPLUS_CAPACITY_DB_VERSION, false );
 			return true;
@@ -104,6 +121,31 @@ class DrPlus_Child_Capacity_Installer {
 			PRIMARY KEY  (log_id),
 			KEY idx_slot (office_id(191), booking_date, start_time),
 			KEY idx_created (created_at)
+		) {$charset};";
+		dbDelta( $sql );
+	}
+
+	/**
+	 * Create the portable slot-lock table.
+	 *
+	 * MySQL/MariaDB use server-side GET_LOCK() and never touch this table, so on
+	 * the engines that matter in production it stays empty. It exists for the
+	 * engines that have no advisory locks (SQLite, and any future backend), where
+	 * a row-level claim is the only correct way to serialise a slot.
+	 *
+	 * @return void
+	 */
+	public static function create_lock_table() {
+		global $wpdb;
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		$table   = self::lock_table();
+		$charset = $wpdb->get_charset_collate();
+		$sql     = "CREATE TABLE {$table} (
+			lock_name VARCHAR(80) NOT NULL,
+			owner_token VARCHAR(64) NOT NULL DEFAULT '',
+			expires_at BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			PRIMARY KEY  (lock_name),
+			KEY idx_expires (expires_at)
 		) {$charset};";
 		dbDelta( $sql );
 	}
