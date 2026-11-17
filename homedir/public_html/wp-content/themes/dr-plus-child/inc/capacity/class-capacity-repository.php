@@ -1181,12 +1181,40 @@ class DrPlus_Child_Capacity_Repository {
 			return false;
 		}
 
+		// THE ORDER RECORD NO LONGER EXISTS.
+		//
+		// Two ways this happens, and they must be treated identically:
+		//
+		//   1. `wp_trash_post()` — the order moves to `trash` but its internal status column
+		//      stays at `wc-processing`. WC_Order::get_status() therefore still reports
+		//      "processing" even though the merchant has thrown the order away (verified on a
+		//      real order). Trusting get_status() alone blocked that hour forever after a
+		//      routine delete-from-the-orders-list.
+		//   2. The row points at an order id that does not exist at all — a booking imported
+		//      from an old system, or an order that was deleted with its posts purged.
+		//
+		// In BOTH cases nobody is coming to the appointment and no order can ever be paid or
+		// completed for it, so the hour must come back. Deciding this from the post record
+		// (which both paths share) keeps the two answers from diverging.
+		$post_status = get_post_status( $order_id );
+		if ( false === $post_status ) {
+			DrPlus_Child_Capacity_Logger::diag( 'order #' . $order_id . ' does not exist — releasing the slot (no order can ever fill it)' );
+			return true;
+		}
+		if ( 'trash' === $post_status ) {
+			DrPlus_Child_Capacity_Logger::diag( 'order #' . $order_id . ' is trashed — releasing the slot' );
+			return true;
+		}
+
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			// Deleted order, or WooCommerce could not build it. Unknown is not "free".
+			// The post exists but WooCommerce cannot build an order from it (wrong post type,
+			// corrupt meta). That is genuinely unknown, so keep holding: failing open here
+			// would release a room that may well be occupied.
 			return false;
 		}
 
+		// A refund/fail/cancel on the order itself.
 		// WC_Order::get_status() returns the bare status (`cancelled`), never `wc-cancelled`.
 		return ! self::status_holds_slot( $order->get_status() );
 	}
