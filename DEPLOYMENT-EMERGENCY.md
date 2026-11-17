@@ -23,7 +23,7 @@ The version checker below is designed to prove this in one page load.
 ## Step 1 — Download
 
 **Option A: whole theme (easiest)**  
-`https://github.com/smam6/drpus-manage-rooms/raw/arena/dbdffc66-drpus-manage-rooms/dr-plus-child-production.zip`  
+`https://github.com/smam6/drpus-manage-rooms/raw/main/dr-plus-child-production.zip`  
 857 KB · 21 files · extracts to `dr-plus-child/`
 
 **Option B: individual files (exact)**  
