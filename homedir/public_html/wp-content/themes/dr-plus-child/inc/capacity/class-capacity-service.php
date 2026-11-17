@@ -77,6 +77,34 @@ class DrPlus_Child_Capacity_Service {
 	}
 
 	/**
+	 * Every office_id that denotes a virtual visit, including the legacy aliases.
+	 *
+	 * is_online_visit() maps `consultation` to `phone_consultation` before comparing, but SQL
+	 * compares raw column values and cannot do that mapping. This method returns the literal
+	 * strings that may appear in `drplus_booking.office_id`, so a query used to decide "does
+	 * this specialist already hold a room?" can exclude all of them.
+	 *
+	 * Honours the same filter as is_online_visit() so the two cannot disagree when a site
+	 * extends the list.
+	 *
+	 * @return string[] Raw office_id values that never occupy a physical room.
+	 */
+	public static function virtual_office_ids() {
+		$types = apply_filters( 'drplus_child_capacity/online_types', self::ONLINE_TYPES );
+		$ids   = array_map( 'strval', (array) $types );
+
+		// The legacy spellings: is_online_visit() resolves these to a modern type, so a row
+		// filed under one of them is just as exempt as a row filed under the modern id.
+		foreach ( self::ONLINE_ALIASES as $legacy => $modern ) {
+			if ( in_array( $modern, $ids, true ) && ! in_array( $legacy, $ids, true ) ) {
+				$ids[] = (string) $legacy;
+			}
+		}
+
+		return array_values( array_unique( $ids ) );
+	}
+
+	/**
 	 * Per-clinic capacity limit, default 2 (spec 1.15, 2.9, 5.5.70, 5.5.71).
 	 *
 	 * Implements: spec 1.15, 2.9, 5.6.63
@@ -92,17 +120,43 @@ class DrPlus_Child_Capacity_Service {
 		// get the SAME limit, otherwise the two entry points enforce different capacities:
 		// a clinic configured for 3 silently enforces 2 via a UUID, and a clinic configured for
 		// 1 would allow 2. Resolve aliases first and use the first configured value found.
+		// Take the STRICTEST value configured for any identifier of this clinic, not the first
+		// one found.
+		//
+		// resolve_clinic_identifiers() returns the ids in a data-dependent order (the numeric
+		// hospital post id and several per-specialist UUIDs all denote one clinic). If an
+		// operator ever set two of them to different numbers — 614 = 1 from the settings page
+		// and a UUID = 3 written by an import or an older release — then "first match wins"
+		// makes the SAME clinic enforce 1 through one entry point and 3 through another. The
+		// room can then be overbooked simply because the customer happened to be routed to the
+		// UUID. Minimum is the only safe merge: it can never allow more bookings than the
+		// operator's most conservative configured limit.
 		$identifiers = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( $office_id );
 		$value       = null;
+		$sources     = array();
 		foreach ( $identifiers as $identifier ) {
 			$stored = get_option( 'drplus_capacity_clinic_' . $identifier, null );
 			if ( null !== $stored && '' !== $stored && false !== $stored ) {
-				$value = (int) $stored;
-				break;
+				$candidate = (int) $stored;
+				if ( $candidate > 0 ) {
+					$sources[] = array( 'id' => $identifier, 'value' => $candidate );
+					$value     = ( null === $value ) ? $candidate : min( $value, $candidate );
+				}
 			}
 		}
 		if ( null === $value ) {
 			$value = $default;
+		} elseif ( count( $sources ) > 1 ) {
+			// Two identifiers of one clinic disagree. Honour the strictest, but say so: a silent
+			// choice here is exactly how the same clinic ends up with two different capacities.
+			$distinct = array_unique( wp_list_pluck( $sources, 'value' ) );
+			if ( count( $distinct ) > 1 ) {
+				$summary = array();
+				foreach ( $sources as $source ) {
+					$summary[] = $source['id'] . '=' . $source['value'];
+				}
+				DrPlus_Child_Capacity_Logger::diag( 'capacity_for("' . $office_id . '"): identifiers disagree (' . implode( ', ', $summary ) . ') — enforcing the strictest value ' . $value );
+			}
 		}
 
 		$value = (int) apply_filters( 'drplus_child_capacity/per_clinic', $value, $office_id );

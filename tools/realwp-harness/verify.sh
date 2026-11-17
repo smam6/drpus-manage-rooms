@@ -32,23 +32,27 @@ run() { # run <label> <script> <grep-pattern>
   fi
 }
 
-step "1/8  WordPress install"
+step "1/10  WordPress install"
 run "core install"                 00a-install-wp.php   'installed uid='
-step "2/8  Production dump (MariaDB → SQLite, via the WordPress driver)"
+step "2/10  Production dump (MariaDB → SQLite, via the WordPress driver)"
 run "dump replayed, 0 errors"      01-import-dump.php   'insert errors     : 0'
-step "3/8  Clinic alias map from production data"
+step "3/10  Clinic alias map from production data"
 run "alias map seeded"             00b-seed-alias-map.php 'alias map saved'
-step "4/8  Environment doctor"
+step "4/10  Environment doctor"
 run "environment + hooks"          02-doctor.php        'RESULT: 19 passed, 0 failed'
-step "5/8  Six live scenarios ×3"
+step "5/10  Six live scenarios ×3"
 for i in 1 2 3; do
   run "live scenarios, loop $i"    03-live-scenarios.php 'RESULT: 12 passed, 0 failed'
 done
-step "6/8  Multi-UUID clinic identity (the reported ticket)"
+step "6/10  Multi-UUID clinic identity (the reported ticket)"
 run "multi-UUID clinic"            05-multi-uuid-clinic.php 'RESULT: 14 passed, 0 failed'
-step "7/8  Cancelled bookings free the hour"
+step "7/10  Cancelled bookings free the hour"
 run "cancelled frees slot"       06-cancelled-frees-slot.php 'RESULT: 8 passed, 0 failed'
-step "8/8  Shipped version-check.php"
+step "8/10  Order status is the source of truth (stale-copy guard)"
+run "order status truth"        07-order-status-truth.php 'RESULT:'
+step "9/10 Capacity consistency (identity, strictness, no N+1)"
+run "capacity consistency"      08-capacity-consistency.php 'RESULT:'
+step "10/10 Shipped version-check.php"
 vc="$(cd "$RUN" && node run.mjs "$HERE/php/04-version-check.php" 2>&1 | sed 's/<[^>]*>/ /g')"
 vc_pass="$(printf '%s' "$vc" | grep -c 'PASS')"
 vc_fail="$(printf '%s' "$vc" | grep -c 'FAIL')"

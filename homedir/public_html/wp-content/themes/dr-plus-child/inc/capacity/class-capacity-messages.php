@@ -247,6 +247,60 @@ class DrPlus_Child_Capacity_Messages {
 	}
 
 	/**
+	 * Section heading for the "order status agreement" panel.
+	 *
+	 * @return string
+	 */
+	public static function admin_sync_title() {
+		return __( 'هم‌خوانی وضعیت رزروها با ووکامرس', 'drplus-child' );
+	}
+
+	/**
+	 * Explanation of what the panel checks and why it matters.
+	 *
+	 * @return string
+	 */
+	public static function admin_sync_description() {
+		return __( 'وضعیت رزرو در جدول رزروها یک «کپی» از وضعیت سفارش ووکامرس است. اگر این کپی به‌روز نشود، ساعتی که سفارشش لغو شده برای همیشه بسته می‌ماند و هیچ خطایی هم نمایش داده نمی‌شود. این بخش همان کپی را با سفارش اصلی مقایسه می‌کند.', 'drplus-child' );
+	}
+
+	/**
+	 * Button that writes the order status back into every stale booking row.
+	 *
+	 * @return string
+	 */
+	public static function admin_sync_repair_button() {
+		return __( 'هم‌خوان‌سازی رزروهای ناهم‌خوان', 'drplus-child' );
+	}
+
+	/**
+	 * Result line when the table and WooCommerce agree.
+	 *
+	 * @return string
+	 */
+	public static function admin_sync_clean() {
+		return __( 'همه‌ی رزروها با سفارش ووکامرس هم‌خوان هستند.', 'drplus-child' );
+	}
+
+	/**
+	 * Result line after a repair run. `%d` is the number of rows corrected.
+	 *
+	 * @return string
+	 */
+	public static function admin_sync_repaired() {
+		return __( '%d رزرو ناهم‌خوان اصلاح شد. ساعت‌هایی که بی‌دلیل بسته مانده بودند آزاد شدند.', 'drplus-child' );
+	}
+
+	/**
+	 * Result line when nothing needed repairing.
+	 *
+	 * @return string
+	 */
+	public static function admin_sync_nothing_to_repair() {
+		return __( 'همه‌ی رزروها از قبل هم‌خوان بودند؛ چیزی برای اصلاح نبود.', 'drplus-child' );
+	}
+
+	/**
 	 * Admin empty-clinics notice (spec 5.3).
 	 *
 	 * @return string
