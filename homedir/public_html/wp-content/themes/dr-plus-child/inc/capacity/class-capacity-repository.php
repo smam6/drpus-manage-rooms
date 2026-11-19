@@ -938,12 +938,12 @@ class DrPlus_Child_Capacity_Repository {
 			" WHERE specialist_id = %d AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
 		$bind         = array_merge( array( $specialist_id, $date, $start ), $statuses );
 
-		if ( empty( $office_id ) ) {
+		// In 'any' mode a virtual visit IS a conflict for a room (and the other way round),
+		// so the exclusion below must not run. In the default 'room' mode it must.
+		if ( DrPlus_Child_Capacity_Service::virtual_visit_blocks_room() ) {
+			DrPlus_Child_Capacity_Logger::diag( 'conflict_mode=any: a virtual visit counts as a conflict for this hour' );
+		} elseif ( empty( $office_id ) || ! in_array( $office_id, $online, true ) ) {
 			// Unscoped: every physical office is in play, so exclude the virtual ones outright.
-			$online_ph = implode( ',', array_fill( 0, count( $online ), '%s' ) );
-			$sql      .= " AND office_id NOT IN ({$online_ph})";
-			$bind      = array_merge( $bind, $online );
-		} elseif ( ! in_array( $office_id, $online, true ) ) {
 			// Scoped to a real room: a virtual-visit row is not a conflict for it. (When the
 			// requested office IS virtual, the validator has already returned early.)
 			$online_ph = implode( ',', array_fill( 0, count( $online ), '%s' ) );
@@ -951,7 +951,15 @@ class DrPlus_Child_Capacity_Repository {
 			$bind      = array_merge( $bind, $online );
 		}
 
-		if ( '' !== $office_id ) {
+		if ( '' !== $office_id && DrPlus_Child_Capacity_Service::virtual_visit_blocks_room() && in_array( $office_id, $online, true ) ) {
+			// 'any' mode, and the booking being requested is itself a virtual visit.
+			//
+			// Scoping to "this clinic" would be wrong: a virtual visit belongs to no clinic, so
+			// resolve_clinic_identifiers() for e.g. 'phone_consultation' resolves to itself and
+			// the IN (...) clause excluded the room rows that must block it. The specialist is
+			// one person at one hour, so the scope here is the SPECIALIST, not the clinic.
+			DrPlus_Child_Capacity_Logger::diag( 'conflict_mode=any: virtual visit "' . $office_id . '" checked against every booking of this specialist (no clinic scope)' );
+		} elseif ( '' !== $office_id ) {
 			// Same clinic-alias expansion as the capacity counters: a clinic can be booked under
 			// its numeric post id and under per-specialist UUIDs, and a conflict filed under one
 			// of those must be found when the customer picked the other (Bug B).

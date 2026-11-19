@@ -142,9 +142,21 @@ class DrPlus_Child_Capacity_Validator {
 			return;
 		}
 		// Visit type is inferred from office_id — book_data has no visit_type key (spec 3.4, Finding 4).
-		if ( DrPlus_Child_Capacity_Service::is_online_visit( $office_id ) ) {
+		$is_online = DrPlus_Child_Capacity_Service::is_online_visit( $office_id );
+
+		if ( $is_online && ! DrPlus_Child_Capacity_Service::virtual_visit_blocks_room() ) {
+			// Default 'room' mode: an online visit occupies no room, so room capacity cannot
+			// constrain it, and it must never be refused for "the clinic is full".
 			DrPlus_Child_Capacity_Logger::diag( 'EXIT: office_id "' . $office_id . '" is treated as an ONLINE visit (exempt by design). If this was an in-person booking, the office_id is wrong.' );
 			return; // Online visits exempt (spec 3.5).
+		}
+
+		// 'any' mode reaches here for an online visit ON PURPOSE: the specialist is one person,
+		// so a room booking at 17:00 must stop a phone consultation at 17:00. Only the
+		// per-specialist conflict is checked below — room CAPACITY never applies to an online
+		// visit, because it does not consume a room.
+		if ( $is_online ) {
+			DrPlus_Child_Capacity_Logger::diag( 'conflict_mode=any: ONLINE visit "' . $office_id . '" still subject to the per-specialist conflict check (room capacity does not apply).' );
 		}
 		$date       = (string) $booking['date'];
 		$start_time = isset( $booking['start_time'] ) ? (string) $booking['start_time'] : '';
@@ -236,7 +248,13 @@ class DrPlus_Child_Capacity_Validator {
 
 		// Lock is now held. It is released either here (rejection) or deferred to
 		// post_insert_verify_and_release (after the parent's INSERT) — never before (spec 4.14).
-		$count = DrPlus_Child_Capacity_Repository::count_distinct_specialists( $office_id, $date, $start_time );
+		// An ONLINE visit consumes no room, so room capacity must never refuse it — even in
+		// 'any' mode, where it is still subject to the per-specialist conflict check above.
+		// Counting it here would reject a phone consultation because "the clinic is full",
+		// which is both wrong and impossible for the customer to understand.
+		$count = $is_online
+			? 0
+			: DrPlus_Child_Capacity_Repository::count_distinct_specialists( $office_id, $date, $start_time );
 
 		DrPlus_Child_Capacity_Logger::diag( sprintf(
 			'CAPACITY CHECK -> office=%s date=%s time=%s capacity=%d current_count=%d verdict=%s',

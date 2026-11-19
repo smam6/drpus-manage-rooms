@@ -144,6 +144,14 @@ class DrPlus_Child_Capacity_Admin {
 		}
 		update_option( 'drplus_capacity_clinic_aliases', $clean_aliases, false );
 
+		// Double-booking policy. Only the two known values are written; anything else falls
+		// back to the shipped default so a malformed request cannot loosen enforcement.
+		$mode = isset( $_POST['drplus_capacity_conflict_mode'] )
+			? sanitize_text_field( wp_unslash( $_POST['drplus_capacity_conflict_mode'] ) )
+			: 'room';
+		$mode = in_array( $mode, array( 'room', 'any' ), true ) ? $mode : 'room';
+		update_option( 'drplus_capacity_conflict_mode', $mode, false );
+
 		$error = false;
 		foreach ( $capacities as $clinic_id => $raw ) {
 			$clinic_id = absint( $clinic_id );
@@ -244,7 +252,21 @@ class DrPlus_Child_Capacity_Admin {
 					<?php endif; ?>
 					</tbody>
 				</table>
-				<?php submit_button( DrPlus_Child_Capacity_Messages::admin_save_button(), 'primary', 'drplus_capacity_save_submit' ); ?>
+				<h2><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_conflict_title() ); ?></h2>
+			<p><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_conflict_description() ); ?></p>
+			<?php $conflict_mode = DrPlus_Child_Capacity_Service::conflict_mode(); ?>
+			<p>
+				<label style="display:block;margin-bottom:6px">
+					<input type="radio" name="drplus_capacity_conflict_mode" value="room" <?php checked( $conflict_mode, 'room' ); ?>>
+					<?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_conflict_mode_room() ); ?>
+				</label>
+				<label style="display:block">
+					<input type="radio" name="drplus_capacity_conflict_mode" value="any" <?php checked( $conflict_mode, 'any' ); ?>>
+					<?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_conflict_mode_any() ); ?>
+				</label>
+			</p>
+			<p class="description"><?php echo esc_html( DrPlus_Child_Capacity_Messages::admin_conflict_note() ); ?></p>
+			<?php submit_button( DrPlus_Child_Capacity_Messages::admin_save_button(), 'primary', 'drplus_capacity_save_submit' ); ?>
 			</form>
 
 			<?php

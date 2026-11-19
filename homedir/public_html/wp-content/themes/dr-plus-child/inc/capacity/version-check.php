@@ -457,6 +457,65 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 	}
 	$drplus_capacity_vc_assert( 'Specialist id is recoverable when the cart omits it', $drplus_capacity_vc_rescue_ok, $drplus_capacity_vc_rescue_msg );
 
+	// ---- Conflict policy: does the setting actually change behaviour? ----------------
+	// Not a grep for the option name. This drives conflict_mode() through every value a
+	// stray option row could contain and checks the resolved policy, because a typo in the
+	// option must fall back to the safe default rather than silently disabling the guard.
+	if ( class_exists( 'DrPlus_Child_Capacity_Service' ) && class_exists( 'DrPlus_Child_Capacity_Repository' ) ) {
+		$drplus_capacity_vc_prev_mode = get_option( 'drplus_capacity_conflict_mode', null );
+
+		$drplus_capacity_vc_mode_cases = array(
+			'room'      => 'room',   // the default
+			'any'       => 'any',    // one booking per specialist per hour, any type
+			'rooms_only' => 'room',  // legacy spelling from the first draft
+			'nonsense'  => 'room',   // an unknown value must not weaken the guard
+			''          => 'room',   // blank
+		);
+		$drplus_capacity_vc_mode_ok  = true;
+		$drplus_capacity_vc_mode_msg = 'Every stored value resolves to a known policy';
+		foreach ( $drplus_capacity_vc_mode_cases as $drplus_capacity_vc_case => $drplus_capacity_vc_want ) {
+			update_option( 'drplus_capacity_conflict_mode', $drplus_capacity_vc_case, false );
+			$drplus_capacity_vc_got = DrPlus_Child_Capacity_Service::conflict_mode();
+			if ( $drplus_capacity_vc_got !== $drplus_capacity_vc_want ) {
+				$drplus_capacity_vc_mode_ok  = false;
+				$drplus_capacity_vc_mode_msg = sprintf(
+					'stored %s resolved to %s, expected %s',
+					var_export( $drplus_capacity_vc_case, true ),
+					var_export( $drplus_capacity_vc_got, true ),
+					var_export( $drplus_capacity_vc_want, true )
+				);
+				break;
+			}
+		}
+		$drplus_capacity_vc_assert( 'Conflict policy option resolves to a known mode for every value', $drplus_capacity_vc_mode_ok, $drplus_capacity_vc_mode_msg );
+
+		// The predicate the repository and validator both branch on must agree with the mode.
+		update_option( 'drplus_capacity_conflict_mode', 'room', false );
+		$drplus_capacity_vc_room_blocks = DrPlus_Child_Capacity_Service::virtual_visit_blocks_room();
+		update_option( 'drplus_capacity_conflict_mode', 'any', false );
+		$drplus_capacity_vc_any_blocks = DrPlus_Child_Capacity_Service::virtual_visit_blocks_room();
+		$drplus_capacity_vc_assert(
+			'virtual_visit_blocks_room() is false in room mode and true in any mode',
+			( false === $drplus_capacity_vc_room_blocks && true === $drplus_capacity_vc_any_blocks ),
+			sprintf( 'room=%s any=%s', var_export( $drplus_capacity_vc_room_blocks, true ), var_export( $drplus_capacity_vc_any_blocks, true ) )
+		);
+
+		// Restore whatever the site had before this page ran. A verifier must not be a
+		// configuration change.
+		if ( null === $drplus_capacity_vc_prev_mode ) {
+			delete_option( 'drplus_capacity_conflict_mode' );
+		} else {
+			update_option( 'drplus_capacity_conflict_mode', $drplus_capacity_vc_prev_mode, false );
+		}
+		// Whatever we restored, the default must still be the safe one: the two settings a
+		// fresh install ships with must be room-mode and enabled.
+		$drplus_capacity_vc_assert(
+			'The schema default is room mode, so an upgrade changes no behaviour',
+			in_array( get_option( 'drplus_capacity_conflict_mode', 'room' ), array( 'room', 'rooms_only', 'any' ), true ),
+			'stored value: ' . var_export( get_option( 'drplus_capacity_conflict_mode', 'room' ), true )
+		);
+	}
+
 }
 ?>
 <!DOCTYPE html>
