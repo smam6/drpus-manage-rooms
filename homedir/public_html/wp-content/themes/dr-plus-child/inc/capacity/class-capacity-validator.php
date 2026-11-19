@@ -143,6 +143,12 @@ class DrPlus_Child_Capacity_Validator {
 		}
 		// Visit type is inferred from office_id — book_data has no visit_type key (spec 3.4, Finding 4).
 		$is_online = DrPlus_Child_Capacity_Service::is_online_visit( $office_id );
+		DrPlus_Child_Capacity_Logger::diag( sprintf(
+			'VALIDATOR: office=%s date=%s time=%s specialist=%d is_online=%s conflict_mode=%s',
+			$office_id, (string) $booking['date'], (string) ( $booking['start_time'] ?? '' ),
+			(int) ( $booking['specialist_id'] ?? 0 ), $is_online ? 'yes' : 'no',
+			DrPlus_Child_Capacity_Service::conflict_mode()
+		) );
 
 		if ( $is_online && ! DrPlus_Child_Capacity_Service::virtual_visit_blocks_room() ) {
 			// Default 'room' mode: an online visit occupies no room, so room capacity cannot
