@@ -951,14 +951,19 @@ class DrPlus_Child_Capacity_Repository {
 			$bind      = array_merge( $bind, $online );
 		}
 
-		if ( '' !== $office_id && DrPlus_Child_Capacity_Service::virtual_visit_blocks_room() && in_array( $office_id, $online, true ) ) {
-			// 'any' mode, and the booking being requested is itself a virtual visit.
+		if ( '' !== $office_id && DrPlus_Child_Capacity_Service::virtual_visit_blocks_room() ) {
+			// 'any' mode: the scope is the SPECIALIST, not the clinic, and that is true in BOTH
+			// directions. A specialist is one person at one hour.
 			//
-			// Scoping to "this clinic" would be wrong: a virtual visit belongs to no clinic, so
-			// resolve_clinic_identifiers() for e.g. 'phone_consultation' resolves to itself and
-			// the IN (...) clause excluded the room rows that must block it. The specialist is
-			// one person at one hour, so the scope here is the SPECIALIST, not the clinic.
-			DrPlus_Child_Capacity_Logger::diag( 'conflict_mode=any: virtual visit "' . $office_id . '" checked against every booking of this specialist (no clinic scope)' );
+			// Scoping by clinic here breaks the feature in the direction that is easiest to
+			// miss. A virtual visit belongs to no clinic, so its office_id is 'phone_consultation'
+			// while resolve_clinic_identifiers( <real clinic> ) returns just that clinic's ids.
+			// The IN (...) clause then filtered the phone row OUT, and a specialist who was
+			// already on a call at 10:00 was reported as free to take a room at 10:00 — the
+			// exact double-booking this mode exists to prevent. Measured on the real dump:
+			// conflict_in_scope( 6, '596' ) was false while specialist_already_booked( 6 ) was
+			// true, i.e. the unscoped check saw the clash and the clinic-scoped one did not.
+			DrPlus_Child_Capacity_Logger::diag( 'conflict_mode=any: office "' . $office_id . '" checked against every booking of this specialist (no clinic scope)' );
 		} elseif ( '' !== $office_id ) {
 			// Same clinic-alias expansion as the capacity counters: a clinic can be booked under
 			// its numeric post id and under per-specialist UUIDs, and a conflict filed under one

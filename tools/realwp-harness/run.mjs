@@ -70,4 +70,18 @@ try {
   process.stdout.write(`\n[EXIT CODE] ${resp ? resp.exitCode : '?'}\n`);
   process.exitCode = 1;
 }
-process.exit(0);
+
+// Flush stdout before exiting. php.run() resolves while the wasm runtime may still hold
+// buffers, and an unconditional process.exit(0) here tore the process down mid-write:
+// every suite returned an EMPTY stdout and looked like it silently passed. The earlier
+// version of this file had exactly that bug, and it hid real failures. Draining the
+// streams first and then forcing exit keeps the runtime from holding the process open
+// forever (which is the other way this fails).
+await new Promise( ( resolve ) => {
+  if ( process.stdout.writableLength === 0 && process.stderr.writableLength === 0 ) {
+    resolve();
+    return;
+  }
+  process.stdout.write( '', resolve );
+} );
+process.exit( process.exitCode || 0 );
