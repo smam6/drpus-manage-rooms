@@ -247,6 +247,51 @@ class DrPlus_Child_Capacity_Messages {
 	}
 
 	/**
+	 * Heading for the double-booking policy panel.
+	 *
+	 * @return string
+	 */
+	public static function admin_conflict_title() {
+		return __( 'قانون تداخل نوبت‌ها', 'drplus-child' );
+	}
+
+	/**
+	 * Explains the choice between the two policies.
+	 *
+	 * @return string
+	 */
+	public static function admin_conflict_description() {
+		return __( 'یک متخصص یک نفر است. اگر ساعت ۱۷:۰۰ در اتاق باشد، همان ساعت نمی‌تواند تلفن جواب بدهد. این تنظیم تعیین می‌کند سیستم چطور رفتار کند.', 'drplus-child' );
+	}
+
+	/**
+	 * Label for the permissive policy (current default).
+	 *
+	 * @return string
+	 */
+	public static function admin_conflict_mode_room() {
+		return __( 'فقط اتاق‌ها (پیش‌فرض): مشاوره تلفنی/آنلاین با رزرو حضوری تداخل ندارد', 'drplus-child' );
+	}
+
+	/**
+	 * Label for the strict policy.
+	 *
+	 * @return string
+	 */
+	public static function admin_conflict_mode_any() {
+		return __( 'سخت‌گیرانه: متخصص در هر ساعت فقط یک نوبت، هر نوعی که باشد', 'drplus-child' );
+	}
+
+	/**
+	 * Note that the choice takes effect immediately.
+	 *
+	 * @return string
+	 */
+	public static function admin_conflict_note() {
+		return __( 'این تنظیم بلافاصله اعمال می‌شود و روی رزروهای قبلی اثری ندارد.', 'drplus-child' );
+	}
+
+	/**
 	 * Section heading for the "order status agreement" panel.
 	 *
 	 * @return string

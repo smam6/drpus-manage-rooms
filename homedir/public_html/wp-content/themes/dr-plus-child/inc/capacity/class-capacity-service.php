@@ -77,6 +77,61 @@ class DrPlus_Child_Capacity_Service {
 	}
 
 	/**
+	 * How strictly to treat a specialist who already has a booking at this hour.
+	 *
+	 * THE BUSINESS QUESTION THIS ANSWERS
+	 *
+	 * A specialist is a single person. A room booking and a phone call cannot both happen at
+	 * 17:00. The parent theme never checks this: its slot generator asks only "is this
+	 * specialist busy at THIS office?", so an in-person hour and a phone hour are independent.
+	 * Verified on a live install, both directions are allowed.
+	 *
+	 * That may be exactly what the clinic wants (a doctor can be in a room while a colleague
+	 * takes calls). It may also be a slow leak: every hour a specialist spends on the phone is
+	 * an hour the room sits idle. Only the operator can decide, so it is a setting, not a
+	 * hard-coded rule.
+	 *
+	 * MODES
+	 *
+	 *   'room'   (default)  A specialist may not occupy two ROOMS at once. A virtual visit
+	 *                       does not conflict with a room. This is the behaviour every
+	 *                       earlier release shipped, so upgrading changes nothing.
+	 *   'any'               A specialist may hold only ONE booking of any kind at an hour.
+	 *                       A phone call blocks the room and a room blocks the phone call.
+	 *   'rooms_only'        Same as 'room', stated explicitly for operators who want the
+	 *                       distinction visible in their settings.
+	 *
+	 * Anything unrecognised falls back to 'room': an unknown value must never silently
+	 * tighten or loosen enforcement.
+	 *
+	 * @return string One of 'room', 'any'.
+	 */
+	public static function conflict_mode() {
+		$mode = get_option( 'drplus_capacity_conflict_mode', 'room' );
+		$mode = is_string( $mode ) ? strtolower( trim( $mode ) ) : 'room';
+		if ( 'rooms_only' === $mode ) {
+			$mode = 'room';
+		}
+		if ( ! in_array( $mode, array( 'room', 'any' ), true ) ) {
+			$mode = 'room';
+		}
+		return (string) apply_filters( 'drplus_child_capacity/conflict_mode', $mode );
+	}
+
+	/**
+	 * In 'any' mode, does a virtual visit block a room (and vice versa)?
+	 *
+	 * Kept as its own predicate so both the repository query and the validator read the same
+	 * decision. A split decision here is how a customer gets told "already booked" for an hour
+	 * the grid still offered.
+	 *
+	 * @return bool
+	 */
+	public static function virtual_visit_blocks_room() {
+		return 'any' === self::conflict_mode();
+	}
+
+	/**
 	 * Every office_id that denotes a virtual visit, including the legacy aliases.
 	 *
 	 * is_online_visit() maps `consultation` to `phone_consultation` before comparing, but SQL
