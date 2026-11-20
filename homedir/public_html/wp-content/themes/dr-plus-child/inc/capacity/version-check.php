@@ -457,6 +457,66 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 	}
 	$drplus_capacity_vc_assert( 'Specialist id is recoverable when the cart omits it', $drplus_capacity_vc_rescue_ok, $drplus_capacity_vc_rescue_msg );
 
+	// ---- The false «قبلاً رزرو دارد» fix -----------------------------------------------
+	// The reported bug: the customer picks specialist B, a stale
+	// $_SESSION['booking']['specialist_id'] still holds A, A happens to be booked at that
+	// hour, and the customer is told B has a booking. B has none — hence the complaint.
+	//
+	// These assertions drive the real rescue, not a grep for a flag name. If a future edit
+	// drops the session marking, the first one fails and names the consequence.
+	$drplus_capacity_vc_rescue_ref = new ReflectionMethod( 'DrPlus_Child_Capacity_Validator', 'rescue_specialist' );
+	$drplus_capacity_vc_rescue_ref->setAccessible( true );
+
+	$drplus_capacity_vc_prev_session = isset( $_SESSION['booking'] ) ? $_SESSION['booking'] : null;
+
+	// (a) A cart that names a specialist is authoritative, even when the session disagrees.
+	$_SESSION['booking'] = array( 'specialist_id' => 4242, 'date' => '2030-01-01', 'office_id' => '614' );
+	$drplus_capacity_vc_from_cart = $drplus_capacity_vc_rescue_ref->invoke( null, array( 'specialist_id' => 1111 ), 'probe (cart)' );
+	$drplus_capacity_vc_cart_ok    = ( 1111 === (int) $drplus_capacity_vc_from_cart['specialist_id'] )
+		&& empty( $drplus_capacity_vc_from_cart['specialist_id_is_inferred'] );
+	$drplus_capacity_vc_assert(
+		'A specialist named by the cart outranks a stale session id',
+		$drplus_capacity_vc_cart_ok,
+		$drplus_capacity_vc_cart_ok
+			? 'the cart id 1111 was kept and treated as authoritative, so the conflict check speaks about the specialist the customer actually chose'
+			: 'got specialist_id=' . var_export( $drplus_capacity_vc_from_cart['specialist_id'], true )
+				. ' inferred=' . ( empty( $drplus_capacity_vc_from_cart['specialist_id_is_inferred'] ) ? 'no' : 'yes' )
+				. ' — a session id overruled the cart, which is the reported false-conflict bug'
+	);
+
+	// (b) An id taken from the session must be marked as inferred, or the validator will
+	//     accuse a specialist the cart never named.
+	$drplus_capacity_vc_from_session = $drplus_capacity_vc_rescue_ref->invoke( null, array( 'specialist_id' => 0 ), 'probe (session)' );
+	$drplus_capacity_vc_session_ok   = ( 4242 === (int) $drplus_capacity_vc_from_session['specialist_id'] )
+		&& ! empty( $drplus_capacity_vc_from_session['specialist_id_is_inferred'] );
+	$drplus_capacity_vc_assert(
+		'A specialist rescued from the session is flagged as inferred',
+		$drplus_capacity_vc_session_ok,
+		$drplus_capacity_vc_session_ok
+			? 'the session id was recovered and flagged, so a conflict against it is reported as «متخصص مشخص نشد» instead of «قبلاً رزرو دارد»'
+			: 'got specialist_id=' . var_export( $drplus_capacity_vc_from_session['specialist_id'], true )
+				. ' inferred=' . ( empty( $drplus_capacity_vc_from_session['specialist_id_is_inferred'] ) ? 'no' : 'yes' )
+				. ' — without the flag the module will claim a booking for a specialist the customer did not pick'
+	);
+
+	// (c) The two messages must stay distinct: the fix depends on being able to choose.
+	$drplus_capacity_vc_msgs_ok = ( DrPlus_Child_Capacity_Messages::specialist_conflict() !== DrPlus_Child_Capacity_Messages::missing_specialist() )
+		&& ( false === strpos( DrPlus_Child_Capacity_Messages::missing_specialist(), 'قبلاً رزرو دارد' ) );
+	$drplus_capacity_vc_assert(
+		'The «re-select the specialist» message never claims an existing booking',
+		$drplus_capacity_vc_msgs_ok,
+		$drplus_capacity_vc_msgs_ok
+			? 'the two notices are distinct and only the conflict notice mentions «قبلاً رزرو دارد»'
+			: 'the re-select notice either duplicates the conflict notice or contains «قبلاً رزرو دارد», which re-creates the phantom appointment the customer cannot find'
+	);
+
+	// Restore whatever the session held before probing.
+	if ( null === $drplus_capacity_vc_prev_session ) {
+		unset( $_SESSION['booking'] );
+	} else {
+		$_SESSION['booking'] = $drplus_capacity_vc_prev_session;
+	}
+
 	// ---- Conflict policy: does the setting actually change behaviour? ----------------
 	// Not a grep for the option name. This drives conflict_mode() through every value a
 	// stray option row could contain and checks the resolved policy, because a typo in the

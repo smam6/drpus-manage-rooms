@@ -168,6 +168,10 @@ class DrPlus_Child_Capacity_Validator {
 		$start_time = isset( $booking['start_time'] ) ? (string) $booking['start_time'] : '';
 		$specialist = isset( $booking['specialist_id'] ) ? (int) $booking['specialist_id'] : 0;
 
+		// Is this id the customer's choice, or did we borrow it from a session that may be
+		// stale? Set by rescue_specialist(); absent on every normal path.
+		$specialist_inferred = ! empty( $booking['specialist_id_is_inferred'] );
+
 		// Bug D: the DB column is TIME, so `14:00` must become `14:00:00` or the comparison
 		// silently matches nothing and the hour reads as empty. extract_start_time() already
 		// normalizes, but re-asserting here keeps the guarantee at the point of use: a future
@@ -196,7 +200,6 @@ class DrPlus_Child_Capacity_Validator {
 			// booking to point at, and claiming one exists is what sent the customer hunting
 			// for a phantom appointment. Ask the repository which input failed.
 			$unverifiable = DrPlus_Child_Capacity_Repository::last_unverifiable_reason();
-
 			if ( '' !== $unverifiable ) {
 				DrPlus_Child_Capacity_Logger::diag( sprintf(
 					'REJECT: cannot verify the slot (missing %s) — refusing. specialist=%d date=%s time=%s office=%s',
@@ -226,6 +229,36 @@ class DrPlus_Child_Capacity_Validator {
 			// per clinic), so the message must explain that the SPECIALIST is the constraint,
 			// not the room, or the customer just sees a slot that refuses to be booked.
 			$same_clinic = DrPlus_Child_Capacity_Repository::specialist_conflict_in_scope( $specialist, $date, $start_time, $office_id );
+
+			// THE SPECIALIST ID WAS A GUESS. DO NOT ACCUSE THAT SPECIALIST.
+			//
+			// When the cart did not name a specialist, rescue_specialist() borrowed one from
+			// the parent (a `sid` in the URL, or — far more often — a leftover
+			// `$_SESSION['booking']['specialist_id']`). If that borrowed id happens to hold
+			// this hour, the check above fires and the customer is told the specialist they
+			// chose is already booked. They chose someone else. Nothing about the message is
+			// true for them, and no hour they pick will work, because the stale id keeps
+			// matching whatever that other doctor has on their calendar.
+			//
+			// We cannot simply skip the check: the borrowed id is also our only defence
+			// against a real double-booking when the cart is genuinely missing the field. The
+			// honest answer is neither "conflict" nor "fine" — it is "we could not tell who
+			// you are booking". That message sends the customer back one step (where the
+			// specialist is chosen), which actually fixes the state, instead of making them
+			// hunt for a phantom appointment in another doctor's calendar.
+			if ( $specialist_inferred ) {
+				DrPlus_Child_Capacity_Logger::diag( sprintf(
+					'REJECT: conflict on INFERRED specialist %d at %s %s (same_clinic=%s) — refusing as UNVERIFIABLE, not as a conflict, because the cart never named this specialist',
+					$specialist,
+					$date,
+					$start_time,
+					$same_clinic ? 'yes' : 'no'
+				) );
+				self::log( $booking, 0, $capacity, self::ERR_SPECIALIST_CONFLICT );
+				wc_add_notice( DrPlus_Child_Capacity_Messages::missing_specialist(), 'error' );
+				return;
+			}
+
 			DrPlus_Child_Capacity_Logger::diag( sprintf(
 				'REJECT: specialist %d already booked at %s %s (same_clinic=%s)',
 				$specialist,
@@ -365,12 +398,49 @@ class DrPlus_Child_Capacity_Validator {
 			$session_data = $_SESSION['booking'];
 			$date         = self::extract_date( $session_data );
 
+			// THE CART ALREADY NAMED THE SPECIALIST. THE SESSION MUST NOT OVERRULE IT.
+			//
+			// A cart item without a date still yields a `partial_booking` holding the
+			// specialist the customer actually put in the basket. The merge below prefers the
+			// session's id only when the cart has none, which is right — but if the two
+			// DISAGREE, the cart is the newer, customer-authored fact and the session is the
+			// leftover. Trusting the session there is the same false-conflict bug in a rarer
+			// disguise, so it is refused outright and logged.
+			$session_specialist = isset( $session_data['specialist_id'] ) ? (int) $session_data['specialist_id'] : 0;
+			if ( null !== $partial_booking
+				&& (int) $partial_booking['specialist_id'] > 0
+				&& $session_specialist > 0
+				&& (int) $partial_booking['specialist_id'] !== $session_specialist ) {
+				DrPlus_Child_Capacity_Logger::diag( sprintf(
+					'SOURCE B: session specialist %d DISAGREES with cart specialist %d — trusting the cart (the customer put it there)',
+					$session_specialist,
+					(int) $partial_booking['specialist_id']
+				) );
+				$session_specialist = 0; // Never used for the conflict check.
+			}
+
 			if ( '' !== $date ) {
 				$office_id     = isset( $session_data['office_id'] )
 					? (string) $session_data['office_id']
 					: ( isset( $session_data['office'] ) ? (string) $session_data['office'] : '' );
 				$start_time    = self::extract_start_time( $session_data );
-				$specialist_id = isset( $session_data['specialist_id'] ) ? (int) $session_data['specialist_id'] : 0;
+				$specialist_id = $session_specialist;
+
+				// THE SESSION IS A CACHE OF A CHOICE THE CUSTOMER MAY HAVE ALREADY CHANGED.
+				//
+				// `$_SESSION['booking']` is written by the booking wizard and is only refreshed
+				// when the wizard runs again. Going back one step and picking a different doctor,
+				// then jumping straight to checkout, leaves the OLD doctor in this array while the
+				// customer books the NEW one. The parent resolves the same array in
+				// Booking::get_specialist(), so the order really is for the new doctor — but this
+				// validator would check the old one and refuse the hour with «این متخصص در این
+				// ساعت قبلاً رزرو دارد», a conflict in a calendar the customer is not using.
+				//
+				// A cart item, when present, carries what the customer actually put in the basket
+				// and outranks the session. When the session is used on its own we cannot prove it
+				// still reflects the current choice, so the id is marked INFERRED: the room count
+				// may use it (a guess is fine for "is this clinic full"), but a CONFLICT will not
+				// be reported against it (see validate_booking_capacity).
 
 				if ( null !== $partial_booking ) {
 					DrPlus_Child_Capacity_Logger::diag( 'SOURCE B (session, merged with partial cart): date resolved -> ' . $date );
@@ -387,7 +457,7 @@ class DrPlus_Child_Capacity_Validator {
 					'date'          => $date,
 					'start_time'    => $start_time,
 					'specialist_id' => $specialist_id,
-				), 'B (session)' );
+				), 'B (session)', true );
 			}
 		}
 
@@ -496,18 +566,51 @@ class DrPlus_Child_Capacity_Validator {
 	 * @param string $source  Which source produced it, for the log.
 	 * @return array Booking with specialist_id recovered when possible.
 	 */
-	protected static function rescue_specialist( array $booking, $source ) {
+	protected static function rescue_specialist( array $booking, $source, $from_session = false ) {
 		if ( isset( $booking['specialist_id'] ) && (int) $booking['specialist_id'] > 0 ) {
+			if ( $from_session ) {
+				// The id came from the session, which survives a change of mind. Keep it, but
+				// record that it is not a proof of who is being booked right now.
+				$booking['specialist_id_is_inferred'] = true;
+				DrPlus_Child_Capacity_Logger::diag( 'SOURCE B: specialist_id=' . (int) $booking['specialist_id'] . ' taken from the session — marked INFERRED (a session value can lag behind the customer\'s current choice)' );
+			}
 			return $booking; // Nothing to rescue.
 		}
 
 		$rescued = self::resolve_specialist_from_parent();
-		if ( $rescued > 0 ) {
-			$booking['specialist_id'] = $rescued;
-			DrPlus_Child_Capacity_Logger::diag( 'SOURCE D: recovered specialist_id=' . $rescued . ' from the parent while reading ' . $source );
-		} else {
+		if ( $rescued <= 0 ) {
 			DrPlus_Child_Capacity_Logger::diag( 'SOURCE D: specialist_id still 0 after ' . $source . ' — no sid, no booking session. The guard will refuse and say so (missing_specialist).' );
+			return $booking;
 		}
+
+		// A GUESSED SPECIALIST MUST NOT RAISE A CONFLICT ERROR ABOUT A REAL BOOKING.
+		//
+		// WHAT WENT WRONG
+		//
+		// The cart owns the authority on who is being booked. When a cart item arrives without
+		// `specialist_id`, this rescue borrows the id from the parent — which reads
+		// `$_GET['sid']` and, failing that, `$_SESSION['booking']['specialist_id']`. That
+		// session value is a leftover: it survives the moment the customer goes back and picks
+		// a different doctor, and the parent only overwrites it on the steps that run the
+		// booking wizard. During checkout it is frequently the PREVIOUS choice.
+		//
+		// The result was the reported bug, reproduced end-to-end: the customer selects
+		// specialist 13 (completely free), the stale session still says 15, 15 happens to hold
+		// 10:00, and checkout refuses with «این متخصص در این ساعت قبلاً رزرو دارد» — naming a
+		// conflict that belongs to a doctor the customer is not booking. From the outside the
+		// chosen specialist has no booking at all, which is exactly what the operator reported.
+		//
+		// WHY THE FIX IS NOT "STOP RESCUING"
+		//
+		// Some real themes/plugins do drop `specialist_id` from the cart payload, and without
+		// any id the validator refuses every hour with missing_specialist() — a worse
+		// experience than a wrong conflict (every slot of every day becomes unbookable). So the
+		// rescue stays, but it is now marked as what it is: a GUESS. The conflict check below
+		// honours the guess for the room count (a guess is fine for "is the clinic full") but
+		// refuses to attribute a booking to that specialist when the guess is unverified.
+		$booking['specialist_id']            = $rescued;
+		$booking['specialist_id_is_inferred'] = true;
+		DrPlus_Child_Capacity_Logger::diag( 'SOURCE D: recovered specialist_id=' . $rescued . ' from the parent while reading ' . $source . ' — marked INFERRED (the cart did not name a specialist)' );
 
 		return $booking;
 	}
