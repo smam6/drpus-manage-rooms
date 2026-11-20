@@ -517,6 +517,65 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 		$_SESSION['booking'] = $drplus_capacity_vc_prev_session;
 	}
 
+	// ---- Abandoned checkout must not pin an hour forever -----------------------------
+	// The second reported «no specialist has any booking, yet nothing can be booked» bug.
+	// A row is inserted at checkout, the payment dies, and the row sits at `pending`. The
+	// parent cron is supposed to cancel it after 30 minutes; when that cron does not run
+	// (wp-cron disabled, no traffic, purged schedule) the hour is blocked forever and the
+	// row is invisible in the appointments list.
+	//
+	// These probe the REAL functions, so a future edit that drops the age guard, drops
+	// created_at from the SQL, or collapses the TTL fails here.
+	if ( class_exists( 'DrPlus_Child_Capacity_Repository' ) ) {
+		$drplus_capacity_vc_ttl = DrPlus_Child_Capacity_Repository::abandoned_checkout_ttl();
+		$drplus_capacity_vc_ttl_ok = ( $drplus_capacity_vc_ttl >= 30 * MINUTE_IN_SECONDS );
+		$drplus_capacity_vc_assert(
+			'An abandoned checkout hold expires instead of pinning the hour forever',
+			$drplus_capacity_vc_ttl_ok,
+			$drplus_capacity_vc_ttl_ok
+				? 'holds expire after ' . (int) round( $drplus_capacity_vc_ttl / MINUTE_IN_SECONDS ) . ' minutes (the parent cancels unpaid bookings after 30), so a dead payment cannot lock an hour permanently'
+				: 'the TTL resolved to ' . (int) $drplus_capacity_vc_ttl . ' seconds — a zero or negative window means every abandoned checkout locks its hour forever, which is the reported symptom'
+		);
+	}
+
+	// A TTL number proves nothing on its own — prove the GUARD actually releases a row.
+	// This drives row_holds_slot() with two synthetic rows that differ only in age, so a
+	// regression in the timestamp reading (the bug that shipped once already: created_at
+	// was missing from the SELECT and the guard silently never fired) fails here.
+	$drplus_capacity_vc_stale_ok  = false;
+	$drplus_capacity_vc_stale_msg = 'the age guard could not be probed';
+	if ( class_exists( 'DrPlus_Child_Capacity_Repository' ) ) {
+		$drplus_capacity_vc_ttl   = DrPlus_Child_Capacity_Repository::abandoned_checkout_ttl();
+		$drplus_capacity_vc_old   = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp', true ) - ( $drplus_capacity_vc_ttl + 3600 ) );
+		$drplus_capacity_vc_new   = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp', true ) - 60 );
+
+		$drplus_capacity_vc_probe = function ( $created ) {
+			return array(
+				'book_id'      => 0,
+				'order_status' => 'pending',
+				'order_id'     => 0, // no order: order_releases_slot() keeps holding, so only the age guard can free it
+				'created_at'   => $created,
+			);
+		};
+
+		$drplus_capacity_vc_fresh_holds = DrPlus_Child_Capacity_Repository::row_holds_slot( $drplus_capacity_vc_probe( $drplus_capacity_vc_new ) );
+		$drplus_capacity_vc_stale_frees = DrPlus_Child_Capacity_Repository::row_holds_slot( $drplus_capacity_vc_probe( $drplus_capacity_vc_old ) );
+
+		$drplus_capacity_vc_stale_ok = ( true === $drplus_capacity_vc_fresh_holds && false === $drplus_capacity_vc_stale_frees );
+		if ( $drplus_capacity_vc_stale_ok ) {
+			$drplus_capacity_vc_stale_msg = 'a 1-minute-old pending row still holds the hour, and one older than the TTL releases it';
+		} elseif ( false === $drplus_capacity_vc_stale_frees ) {
+			$drplus_capacity_vc_stale_msg = 'an aged pending row still HOLDS its hour — an abandoned checkout can lock the slot permanently, which is the reported symptom';
+		} else {
+			$drplus_capacity_vc_stale_msg = 'a freshly paid row was already released — live payments would be double-booked';
+		}
+	}
+	$drplus_capacity_vc_assert(
+		'An aged unpaid row releases its hour while a fresh one keeps it',
+		$drplus_capacity_vc_stale_ok,
+		$drplus_capacity_vc_stale_msg
+	);
+
 	// ---- Conflict policy: does the setting actually change behaviour? ----------------
 	// Not a grep for the option name. This drives conflict_mode() through every value a
 	// stray option row could contain and checks the resolved policy, because a typo in the

@@ -412,7 +412,11 @@ class DrPlus_Child_Capacity_Repository {
 		// order before trusting the column.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT specialist_id, order_status, order_id FROM " . self::booking_table() .
+				// created_at is selected so the shared row_holds_slot() age guard can
+				// release an abandoned checkout here too. Without it the room count keeps
+				// a dead row in the total while checkout releases it — the two layers
+				// would disagree about the same hour.
+				"SELECT specialist_id, order_status, order_id, created_at FROM " . self::booking_table() .
 				" WHERE office_id IN ({$in}) AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders ),
 				array_merge( $clinic_ids, array( $date, $start ), $statuses )
 			),
@@ -934,7 +938,11 @@ class DrPlus_Child_Capacity_Repository {
 		// room. That contradicts the documented rule that online visits are capacity-exempt, and
 		// it silently costs the clinic every hour a specialist happens to be taking calls.
 		$online = DrPlus_Child_Capacity_Service::virtual_office_ids();
-		$sql          = "SELECT book_id, order_status, order_id FROM " . self::booking_table() .
+		// created_at is REQUIRED, not decorative: row_holds_slot() ages an abandoned
+		// `pending`/`on-hold` row from it. Omitting the column made the guard silently
+		// skip (no timestamp -> "keep holding"), which is precisely how a dead checkout
+		// row pins an hour forever.
+		$sql          = "SELECT book_id, order_status, order_id, created_at FROM " . self::booking_table() .
 			" WHERE specialist_id = %d AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
 		$bind         = array_merge( array( $specialist_id, $date, $start ), $statuses );
 
@@ -1115,7 +1123,10 @@ class DrPlus_Child_Capacity_Repository {
 		$statuses     = self::EXCLUDED_STATUSES;
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
 
-		$sql  = "SELECT start_time, order_status, order_id FROM " . self::booking_table() .
+		// created_at travels with start_time for the same reason as above: the grid
+		// must hide exactly the hours checkout refuses, and the age guard lives in
+		// row_holds_slot(), which both paths share.
+		$sql  = "SELECT start_time, order_status, order_id, created_at FROM " . self::booking_table() .
 			" WHERE specialist_id = %d AND `date` = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
 		$bind = array_merge( array( $specialist_id, $date ), $statuses );
 
@@ -1252,7 +1263,181 @@ class DrPlus_Child_Capacity_Repository {
 		}
 		// The copied column says "active". Ask the order before believing it.
 		$order_id = isset( $row['order_id'] ) ? $row['order_id'] : 0;
-		return ! self::order_releases_slot( $order_id );
+		if ( self::order_releases_slot( $order_id ) ) {
+			return false;
+		}
+
+		// AN ABANDONED, UNPAID CHECKOUT MUST NOT LOCK AN HOUR FOREVER.
+		//
+		// This is the second reported "no specialist has any booking, yet every hour is
+		// refused" bug, and it needs no phantom contradiction to explain: the row is real,
+		// the order is real, and nobody is coming.
+		//
+		// HOW IT HAPPENS. The customer reaches checkout, the parent INSERTs the booking row,
+		// the payment fails / the tab is closed / the gateway times out. The row is left at
+		// `pending` (or `on-hold`). The parent has a cron that is *supposed* to cancel those
+		// after 30 minutes — but this module cannot assume that cron runs. Sites disable
+		// wp-cron, have no traffic to trigger it, or a plugin purges the schedule. When it
+		// does not run, that unpaid row holds its hour indefinitely.
+		//
+		// The damage compounds: every abandoned attempt adds another pinned hour. The slots
+		// also disappear from the grid (specialist_booked_slots_for_day uses this same
+		// predicate), so the operator sees a specialist with an empty calendar in the
+		// appointments list and a fully-blocked booking page — which is exactly the report.
+		//
+		// WHY AN AGE LIMIT IS THE RIGHT FIX AND NOT A WEAKENING
+		//
+		// A slot is only genuinely at risk while a payment is in flight. No gateway settles
+		// an appointment days later, and the parent's own window is 30 minutes. Holding for
+		// two hours is already 4x more conservative than the parent; past that the only thing
+		// being protected is a dead row. Crucially this is measured from the order's own
+		// creation time, NOT from "now" — a row with no readable timestamp keeps holding, so
+		// a site with broken clocks fails closed rather than releasing live bookings.
+		if ( self::is_stale_unpaid( $row, $order_id ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * How long an unpaid booking may hold its hour before it is treated as abandoned.
+	 *
+	 * Filterable so a clinic with slow offline payments can widen it without patching the
+	 * module. Two hours is deliberately generous: the parent cancels `pending`/`on-hold`
+	 * after 30 minutes, and no payment gateway settles an appointment hours after the
+	 * checkout request. Narrowing this would start releasing genuinely in-flight payments;
+	 * widening it re-creates the permanent lock this exists to prevent.
+	 *
+	 * @return int Seconds.
+	 */
+	public static function abandoned_checkout_ttl() {
+		$ttl = (int) apply_filters( 'drplus_child_capacity/abandoned_checkout_ttl', 2 * HOUR_IN_SECONDS );
+		// Never let a filter disable the release entirely (0 or negative would mean "hold
+		// forever", which is the bug) and never let it shrink below the parent's 30 minutes.
+		return max( 30 * MINUTE_IN_SECONDS, $ttl );
+	}
+
+	/**
+	 * Is this row an abandoned, unpaid checkout that has outlived its hold?
+	 *
+	 * Only `pending` / `on-hold` qualify. A `processing`/`completed` row is a real
+	 * appointment and is never released by age — the visit may well be in the future.
+	 *
+	 * @param array $row      Booking row.
+	 * @param int   $order_id Order id from the row.
+	 * @return bool True when the hold has expired and the hour must come back.
+	 */
+	protected static function is_stale_unpaid( $row, $order_id ) {
+		$status = strtolower( trim( (string) ( isset( $row['order_status'] ) ? $row['order_status'] : '' ) ) );
+		if ( 0 === strpos( $status, 'wc-' ) ) {
+			$status = substr( $status, 3 );
+		}
+		if ( ! in_array( $status, array( 'pending', 'on-hold' ), true ) ) {
+			return false;
+		}
+
+		$created = self::row_created_timestamp( $row, $order_id );
+		if ( $created <= 0 ) {
+			// No trustworthy timestamp. Failing closed here would re-create the permanent
+			// lock, but releasing would drop a hold we cannot age. Prefer holding: an
+			// unknown-age row is rarer than a broken clock, and the operator can see it in
+			// the appointments list. Logged so this is diagnosable rather than mysterious.
+			DrPlus_Child_Capacity_Logger::diag( 'stale-unpaid check on book #' . ( isset( $row['book_id'] ) ? $row['book_id'] : '?' ) . ': no readable created_at — keeping the hold (fail closed)' );
+			return false;
+		}
+
+		$age = time() - $created;
+		if ( $age < self::abandoned_checkout_ttl() ) {
+			return false; // Still inside the payment window: genuinely holds the slot.
+		}
+
+		DrPlus_Child_Capacity_Logger::diag( sprintf(
+			'releasing an abandoned checkout: book #%s is %s with order #%d, %d minutes old (ttl %d) — nobody is coming to this appointment',
+			isset( $row['book_id'] ) ? $row['book_id'] : '?',
+			$status,
+			(int) $order_id,
+			(int) round( $age / MINUTE_IN_SECONDS ),
+			(int) round( self::abandoned_checkout_ttl() / MINUTE_IN_SECONDS )
+		) );
+
+		return true;
+	}
+
+	/**
+	 * When was this booking created, in unix time?
+	 *
+	 * Tries the row's own `created_at`, then the order's creation date. Both are read as
+	 * site-local time with an explicit UTC conversion, because `strtotime()` on a bare
+	 * 'Y-m-d H:i:s' uses the PHP default timezone, which on many hosts is UTC while the site
+	 * is not — and a mismatch of hours is exactly the kind of error that turns a 2-hour
+	 * window into a 6-hour one.
+	 *
+	 * @param array $row      Booking row.
+	 * @param int   $order_id Order id.
+	 * @return int Unix timestamp, or 0 when unreadable.
+	 */
+	protected static function row_created_timestamp( $row, $order_id ) {
+		// THE ROW'S OWN created_at COMES FIRST, AND THAT ORDER MATTERS.
+		//
+		// The parent writes `created_at` when it inserts the booking row, which is the
+		// moment the hold began. The order's get_date_created() is the same event in
+		// principle, but it is not always populated the way one expects: a site that
+		// back-fills rows, an order rebuilt by a plugin, or a WC_Order whose post dates were
+		// rewritten all yield a timestamp that has nothing to do with when this hour was
+		// taken. Reading the row first keeps the answer tied to the record we are judging.
+		//
+		// The ORDER is the fallback, not the primary: some imports leave created_at at
+		// '0000-00-00 00:00:00', and there the order is the only usable clock.
+		$candidates = array();
+
+		if ( ! empty( $row['created_at'] ) ) {
+			$candidates[] = (string) $row['created_at'];
+		}
+
+		foreach ( $candidates as $raw ) {
+			$raw = trim( $raw );
+			if ( '' === $raw || 0 === strpos( $raw, '0000-00-00' ) ) {
+				continue;
+			}
+			try {
+				// WHICH ZONE IS THIS TIMESTAMP IN? It is not knowable from the string, and
+				// getting it wrong is not cosmetic: an hour of drift can turn a 2-hour
+				// window into 1 hour or 5, releasing live payments or pinning dead ones.
+				//
+				// The parent writes `created_at` via the ORM, which on this stack emits
+				// UTC (PHP's default zone) while `current_time('mysql')` emits site time —
+				// and different parent versions/plugins have done both. So the value is
+				// ambiguous by construction, and the only safe reading is the one that
+				// cannot shorten a live hold.
+				//
+				// Take the LATER of the two interpretations: that yields the SMALLER age,
+				// so a row is released later rather than earlier. A booking that is
+				// genuinely abandoned still crosses the TTL; a payment still in flight is
+				// never released by a timezone accident.
+				$as_site = ( new DateTimeImmutable( $raw, wp_timezone() ) )->getTimestamp();
+				$as_utc  = ( new DateTimeImmutable( $raw, new DateTimeZone( 'UTC' ) ) )->getTimestamp();
+				$ts      = max( $as_site, $as_utc );
+				if ( $ts > 0 ) {
+					return $ts;
+				}
+			} catch ( Exception $e ) {
+				continue;
+			}
+		}
+
+		$order_id = (int) $order_id;
+		if ( $order_id > 0 && function_exists( 'wc_get_order' ) ) {
+			$order = wc_get_order( $order_id );
+			if ( $order ) {
+				$date_created = $order->get_date_created();
+				if ( $date_created ) {
+					return (int) $date_created->getTimestamp();
+				}
+			}
+		}
+
+		return 0;
 	}
 
 	/**
