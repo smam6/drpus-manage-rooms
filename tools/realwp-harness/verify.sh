@@ -32,29 +32,29 @@ run() { # run <label> <script> <grep-pattern>
   fi
 }
 
-step "1/14  WordPress install"
+step "1/15  WordPress install"
 run "core install"                 00a-install-wp.php   'installed uid='
-step "2/14  Production dump (MariaDB → SQLite, via the WordPress driver)"
+step "2/15  Production dump (MariaDB → SQLite, via the WordPress driver)"
 run "dump replayed, 0 errors"      01-import-dump.php   'insert errors     : 0'
-step "3/14  Clinic alias map from production data"
+step "3/15  Clinic alias map from production data"
 run "alias map seeded"             00b-seed-alias-map.php 'alias map saved'
-step "4/14  Environment doctor"
+step "4/15  Environment doctor"
 run "environment + hooks"          02-doctor.php        'RESULT: 19 passed, 0 failed'
-step "5/14  Six live scenarios ×3"
+step "5/15  Six live scenarios ×3"
 for i in 1 2 3; do
   run "live scenarios, loop $i"    03-live-scenarios.php 'RESULT: 12 passed, 0 failed'
 done
-step "6/14  Multi-UUID clinic identity (the reported ticket)"
+step "6/15  Multi-UUID clinic identity (the reported ticket)"
 run "multi-UUID clinic"            05-multi-uuid-clinic.php 'RESULT: 14 passed, 0 failed'
-step "7/14  Cancelled bookings free the hour"
+step "7/15  Cancelled bookings free the hour"
 run "cancelled frees slot"       06-cancelled-frees-slot.php 'RESULT: 8 passed, 0 failed'
-step "8/14  Order status is the source of truth (stale-copy guard)"
+step "8/15  Order status is the source of truth (stale-copy guard)"
 run "order status truth"        07-order-status-truth.php 'RESULT:'
-step "9/14 Capacity consistency (identity, strictness, no N+1)"
+step "9/15 Capacity consistency (identity, strictness, no N+1)"
 run "capacity consistency"      08-capacity-consistency.php 'RESULT:'
-step "10/14 Cancellation paths (customer, specialist, admin, refund, trash, rebook)"
+step "10/15 Cancellation paths (customer, specialist, admin, refund, trash, rebook)"
 run "cancellation paths"       09-cancellation-paths.php 'RESULT:'
-step "11/14 Conflict policy (room vs any, 6 scenarios × 2 modes, isolated processes)"
+step "11/15 Conflict policy (room vs any, 6 scenarios × 2 modes, isolated processes)"
 if bash "$HERE/php/10-conflict-driver.sh" > /tmp/conflict-policy.log 2>&1; then
   csum="$(grep -a 'CONFLICT-POLICY RESULT:' /tmp/conflict-policy.log | tail -1 | sed 's/^ *//')"
   printf '  \033[32mPASS\033[0m  %s\n' "$csum"
@@ -63,11 +63,13 @@ else
   sed -n '1,40p' /tmp/conflict-policy.log
   fail=1
 fi
-step "12/14 Settings save hardening (policy value whitelist, capability gate)"
+step "12/15 Settings save hardening (policy value whitelist, capability gate)"
 run "settings save"             11-admin-save.php 'RESULT: 14 passed, 0 failed'
-step "13/14 Stale-session guard (false «قبلاً رزرو دارد» regression)"
+step "13/15 Stale-session guard (false «قبلاً رزرو دارد» regression)"
 run "stale session"              12-stale-session.php 'RESULT: 13 passed, 0 failed'
-step "14/14 Shipped version-check.php"
+step "14/15 Abandoned checkout releases its hour (no permanent lock)"
+run "abandoned checkout"         13-abandoned-checkout.php 'RESULT: 11 passed, 0 failed'
+step "15/15 Shipped version-check.php"
 vc="$(cd "$RUN" && node run.mjs "$HERE/php/04-version-check.php" 2>&1 | sed 's/<[^>]*>/ /g')"
 vc_pass="$(printf '%s' "$vc" | grep -c 'PASS')"
 vc_fail="$(printf '%s' "$vc" | grep -c 'FAIL')"
@@ -78,7 +80,7 @@ printf '  assertions: %s PASS / %s FAIL\n' "$vc_pass" "$vc_fail"
 
 printf '\n'
 if [ "$fail" = "0" ]; then
-  printf '\033[1;32mALL SUITES GREEN\033[0m — 19 doctor + 12×3 live + 14 multi-UUID + 8 cancelled + 12 conflict-policy + 14 settings-save + 13 stale-session + %s version-check assertions\n' "$vc_pass"
+  printf '\033[1;32mALL SUITES GREEN\033[0m — 19 doctor + 12×3 live + 14 multi-UUID + 8 cancelled + 12 conflict-policy + 14 settings-save + 13 stale-session + 11 abandoned-checkout + %s version-check assertions\n' "$vc_pass"
 else
   printf '\033[1;31mFAILURES PRESENT\033[0m\n'
 fi

@@ -3,6 +3,19 @@
 All notable changes to the Room Capacity module are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [1.0.3] — 2026-11-20
+
+### Fixed
+- **«اصلا کلا برای هیچ متخصصی اجازه رزرو نمیده» — no specialist could be booked at all, while every specialist's appointment list was empty.** Two independent causes; the second is new here.
+  - **Abandoned checkouts pinned hours forever.** The customer reaches checkout, the parent INSERTs the booking row, then the payment fails or the tab closes. The row sits at `pending`/`on-hold`. The parent has a cron that cancels those after 30 minutes — but this module cannot assume it runs (wp-cron disabled, no traffic to trigger it, purged schedule). When it does not run, the unpaid row held its hour indefinitely, and it is *invisible* in the appointments list because the parent filters `pending` out. Every abandoned attempt pinned one more hour, so the damage grew with use. `row_holds_slot()` now releases a `pending`/`on-hold` row older than `abandoned_checkout_ttl()` (default 2 h — 4× the parent's window, filterable, floored at 30 min so it can never be set to "hold forever").
+  - **Real appointments are still never released by age.** `processing`, `completed`, and any status outside `pending`/`on-hold` hold exactly as before, so no double-booking path was opened.
+  - **`created_at` was missing from three SELECTs** that feed `row_holds_slot()`. The age guard could not read the clock and silently answered "still holding" — the fix looked correct and did nothing. Caught by the new suite, not by inspection.
+  - **`created_at` carries no timezone, and the parent has written it both ways** (UTC via its ORM, site-local via `current_time()`). Reading it as the wrong zone shifts the age by the host's UTC offset, which on this site is 3.5 h — enough to release live payments or pin dead ones. The guard now takes the *later* of the two interpretations, so a mismatch can only extend a hold, never cut one short. An unreadable timestamp keeps holding (fail closed).
+
+### Added
+- Test suite `13-abandoned-checkout.php` (11 assertions) wired into `verify.sh` as step 14/15.
+- `version-check.php`: two assertions for the above (34 total). One of them drives `row_holds_slot()` with two rows differing only in age, so a regression in the timestamp path fails on the host rather than shipping silently.
+
 ## [1.0.2] — 2026-11-20
 
 ### Fixed
