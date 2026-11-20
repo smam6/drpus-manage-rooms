@@ -3,6 +3,63 @@
 All notable changes to the Room Capacity module are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [1.0.6] — 2026-11-06
+
+### Fixed — a diagnostic that cried wolf
+
+Reported from a live install, alongside the message «این متخصص در این ساعت قبلاً رزرو
+دارد»:
+
+> Cancelled bookings on this site really free their hour
+> 1 cancelled booking(s) still block an hour: book #133 (2026-11-26 13:00:00) **FAIL**
+
+That row was **correctly released**. The check was wrong, in three separate ways, and
+all three are the same mistake: it asked a broader question than the one it meant.
+
+1. **The "peer" query did not expand the clinic.** It filtered `office_id = <one
+   spelling>` while the counters expand a clinic to *all* of its identifiers — the
+   numeric post id plus every custom-office UUID that belongs to the same clinic. A
+   live booking filed under the other spelling was therefore invisible to the peer
+   query and visible to the counter, so a perfectly normal hour read as "blocked by
+   the cancelled row".
+2. **The peer query ignored the specialist.** A *different* specialist holding the
+   same hour is not the cancelled row blocking anything — an hour may hold several
+   specialists up to the room capacity.
+3. **It asked the clinic-agnostic question.** `specialist_already_booked()` with no
+   clinic deliberately returns true when that specialist is booked at *another* clinic
+   at that hour. That is the correct answer to "is this person busy?", and the wrong
+   answer to "did this cancelled row keep its hour?".
+
+The diagnostic now calls a new `peer_holds_slot()`, which asks the *same*
+`row_holds_slot()` predicate the booking flow uses, scoped to the specialist and
+excluding the row under judgement. A diagnostic can no longer disagree with the
+checkout about what counts as a conflict — which was the only way this class of false
+alarm could happen.
+
+### Verified: the reported message had a different cause
+
+The same data was used to rule the cancelled row out of the customer-facing message.
+Driving every row status through the real guard:
+
+| row status | blocks its specialist |
+|---|---|
+| `pending`, `on-hold`, `processing`, `completed` | yes |
+| `cancelled`, `refunded`, `failed`, `trash`, `checkout-draft` | **never** |
+
+So a cancelled booking cannot produce «این متخصص در این ساعت قبلاً رزرو دارد». The
+message comes from a *live* row on that hour, and the most likely one on a date in the
+future is an abandoned checkout still inside its two-hour window — which this module
+keeps on purpose, because a payment may genuinely be in flight. It releases itself
+after `abandoned_checkout_ttl()` (2 h by default); there is nothing to fix.
+
+### Added
+- `18-cancelled-hour.php` (10 assertions), wired into `verify.sh` as step 18/19. It
+  pins **both** directions: the cancelled row must be released *and* the predicate must
+  still report a live holder as a conflict. A check that always passes is worse than one
+  that always fails, so every "no leak" assertion is paired with a case that must be
+  flagged if the predicate ever stops discriminating.
+- `verify.sh` is now 19 steps.
+
 ## [1.0.5] — 2026-11-06
 
 Pre-delivery audit. No behaviour changed in the runtime code — 1.0.4 was already correct

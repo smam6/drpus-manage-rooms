@@ -1718,6 +1718,66 @@ class DrPlus_Child_Capacity_Repository {
 	}
 
 	/**
+	 * Does any OTHER row legitimately hold this specialist at this hour?
+	 *
+	 * The narrow, honest question a diagnostic needs when it is judging one specific
+	 * booking row: "has this row's hour really been freed, or is something else keeping
+	 * this specialist busy?" It deliberately:
+	 *
+	 *   * EXCLUDES the row under judgement, so a cancelled row can never keep itself alive;
+	 *   * scopes by SPECIALIST, not clinic — one person cannot be in two rooms, so a
+	 *     booking at another clinic counts (this is why specialist_already_booked() is
+	 *     clinic-agnostic too);
+	 *   * uses row_holds_slot(), the same predicate the booking flow uses, so a diagnostic
+	 *     can never disagree with the checkout about what a conflict is.
+	 *
+	 * A previous version of the version-check page compared `office_id` strings directly
+	 * here. Because a clinic can be filed under a numeric post id AND under per-specialist
+	 * custom-office UUIDs, a live booking under the other spelling was invisible and a
+	 * correctly-released row was reported as a leak.
+	 *
+	 * @param int    $book_id      Row to ignore (the one being judged).
+	 * @param int    $specialist_id Specialist whose hour is in question.
+	 * @param string $date         Normalized Y-m-d.
+	 * @param string $start_time   Normalized H:i:s.
+	 * @return bool
+	 */
+	public static function peer_holds_slot( $book_id, $specialist_id, $date, $start_time ) {
+		global $wpdb;
+
+		$book_id       = (int) $book_id;
+		$specialist_id = (int) $specialist_id;
+		$date          = self::assert_queryable_date( $date );
+		$start_time    = self::normalize_time( $start_time );
+
+		if ( $specialist_id <= 0 || '' === $date || '' === $start_time ) {
+			return false;
+		}
+
+		$statuses     = self::EXCLUDED_STATUSES;
+		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+
+		$sql = "SELECT book_id, order_status, order_id, created_at FROM " . self::booking_table() .
+			" WHERE specialist_id = %d AND `date` = %s AND start_time = %s AND deleted = 0 AND " .
+			self::active_status_predicate( $placeholders );
+
+		$bind = array_merge( array( $specialist_id, $date, $start_time ), $statuses );
+		if ( $book_id > 0 ) {
+			$sql .= ' AND book_id <> %d';
+			$bind[] = $book_id;
+		}
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $bind ), ARRAY_A );
+		foreach ( (array) $rows as $row ) {
+			if ( self::row_holds_slot( $row ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Write `cancelled` onto a booking row whose hold has expired, so every reader agrees.
 	 *
 	 * Called from row_holds_slot() when a row's age crosses the abandoned-checkout TTL.

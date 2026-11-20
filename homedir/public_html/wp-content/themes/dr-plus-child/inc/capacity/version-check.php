@@ -356,6 +356,30 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 		ARRAY_A
 	);
 
+	// WHAT THIS CHECK MUST NOT DO.
+	//
+	// A previous version of this block asked two questions that are not the same
+	// question, and failed on sites where nothing was wrong. It reported
+	// «1 cancelled booking(s) still block an hour: book #133 (2026-11-26 13:00:00)»
+	// on a site where that row was correctly released. Three separate mistakes:
+	//
+	//   1. The "peer" query filtered `office_id = <one spelling>`, but the counters
+	//      expand a clinic to ALL of its identifiers (numeric post id plus every
+	//      custom-office UUID for the same clinic). A live booking filed under the
+	//      other spelling was invisible to the peer check and visible to the counter,
+	//      so a perfectly normal hour read as "blocked by the cancelled row".
+	//   2. The peer query ignored `specialist_id`. A DIFFERENT specialist holding the
+	//      same hour is not the cancelled row blocking anything — an hour may hold
+	//      several specialists up to the room capacity.
+	//   3. It called specialist_already_booked() without a clinic, which is the
+	//      deliberately clinic-agnostic form: a specialist with a booking at ANOTHER
+	//      clinic at that hour legitimately makes it true, and that is correct
+	//      behaviour, not a leak.
+	//
+	// The honest question is narrow: does THIS cancelled row, on its own, still hold
+	// its hour? peer_holds_slot() answers exactly that by asking the repository's own
+	// predicate about every other row on the same hour — so this check can never
+	// disagree with the booking flow about what counts as a conflict.
 	$drplus_capacity_vc_leaking = array();
 	$drplus_capacity_vc_checked = 0;
 	foreach ( (array) $drplus_capacity_vc_cancelled_rows as $drplus_capacity_vc_row ) {
@@ -363,37 +387,32 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 		if ( '' === $drplus_capacity_vc_date ) {
 			continue; // Unusable date is not a capacity fact.
 		}
-		// Anything OTHER than this cancelled row still on the slot?
-		$drplus_capacity_vc_peers = (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$drplus_capacity_vc_table}
-				 WHERE office_id = %s AND `date` = %s AND start_time = %s
-				   AND deleted = 0 AND book_id <> %d
-				   AND LOWER(TRIM(order_status)) NOT IN
-				       ('cancelled','canceled','wc-cancelled','wc-canceled','refunded','wc-refunded','failed','wc-failed','trash','checkout-draft')",
-				$drplus_capacity_vc_row['office_id'],
-				$drplus_capacity_vc_date,
-				$drplus_capacity_vc_row['start_time'],
-				$drplus_capacity_vc_row['book_id']
-			)
-		);
-		if ( $drplus_capacity_vc_peers > 0 ) {
-			continue; // Another live booking legitimately holds the slot.
-		}
-		$drplus_capacity_vc_checked++;
-		$drplus_capacity_vc_count = DrPlus_Child_Capacity_Repository::count_distinct_specialists(
-			$drplus_capacity_vc_row['office_id'],
+
+		// Does anything ELSE legitimately hold this row's specialist at this hour?
+		// Any clinic qualifies: one person cannot be in two rooms, which is why the
+		// specialist check is clinic-agnostic in the first place.
+		if ( DrPlus_Child_Capacity_Repository::peer_holds_slot(
+			(int) $drplus_capacity_vc_row['book_id'],
+			(int) $drplus_capacity_vc_row['specialist_id'],
 			$drplus_capacity_vc_date,
 			$drplus_capacity_vc_row['start_time']
-		);
+		) ) {
+			continue; // Another live booking legitimately holds this specialist.
+		}
+
+		$drplus_capacity_vc_checked++;
+
+		// The cancelled row must not occupy its own specialist. This is the only
+		// question that matters, and it is the same predicate the checkout uses.
 		$drplus_capacity_vc_locked = DrPlus_Child_Capacity_Repository::specialist_already_booked(
 			(int) $drplus_capacity_vc_row['specialist_id'],
 			$drplus_capacity_vc_date,
 			$drplus_capacity_vc_row['start_time']
 		);
-		if ( 0 !== $drplus_capacity_vc_count || $drplus_capacity_vc_locked ) {
+		if ( $drplus_capacity_vc_locked ) {
 			$drplus_capacity_vc_leaking[] = 'book #' . $drplus_capacity_vc_row['book_id']
-				. ' (' . $drplus_capacity_vc_date . ' ' . $drplus_capacity_vc_row['start_time'] . ')';
+				. ' (specialist ' . (int) $drplus_capacity_vc_row['specialist_id'] . ', '
+				. $drplus_capacity_vc_date . ' ' . $drplus_capacity_vc_row['start_time'] . ')';
 		}
 	}
 
@@ -404,7 +423,8 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 			? 'no cancelled bookings in this database — nothing to check'
 			: ( empty( $drplus_capacity_vc_leaking )
 				? $drplus_capacity_vc_checked . ' cancelled booking(s) checked against the real table — every one released its slot'
-				: count( $drplus_capacity_vc_leaking ) . ' cancelled booking(s) still block an hour: ' . implode( ', ', array_slice( $drplus_capacity_vc_leaking, 0, 5 ) ) )
+				: count( $drplus_capacity_vc_leaking ) . ' cancelled booking(s) STILL BLOCK their own specialist: ' . implode( ', ', array_slice( $drplus_capacity_vc_leaking, 0, 5 ) )
+					. ' — this is a real fault: report these book ids' )
 	);
 
 	// --- the copied order_status can go stale ----------------------------------------
