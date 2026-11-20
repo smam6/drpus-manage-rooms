@@ -3,6 +3,33 @@
 All notable changes to the Room Capacity module are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [1.0.4] — 2026-11-06
+
+### Fixed — defects introduced by 1.0.3, and the workflow gaps behind them
+
+1.0.3 fixed the reported symptom and, in doing so, created a worse one. This release
+starts from the operator's real database and follows the whole journey — book, abandon,
+pay, cancel, expire, rebook — rather than the one case that was reported.
+
+- **A PAID appointment was released after two hours, so the same specialist could be booked twice.** 1.0.3 decided "abandoned checkout" by reading `drplus_booking.order_status`. But that column is written **once**, when the parent INSERTs the row — which happens *before* the gateway settles — and nothing in the parent ever updates it on payment. The normal happy path is therefore `row.order_status = 'pending'` while `order.status = 'processing'`. After the TTL, 1.0.3 saw `pending`, called it abandoned, and handed a **paid** hour back to the pool: two patients, one room, both charged. Reproduced on a rebuilt database (the slot reopened at exactly 120 minutes) and present in the operator's own data (`book #61` / order `#2947`). The predicate now asks the **order** before calling anything abandoned; a row only counts as an unfinished checkout when the order is also still unpaid.
+- **`on-hold` was about to become a permanent hold.** WooCommerce's `on-hold` means "waiting for payment", so it must remain releasable by age. Treating it as paid made an abandoned manual/BACS checkout pin its hour forever — the original bug in a new costume. Caught by the existing suite, which failed on the first attempt at the fix.
+- **A hand-entered appointment (no order) was erased after two hours.** The TTL exists for checkouts, and a checkout row always has an order. A row with `order_id = 0` is an appointment the operator typed in or an import; there is no payment to time out. The site's database contains one, and its hour was being silently released. The TTL now applies only to rows that actually came from a checkout.
+- **One clinic took two different booking locks.** Counting collapses a clinic's numeric id and its custom-office UUIDs onto one canonical id, but the lock hashed whatever string it was handed. Two customers booking the same hour through different spellings of the same clinic took two different `GET_LOCK` names, both passed the capacity count concurrently, and the clinic accepted `capacity + 1`. Only the compensating rollback stopped it — and that rollback **cancels the customer's paid order with no refund path**. The lock is now derived from the same canonical id the counter uses, so lock and count agree by construction.
+- **The grid and the checkout disagreed about which hours are taken.** `count_day_slots()` (which builds the day picker) was a bare `COUNT(DISTINCT specialist_id)` in SQL. That form cannot call `row_holds_slot()` — it never selects `created_at` or `order_id`, which is exactly what the predicate needs — so every case the predicate releases still counted as taken on the grid, and every case it keeps could be under-counted. Proven divergences on a rebuilt database: a 4-hour-old abandoned `pending`, a stale copied status, and a row pointing at a non-existent order each reported `grid = 1, checkout = 0`. The symptom is the reported one: a day whose hours are missing from the picker. Both surfaces now run the same row-level predicate.
+- **Released rows kept masquerading as appointments.** Releasing the hour inside this module is only half the job: the parent's appointments list, dashboard counters and per-specialist counts filter the copied column directly. Five abandoned attempts at one hour produced **five phantom appointments** in the operator's list; a sixth that really was paid made six, with no way to tell which was real. An expired hold now marks its row `cancelled` (and cancels the still-unpaid order), so every reader agrees. Verified: 5 phantoms → 0, the real appointment untouched.
+- **`created_at` was still missing from three SELECTs.** 1.0.3 fixed three call sites; three more (`count_day_slots`, `specialist_booked_slots_for_day`, `conflict rows`) selected the status and the order but not the row id or clock, so the retirement step could not identify the row it had just decided to free. Same class of defect, same fix: select the columns the predicate consumes.
+- **A compact date was read as a Unix timestamp.** `20271201` is numeric, so it went through the timestamp path and became **`1970-08-23`** — a date in the past, where the capacity check finds nothing and allows the booking. A booking for 2027-12-01 therefore passed with no room check at all. Eight-digit values that form a real calendar date are now read as dates; `raw_date` still declares itself explicitly as a timestamp.
+
+- **The day grid re-did per-request work once per ROW.** `resolve_clinic_identifiers()` re-read the specialists table and the posts/postmeta alias index for every row, so a 300-row day issued 9 identical read pairs instead of one. Not a correctness bug, but it multiplies a fixed cost by the number of bookings in a day — the number that grows with the clinic's success. Measured on a rebuilt database: 30 rows went from 30 queries to 12, and a 300-row day renders in 91 queries instead of 120+. Order lookups are cached per request too, and the cache is flushed after any status write this module makes.
+
+### Changed
+- `woocommerce_order_status_changed` now copies the order's status onto its booking rows. The capacity predicates still ask the order directly (they must not depend on this hook), so this is a repair of the drifted column, not a new dependency. It is what keeps the parent's lists and the parent's own cron honest.
+- Test suite `13-abandoned-checkout.php` grew from 11 to 28 assertions, covering every defect above with the exact shape that reproduced it.
+- New suite `15-lifecycle.php` (12 assertions) walks one hour through book → abandon → pay → full → cancel → expire → rebook and asserts the capacity answer at every step.
+- New suite `16-query-budget.php` (3 assertions) pins the query cost of one day-grid render, so the per-row regression cannot come back unnoticed.
+- `verify.sh` is now 17 steps.
+- `version-check.php`: 36 assertions (was 33). The new ones drive the real predicates — an aliased clinic must take one lock, a paid order must never be released by age, a hand-entered row must never be aged out.
+
 ## [1.0.3] — 2026-11-20
 
 ### Fixed

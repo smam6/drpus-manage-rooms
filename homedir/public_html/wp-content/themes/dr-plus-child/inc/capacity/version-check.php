@@ -457,6 +457,77 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 	}
 	$drplus_capacity_vc_assert( 'Specialist id is recoverable when the cart omits it', $drplus_capacity_vc_rescue_ok, $drplus_capacity_vc_rescue_msg );
 
+	// ---- One clinic, one lock -----------------------------------------------------------
+	// Counting collapses a clinic's numeric id and its custom-office UUIDs onto one canonical
+	// id; the lock used to hash the raw string it was handed. Two customers booking the same
+	// hour through different spellings therefore took two different MySQL locks, both passed
+	// the capacity count, and the clinic accepted capacity+1 — caught only by the compensating
+	// rollback, which cancels a paid order with no refund path.
+	$drplus_capacity_vc_lock_clinic = (string) DrPlus_Child_Capacity_Repository::sample_aliased_clinic();
+	$drplus_capacity_vc_lock_parity = true;
+	$drplus_capacity_vc_lock_msg    = 'no clinic has more than one identifier in this database — nothing to compare';
+	if ( '' !== $drplus_capacity_vc_lock_clinic ) {
+		$drplus_capacity_vc_lock_ids = DrPlus_Child_Capacity_Repository::resolve_clinic_identifiers( $drplus_capacity_vc_lock_clinic );
+		if ( count( $drplus_capacity_vc_lock_ids ) > 1 ) {
+			$drplus_capacity_vc_lock_base = DrPlus_Child_Capacity_Lock_Manager::build_lock_name( (string) $drplus_capacity_vc_lock_ids[0], '2027-01-01', '10:00:00' );
+			foreach ( $drplus_capacity_vc_lock_ids as $drplus_capacity_vc_one_id ) {
+				if ( DrPlus_Child_Capacity_Lock_Manager::build_lock_name( (string) $drplus_capacity_vc_one_id, '2027-01-01', '10:00:00' ) !== $drplus_capacity_vc_lock_base ) {
+					$drplus_capacity_vc_lock_parity = false;
+					$drplus_capacity_vc_lock_msg    = 'identifier ' . $drplus_capacity_vc_one_id . ' and ' . $drplus_capacity_vc_lock_ids[0] . ' resolve to the same clinic but take different locks — concurrent bookings of that clinic can exceed capacity';
+					break;
+				}
+			}
+			if ( $drplus_capacity_vc_lock_parity ) {
+				$drplus_capacity_vc_lock_msg = count( $drplus_capacity_vc_lock_ids ) . ' identifier(s) of clinic ' . $drplus_capacity_vc_lock_clinic . ' all share one lock';
+			}
+		}
+	}
+	$drplus_capacity_vc_assert( 'Every identifier of one clinic takes the same lock', $drplus_capacity_vc_lock_parity, $drplus_capacity_vc_lock_msg );
+
+	// ---- A paid appointment is never released by the abandoned-checkout TTL --------------
+	// The copied `order_status` is written before the gateway settles, so the happy path is
+	// row=pending with order=processing. Reading the row alone released a PAID hour at the
+	// TTL, letting the same specialist be booked twice. Drive the predicate with exactly that
+	// shape and require it to hold.
+	//
+	// The orderless case is the mirror image and is checked separately: a row with no order
+	// was never a checkout, so the TTL must NOT touch it — releasing it would erase an
+	// operator's hand-entered appointment after two hours.
+	$drplus_capacity_vc_orderless_holds = DrPlus_Child_Capacity_Repository::row_holds_slot(
+		array(
+			'book_id'      => 0,
+			'order_status' => 'pending',
+			'order_id'     => 0,           // hand-entered appointment / import
+			'created_at'   => gmdate( 'Y-m-d H:i:s', time() - 6 * HOUR_IN_SECONDS ),
+		)
+	);
+	$drplus_capacity_vc_assert(
+		'A hand-entered appointment is never aged out by the checkout TTL',
+		true === $drplus_capacity_vc_orderless_holds,
+		$drplus_capacity_vc_orderless_holds
+			? 'an orderless pending row keeps its hour however old it is, so a walk-in the operator entered by hand cannot silently vanish'
+			: 'an orderless pending row 6 h old was RELEASED — a hand-entered appointment disappears from the capacity picture after two hours'
+	);
+
+	// The mirror case: a row that belongs to a REAL, PAID order must hold at any age.
+	$drplus_capacity_vc_real_order = DrPlus_Child_Capacity_Repository::first_paid_order_id();
+	$drplus_capacity_vc_paid_ok    = true;
+	$drplus_capacity_vc_paid_msg   = 'no paid order in this database — nothing to check';
+	if ( $drplus_capacity_vc_real_order > 0 ) {
+		$drplus_capacity_vc_paid_ok = DrPlus_Child_Capacity_Repository::row_holds_slot(
+			array(
+				'book_id'      => 0,
+				'order_status' => 'pending', // deliberately stale, exactly like the real bug
+				'order_id'     => $drplus_capacity_vc_real_order,
+				'created_at'   => gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS ),
+			)
+		);
+		$drplus_capacity_vc_paid_msg = $drplus_capacity_vc_paid_ok
+			? 'a row pointing at paid order #' . $drplus_capacity_vc_real_order . ' holds its hour even 30 days old with a stale pending copy'
+			: 'a row pointing at PAID order #' . $drplus_capacity_vc_real_order . ' was RELEASED — this frees a booked appointment and allows double-booking';
+	}
+	$drplus_capacity_vc_assert( 'A paid appointment is never released by age', $drplus_capacity_vc_paid_ok, $drplus_capacity_vc_paid_msg );
+
 	// ---- The false «قبلاً رزرو دارد» fix -----------------------------------------------
 	// The reported bug: the customer picks specialist B, a stale
 	// $_SESSION['booking']['specialist_id'] still holds A, A happens to be booked at that
@@ -549,11 +620,26 @@ if ( ! $drplus_capacity_vc_classes_ready ) {
 		$drplus_capacity_vc_old   = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp', true ) - ( $drplus_capacity_vc_ttl + 3600 ) );
 		$drplus_capacity_vc_new   = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp', true ) - 60 );
 
-		$drplus_capacity_vc_probe = function ( $created ) {
+		// THE PROBE NEEDS A REAL UNPAID ORDER.
+		//
+		// An orderless row (order_id = 0) is deliberately NOT subject to the TTL: it was
+		// never a checkout, so there is no payment to time out. If this probe used one, it
+		// would be asserting the opposite of the intended behaviour and would silently pin
+		// the wrong contract. A real order id is created here, left unpaid, and the row is
+		// pointed at it — which is exactly the shape the guard is meant to age out.
+		$drplus_capacity_vc_probe_order = 0;
+		if ( function_exists( 'wc_create_order' ) ) {
+			$drplus_capacity_vc_probe_order = wc_create_order();
+			$drplus_capacity_vc_probe_order->set_status( 'pending' );
+			$drplus_capacity_vc_probe_order->save();
+			$drplus_capacity_vc_probe_order = (int) $drplus_capacity_vc_probe_order->get_id();
+		}
+
+		$drplus_capacity_vc_probe = function ( $created ) use ( $drplus_capacity_vc_probe_order ) {
 			return array(
 				'book_id'      => 0,
 				'order_status' => 'pending',
-				'order_id'     => 0, // no order: order_releases_slot() keeps holding, so only the age guard can free it
+				'order_id'     => $drplus_capacity_vc_probe_order, // a real, unpaid order
 				'created_at'   => $created,
 			);
 		};
