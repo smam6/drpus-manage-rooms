@@ -3,6 +3,18 @@
 All notable changes to the Room Capacity module are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [1.0.2] — 2026-11-20
+
+### Fixed
+- **False «این متخصص در این ساعت قبلاً رزرو دارد» for a specialist with no bookings.** Reported by the operator: checkout refused an hour the specialist was free for. Reproduced end to end, then fixed.
+  - Cause: the cart item often arrives without `specialist_id`, so `extract_booking_from_request()` fell through to the session. `$_SESSION['booking']['specialist_id']` still held the *previous* doctor — the parent only rewrites it when the booking wizard runs again, and going back one step and then straight to checkout skips that. The module checked the stale doctor, found **that** doctor's booking, and blamed the one the customer had actually chosen.
+  - Fix: an id taken from the session is now marked `specialist_id_is_inferred`. It still counts towards room capacity, but a conflict is never reported against it — the customer sees the «متخصص این نوبت مشخص نشد…» notice, which asks them to re-select the specialist and actually repairs the state. A genuine booking against a specialist the cart *does* name is still refused exactly as before, so no double-booking path was opened.
+  - Also fixed: when the cart and the session name different specialists, the cart now wins. It is customer-authored; the session is a leftover.
+- `version-check.php` gained three assertions for the above (32 total), driving the real rescue rather than grepping for the flag name.
+
+### Added
+- `tools/host-probe/why-blocked.php` (not shipped in the theme zip): a read-only admin diagnostic that prints every booking row for a given day with the exact reason it holds or frees the slot, plus the query the validator runs. For pinning any future refusal to a specific `book_id` instead of guessing.
+
 ## [1.0.1] — 2026-11-07
 
 ### Fixed
