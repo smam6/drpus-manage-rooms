@@ -3,6 +3,36 @@
 All notable changes to the Room Capacity module are documented here.
 Format follows Keep a Changelog; versions follow SemVer.
 
+## [1.0.5] — 2026-11-06
+
+Pre-delivery audit. No behaviour changed in the runtime code — 1.0.4 was already correct
+on every case below. What was missing was a test that proves the *operator's own number*
+reaches the checkout decision, so this release adds one and records what it found.
+
+### Added
+- `17-capacity-assignment.php` (12 assertions), wired into `verify.sh` as step 17/18. It
+  walks the real accept/refuse verdict through `validate_booking_capacity()` rather than
+  asserting predicates, for the whole matrix an operator cares about: an empty room
+  accepts, one-of-two accepts, a full room refuses, the same specialist cannot double-book,
+  a full hour does not block another slot or another day, an online visit is exempt,
+  cancelling frees a place, and — the case that matters most for an operator — setting the
+  capacity to 1 refuses a second booking while raising it to 3 accepts one.
+- `verify.sh` is now 18 steps.
+
+### Notes
+- Writing that test produced a false alarm worth recording, because from the outside it
+  looks exactly like the reported bug: a first draft called the validator in a loop and
+  reported "capacity 2 refuses the second booking". The cause was the test. Layer 1 takes
+  the booking lock and expects `post_insert_verify_and_release()` to release it after the
+  parent's INSERT; a loop that never fires that hook leaves the lock held, and every call
+  after the first fails closed as "could not acquire lock". Releasing between calls — what
+  a real request does — gives the correct verdicts. **A lock that fails closed is
+  indistinguishable from a capacity bug from the operator's side**, and would be reported
+  as "it refuses bookings it should allow".
+- Audited against the operator's own database: 90 probes across two specialists, five
+  dates and nine hours returned zero blocked slots, and zero booking rows disagreeing with
+  their WooCommerce order (the drift that 1.0.4 fixed is absent from the data).
+
 ## [1.0.4] — 2026-11-06
 
 ### Fixed — defects introduced by 1.0.3, and the workflow gaps behind them
