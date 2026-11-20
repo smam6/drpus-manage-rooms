@@ -235,7 +235,26 @@ class DrPlus_Child_Capacity_Lock_Manager {
 	 * @return string 44-char lock name ('drplus_cap_' . md5).
 	 */
 	public static function build_lock_name( string $office_id, string $date, string $start ): string {
-		return 'drplus_cap_' . md5( $office_id . '|' . $date . '|' . $start );
+		// THE LOCK MUST BE SHARED BY EVERY SPELLING OF THE SAME CLINIC.
+		//
+		// Counting already collapses a clinic's identifiers: resolve_clinic_identifiers()
+		// maps a numeric office id and its custom-office UUIDs onto one canonical id, so
+		// count_distinct_specialists() sees a single clinic. The lock did not, and hashed
+		// whatever string it was handed. Proven consequence:
+		//
+		//   1. two customers book the SAME hour through different spellings of the SAME
+		//      clinic -> two different GET_LOCK names -> both requests pass the capacity
+		//      count concurrently -> the clinic accepts capacity+1;
+		//   2. only the compensating rollback in Layer 2 stopped it, and that rollback
+		//      cancels the customer's PAID order without a refund path.
+		//
+		// Deriving the lock from the same canonical id the counter uses makes the lock and
+		// the count agree by construction. When the identifier does not resolve (empty or
+		// unknown), the raw value is kept so the name stays stable rather than collapsing
+		// every unknown clinic onto one lock.
+		$canonical = DrPlus_Child_Capacity_Repository::canonical_clinic_id( $office_id );
+
+		return 'drplus_cap_' . md5( $canonical . '|' . $date . '|' . $start );
 	}
 
 	/**

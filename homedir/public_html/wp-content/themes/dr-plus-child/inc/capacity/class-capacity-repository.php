@@ -106,6 +106,31 @@ class DrPlus_Child_Capacity_Repository {
 	protected static $office_identity_index = null;
 
 	/**
+	 * Per-request cache of "does this order release its slot?" results.
+	 *
+	 * Building one day of the grid loads every booking row for that day and asks
+	 * order_releases_slot() about each one. Without this cache that is one
+	 * wc_get_order() + one get_post_status() per ROW, which on a busy clinic (320 rows
+	 * measured) was 121 queries and ~420 ms for a single render — and the booking grid
+	 * is on the critical path of every visit to the booking page.
+	 *
+	 * The answer for a given order cannot change within one request, so caching it is
+	 * free of correctness risk. It is keyed by order id and reset with
+	 * DrPlus_Child_Capacity_Repository::flush_order_cache() after any status write this
+	 * module makes, so a hook that cancels an order mid-request is still observed.
+	 *
+	 * @var array<int,bool>
+	 */
+	protected static $order_release_cache = array();
+
+	/**
+	 * Per-request memo of resolve_clinic_identifiers(), keyed by lower-cased identifier.
+	 *
+	 * @var array<string,array>
+	 */
+	protected static $clinic_identifier_memo = array();
+
+	/**
 	 * Read-and-clear the reason recorded by the last specialist check.
 	 *
 	 * @return string '', 'specialist', 'date' or 'time'.
@@ -213,6 +238,25 @@ class DrPlus_Child_Capacity_Repository {
 		$date = trim( (string) $date );
 		if ( '' === $date ) {
 			return '';
+		}
+
+		// A COMPACT YYYYMMDD DATE IS A DATE, NOT AN EPOCH.
+		//
+		// This branch used to run for any numeric string, so `20271201` became the unix
+		// timestamp 20,271,201 = 1970-08-23. That date is in the past, so the capacity
+		// check found nothing there and allowed every booking — the silent-pass bug.
+		//
+		// Only the caller can say a value is genuinely a timestamp (raw_date), so that
+		// stays explicit via $treat_as_number. An eight-digit value that forms a real
+		// calendar date is read as one; anything else numeric keeps the old timestamp
+		// behaviour, which raw_date relies on.
+		if ( ! $treat_as_number && 8 === strlen( $date ) && ctype_digit( $date ) ) {
+			$compact_year  = (int) substr( $date, 0, 4 );
+			$compact_month = (int) substr( $date, 4, 2 );
+			$compact_day   = (int) substr( $date, 6, 2 );
+			if ( self::is_gregorian_date( $compact_year, $compact_month, $compact_day ) ) {
+				return sprintf( '%04d-%02d-%02d', $compact_year, $compact_month, $compact_day );
+			}
 		}
 
 		// Unix timestamp in seconds or milliseconds (raw_date).
@@ -416,7 +460,7 @@ class DrPlus_Child_Capacity_Repository {
 				// release an abandoned checkout here too. Without it the room count keeps
 				// a dead row in the total while checkout releases it — the two layers
 				// would disagree about the same hour.
-				"SELECT specialist_id, order_status, order_id, created_at FROM " . self::booking_table() .
+				"SELECT book_id, specialist_id, order_status, order_id, created_at FROM " . self::booking_table() .
 				" WHERE office_id IN ({$in}) AND `date` = %s AND start_time = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders ),
 				array_merge( $clinic_ids, array( $date, $start ), $statuses )
 			),
@@ -484,11 +528,70 @@ class DrPlus_Child_Capacity_Repository {
 	 * @param string $office_id Office identifier from the booking.
 	 * @return string[] Non-empty list of identifiers, always including $office_id.
 	 */
+	/**
+	 * One stable identifier for a physical clinic, used as the key of the booking lock.
+	 *
+	 * The set returned by resolve_clinic_identifiers() describes every spelling that maps
+	 * to the same clinic, but a lock needs a single deterministic name: whichever spelling
+	 * arrives, the name must be byte-identical. Sorting the resolved set and joining it
+	 * gives exactly that, while staying stable when the alias map later gains an entry
+	 * (the set can only grow, so a lock taken before the change and one taken after would
+	 * still differ — acceptable, because a booking in flight is short-lived and the worst
+	 * case is one extra serialisation point, never a missed one).
+	 *
+	 * When nothing resolves, the raw identifier is returned so an unknown clinic keeps its
+	 * own lock rather than colliding with every other unknown clinic.
+	 *
+	 * @param string $office_id Numeric clinic id or custom-office UUID.
+	 * @return string
+	 */
+	public static function canonical_clinic_id( $office_id ) {
+		$office_id = trim( (string) $office_id );
+		if ( '' === $office_id ) {
+			return '';
+		}
+
+		$identifiers = (array) self::resolve_clinic_identifiers( $office_id );
+		$identifiers = array_filter( array_map( 'strval', $identifiers ), 'strlen' );
+		if ( empty( $identifiers ) ) {
+			return $office_id;
+		}
+
+		sort( $identifiers );
+
+		return implode( ',', $identifiers );
+	}
+
 	public static function resolve_clinic_identifiers( $office_id ) {
 		$office_id = trim( (string) $office_id );
 		if ( '' === $office_id ) {
 			return array( '' );
 		}
+
+		// MEMOISED. The alias map and the office-identity index do not change within one
+		// request, but this method is called once per booking row while building the grid.
+		// Measured on a rebuilt database: 9 identical `drplus_specialists` reads and 9
+		// identical `posts`/`postmeta` reads for 30 rows, purely from re-resolving the same
+		// clinic. The computation is pure, so caching it cannot change an answer.
+		$memo_key = strtolower( $office_id );
+		if ( isset( self::$clinic_identifier_memo[ $memo_key ] ) ) {
+			return self::$clinic_identifier_memo[ $memo_key ];
+		}
+
+		$resolved = self::compute_clinic_identifiers( $office_id );
+
+		self::$clinic_identifier_memo[ $memo_key ] = $resolved;
+
+		return $resolved;
+	}
+
+	/**
+	 * The uncached body of resolve_clinic_identifiers(). See that method for the reasoning.
+	 *
+	 * @param string $office_id Trimmed, non-empty office identifier.
+	 * @return array
+	 */
+	protected static function compute_clinic_identifiers( $office_id ) {
 
 		// normalize_to_clinic: every identifier for one physical clinic collapses to a single
 		// count set, so a clinic is never counted two ways depending on which entry point the
@@ -1071,16 +1174,54 @@ class DrPlus_Child_Capacity_Repository {
 
 		$in           = implode( ',', array_fill( 0, count( $clinic_ids ), '%s' ) );
 		$placeholders = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+
+		// ROWS, NOT COUNT(DISTINCT ...). This is the grid/checkout parity bug.
+		//
+		// This method feeds the booking grid; count_distinct_specialists() feeds the
+		// checkout gate. They must never disagree, and the SQL aggregate made them disagree
+		// in three proven ways:
+		//
+		//   * an abandoned (older-than-TTL) pending row counted here but not there,
+		//   * a stale copied `order_status` counted here but not there,
+		//   * a row whose order_id does not exist counted here but not there,
+		//
+		// because a COUNT(DISTINCT specialist_id) cannot call row_holds_slot(): it never
+		// sees `created_at` or `order_id`, which is exactly what that predicate needs.
+		//
+		// The symptom the operator reports is a grid that hides free hours (the slot is
+		// counted as taken here, then the checkout happily accepts the very same hour — or
+		// worse, refuses a slot the grid offered). Either way the two surfaces contradict
+		// each other, and the contradiction is the bug. Selecting the rows and applying the
+		// one shared predicate makes parity structural rather than something to remember.
 		$sql = $wpdb->prepare(
-			"SELECT start_time, COUNT(DISTINCT specialist_id) AS cnt FROM " . self::booking_table() .
-			" WHERE office_id IN ({$in}) AND `date` = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders ) . " GROUP BY start_time",
+			"SELECT book_id, start_time, specialist_id, order_status, order_id, created_at FROM " . self::booking_table() .
+			" WHERE office_id IN ({$in}) AND `date` = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders ) .
+			" ORDER BY start_time",
 			array_merge( $clinic_ids, array( $date ), $statuses )
 		);
-		$rows  = $wpdb->get_results( $sql, ARRAY_A );
-		$map   = array();
+		$rows = $wpdb->get_results( $sql, ARRAY_A );
+
+		$map    = array();
+		$seen   = array();
 		foreach ( (array) $rows as $row ) {
-			$map[ $row['start_time'] ] = (int) $row['cnt'];
+			$slot = $row['start_time'];
+
+			// ONE specialist can only occupy a slot once: dedupe exactly like
+			// COUNT(DISTINCT specialist_id) did, but only after the row has passed the
+			// same test the checkout gate applies.
+			if ( ! self::row_holds_slot( $row ) ) {
+				continue;
+			}
+
+			$specialist = (int) $row['specialist_id'];
+			if ( isset( $seen[ $slot ][ $specialist ] ) ) {
+				continue;
+			}
+			$seen[ $slot ][ $specialist ] = true;
+
+			$map[ $slot ] = isset( $map[ $slot ] ) ? $map[ $slot ] + 1 : 1;
 		}
+
 		return $map;
 	}
 
@@ -1126,7 +1267,7 @@ class DrPlus_Child_Capacity_Repository {
 		// created_at travels with start_time for the same reason as above: the grid
 		// must hide exactly the hours checkout refuses, and the age guard lives in
 		// row_holds_slot(), which both paths share.
-		$sql  = "SELECT start_time, order_status, order_id, created_at FROM " . self::booking_table() .
+		$sql  = "SELECT book_id, start_time, order_status, order_id, created_at FROM " . self::booking_table() .
 			" WHERE specialist_id = %d AND `date` = %s AND deleted = 0 AND " . self::active_status_predicate( $placeholders );
 		$bind = array_merge( array( $specialist_id, $date ), $statuses );
 
@@ -1201,6 +1342,36 @@ class DrPlus_Child_Capacity_Repository {
 			return false;
 		}
 
+		if ( array_key_exists( $order_id, self::$order_release_cache ) ) {
+			return self::$order_release_cache[ $order_id ];
+		}
+
+		$result = self::compute_order_releases_slot( $order_id );
+
+		self::$order_release_cache[ $order_id ] = $result;
+
+		return $result;
+	}
+
+	/**
+	 * Drop the per-request order cache.
+	 *
+	 * Called after this module writes a status it later reads through the cache, so the
+	 * write is observed immediately rather than one request late.
+	 *
+	 * @return void
+	 */
+	public static function flush_order_cache() {
+		self::$order_release_cache = array();
+	}
+
+	/**
+	 * The uncached body of order_releases_slot(). See that method for the reasoning.
+	 *
+	 * @param int $order_id Positive order id.
+	 * @return bool
+	 */
+	protected static function compute_order_releases_slot( $order_id ) {
 		if ( ! function_exists( 'wc_get_order' ) ) {
 			return false;
 		}
@@ -1294,6 +1465,24 @@ class DrPlus_Child_Capacity_Repository {
 		// creation time, NOT from "now" — a row with no readable timestamp keeps holding, so
 		// a site with broken clocks fails closed rather than releasing live bookings.
 		if ( self::is_stale_unpaid( $row, $order_id ) ) {
+			// A RELEASED ROW MUST ALSO STOP LOOKING LIKE AN APPOINTMENT.
+			//
+			// Releasing the hour in this module's own predicates is only half the job. The
+			// parent theme's appointments list, dashboard counters and per-specialist counts
+			// all filter the copied `order_status` column directly, so an abandoned checkout
+			// that this module correctly stopped counting still appeared there as a live
+			// appointment — and every new attempt added another one.
+			//
+			// Measured on a rebuilt database: five abandoned attempts at one hour produced
+			// FIVE phantom appointments in the operator's list, and a sixth that really was
+			// paid made six. The operator cannot tell which one is real.
+			//
+			// Marking the row `cancelled` when the hold expires makes the release visible
+			// everywhere the parent looks, and it is idempotent: the write happens once, on
+			// the first read after the TTL, and later reads see `cancelled` and skip the age
+			// check entirely. The parent's own cron does the same thing for the same reason.
+			self::retire_abandoned_row( $row, $order_id );
+
 			return false;
 		}
 
@@ -1334,6 +1523,52 @@ class DrPlus_Child_Capacity_Repository {
 			$status = substr( $status, 3 );
 		}
 		if ( ! in_array( $status, array( 'pending', 'on-hold' ), true ) ) {
+			return false;
+		}
+
+		// THE ROW'S "pending" IS NOT PROOF THAT NOBODY PAID.
+		//
+		// This is the third incarnation of the "a booked hour became bookable again" bug
+		// and it was introduced by the very fix that was meant to end it.
+		//
+		// The copied `order_status` column is written ONCE, when the parent INSERTs the
+		// booking row — which happens BEFORE the gateway settles. Nothing in the parent
+		// ever updates it on payment: the only writer is the parent's five-minute cron,
+		// and that cron only touches rows already sitting at pending/on-hold. So the
+		// ordinary, happy-path sequence is:
+		//
+		//   1. customer checks out      -> row.order_status = 'pending', order = 'pending'
+		//   2. gateway settles          -> order = 'processing'      (row untouched)
+		//   3. two hours pass           -> this function sees 'pending', calls it abandoned,
+		//                                  and hands a PAID appointment back to the pool.
+		//
+		// Verified on the operator's own data: book #61 / order #2947 is 'processing' with
+		// the row still at 'pending'. On that row the old code freed the slot at the TTL.
+		//
+		// The order is the authority (see order_releases_slot()), so ask it before calling
+		// anything abandoned. A row only counts as an unfinished checkout when the ORDER
+		// is also still unpaid. If the order cannot be read we fall through to the age
+		// check, which keeps the previous fail-closed behaviour.
+		if ( self::order_is_paid_or_beyond( $order_id ) ) {
+			return false;
+		}
+
+		// A ROW WITH NO ORDER IS NOT AN ABANDONED CHECKOUT.
+		//
+		// The TTL exists for one situation only: the customer reached checkout, the parent
+		// INSERTed the row, and the payment never arrived. Those rows always have an order —
+		// the parent creates it in the same request.
+		//
+		// A row with order_id = 0 was never part of a checkout. It is an appointment the
+		// operator entered by hand, or an import from an older system. Nobody is "waiting to
+		// pay" for it, so there is nothing to time out: releasing it on age silently erases
+		// a real appointment from the capacity picture after two hours, which is a booking
+		// the clinic is still expecting to fill. The site's own data contains one.
+		//
+		// Note this is the OPPOSITE of the paid-order case above and must not be merged with
+		// it: there, an order proves the payment went through; here, no order exists to ask,
+		// and the row is the only record that the hour is taken.
+		if ( (int) $order_id <= 0 ) {
 			return false;
 		}
 
@@ -1438,6 +1673,230 @@ class DrPlus_Child_Capacity_Repository {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Has this booking's ORDER moved past "nobody has paid yet"?
+	 *
+	 * Used by is_stale_unpaid() to decide whether a row that still says `pending` is a
+	 * genuinely abandoned checkout or a settled payment the copied column never caught up
+	 * with. Returns TRUE only when there is a readable order and its status proves the
+	 * payment went through (or the customer's obligation otherwise ended); it returns
+	 * FALSE for an unreadable/missing order so that callers keep their fail-closed path.
+	 *
+	 * @param int $order_id Order id from the booking row.
+	 * @return bool
+	 */
+	protected static function order_is_paid_or_beyond( $order_id ) {
+		$order_id = (int) $order_id;
+		if ( $order_id <= 0 || ! function_exists( 'wc_get_order' ) ) {
+			return false;
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return false;
+		}
+
+		$status = strtolower( trim( (string) $order->get_status() ) );
+		if ( 0 === strpos( $status, 'wc-' ) ) {
+			$status = substr( $status, 3 );
+		}
+
+		// `on-hold` MEANS "WAITING FOR PAYMENT", so it is an unfinished checkout too.
+		//
+		// WooCommerce's own definition: a gateway has taken the order but not the money
+		// (manual/BACS, an off-site gateway that has not called back, an authorisation that
+		// has not been captured). Nobody has paid, so the hour must still be releasable by
+		// age — that is exactly the case this module exists to stop pinning forever.
+		//
+		// Treating it as "paid" was a regression: it made abandoned on-hold checkouts hold
+		// their hour indefinitely, which is the original reported bug in a new costume.
+		$unfinished = array( 'pending', 'on-hold', 'checkout-draft', 'draft', '' );
+
+		return ! in_array( $status, $unfinished, true );
+	}
+
+	/**
+	 * Write `cancelled` onto a booking row whose hold has expired, so every reader agrees.
+	 *
+	 * Called from row_holds_slot() when a row's age crosses the abandoned-checkout TTL.
+	 * See the comment at the call site for why releasing the slot in this module alone is
+	 * not enough: the parent theme reads the copied column, not this predicate.
+	 *
+	 * Deliberately narrow. It never touches a row whose order is readable and unpaid but
+	 * still inside the window, never touches a paid/refunded/cancelled row, and does
+	 * nothing at all if `book_id` is missing (the synthetic rows used by diagnostics have
+	 * no row to update). A failure to write is swallowed — the predicate has already
+	 * decided the correct answer, and turning a diagnostic read into a fatal error would
+	 * make an abandoned checkout break the booking grid.
+	 *
+	 * @param array $row      Booking row (needs `book_id`).
+	 * @param int   $order_id Order id the row points at.
+	 * @return void
+	 */
+	protected static function retire_abandoned_row( $row, $order_id ) {
+		global $wpdb;
+
+		$book_id = isset( $row['book_id'] ) ? (int) $row['book_id'] : 0;
+		if ( $book_id <= 0 ) {
+			return; // Synthetic row from a diagnostic probe — nothing to retire.
+		}
+
+		$table = self::booking_table();
+
+		$wpdb->update(
+			$table,
+			array( 'order_status' => 'cancelled' ),
+			array( 'book_id' => $book_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		self::flush_order_cache();
+
+		DrPlus_Child_Capacity_Logger::diag( sprintf(
+			'retired abandoned booking #%d (order #%d): its hold expired, so the row is marked cancelled and every reader now agrees the hour is free',
+			$book_id,
+			(int) $order_id
+		) );
+
+		// Only retire the order when this module can prove it is still an unpaid checkout.
+		// A paid order must never be cancelled by a housekeeping step.
+		$order_id = (int) $order_id;
+		if ( $order_id <= 0 || ! function_exists( 'wc_get_order' ) ) {
+			return;
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return;
+		}
+
+		$status = strtolower( trim( (string) $order->get_status() ) );
+		if ( 0 === strpos( $status, 'wc-' ) ) {
+			$status = substr( $status, 3 );
+		}
+		if ( ! in_array( $status, array( 'pending', 'on-hold' ), true ) ) {
+			return; // Payment arrived, or an operator already decided. Leave it alone.
+		}
+
+		$order->update_status(
+			'cancelled',
+			__( 'این رزرو پرداخت نشد و ساعت رزروشده آزاد شد.', 'drplus-child' )
+		);
+	}
+
+	/**
+	 * Pick one clinic identifier that resolves to more than one spelling, for diagnostics.
+	 *
+	 * The version-check page uses this to prove that every spelling of a real clinic on
+	 * this site takes the same booking lock. Returns '' when the site has no aliased
+	 * clinic, which is a legitimate state rather than a failure.
+	 *
+	 * @return string An office identifier, or '' when nothing is aliased.
+	 */
+	public static function sample_aliased_clinic() {
+		global $wpdb;
+
+		$candidates = $wpdb->get_col(
+			'SELECT DISTINCT office_id FROM ' . self::booking_table() . ' WHERE office_id <> %s LIMIT 20',
+			array( '' )
+		);
+
+		foreach ( (array) $candidates as $candidate ) {
+			$candidate = trim( (string) $candidate );
+			if ( '' === $candidate ) {
+				continue;
+			}
+			if ( count( (array) self::resolve_clinic_identifiers( $candidate ) ) > 1 ) {
+				return $candidate;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * The id of one order that has genuinely been paid, for diagnostics.
+	 *
+	 * Returns 0 when this site has no paid order, so callers can skip the check instead
+	 * of reporting a failure they cannot act on.
+	 *
+	 * @return int
+	 */
+	public static function first_paid_order_id() {
+		global $wpdb;
+
+		$order_id = $wpdb->get_var(
+			'SELECT order_id FROM ' . self::booking_table() .
+			" WHERE order_id > 0 AND deleted = 0 AND LOWER( TRIM( order_status ) ) IN ( 'processing', 'completed' ) LIMIT 1"
+		);
+
+		return (int) $order_id;
+	}
+
+	/**
+	 * Copy an order's new status onto every non-deleted booking row that points at it.
+	 *
+	 * Hooked to `woocommerce_order_status_changed`. See the comment in bootstrap.php for
+	 * why the copied column must not be allowed to drift: three separate defects were all
+	 * symptoms of it. The capacity predicates deliberately do NOT rely on this having run —
+	 * they still ask the order — so a site where the hook is unavailable behaves exactly
+	 * as it did before, only with the old drift.
+	 *
+	 * @param int      $order_id Order id.
+	 * @param string   $from     Previous status (unused, present for the hook signature).
+	 * @param string   $to       New status, bare (`processing`) in WC 3.0+.
+	 * @param WC_Order $order    Order object, when WooCommerce passes it.
+	 * @return void
+	 */
+	public static function sync_row_status_from_order( $order_id, $from = '', $to = '', $order = null ) {
+		global $wpdb;
+
+		$order_id = (int) $order_id;
+		if ( $order_id <= 0 ) {
+			return;
+		}
+
+		// Prefer the object WooCommerce handed us; fall back to reading it ourselves.
+		if ( ! $order instanceof WC_Order ) {
+			if ( ! function_exists( 'wc_get_order' ) ) {
+				return;
+			}
+			$order = wc_get_order( $order_id );
+		}
+		if ( ! $order ) {
+			return;
+		}
+
+		$status = strtolower( trim( (string) $order->get_status() ) );
+		if ( '' === $status ) {
+			return;
+		}
+
+		$updated = $wpdb->update(
+			self::booking_table(),
+			array( 'order_status' => $status ),
+			array(
+				'order_id' => $order_id,
+				'deleted'  => 0,
+			),
+			array( '%s' ),
+			array( '%d', '%d' )
+		);
+
+		self::flush_order_cache();
+
+		if ( false !== $updated && $updated > 0 ) {
+			DrPlus_Child_Capacity_Logger::diag( sprintf(
+				'order #%d moved %s -> %s; synced %d booking row(s)',
+				$order_id,
+				'' === $from ? '?' : $from,
+				$status,
+				(int) $updated
+			) );
+		}
 	}
 
 	/**

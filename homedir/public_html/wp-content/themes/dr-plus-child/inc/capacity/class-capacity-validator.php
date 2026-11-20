@@ -875,6 +875,26 @@ class DrPlus_Child_Capacity_Validator {
 			return '';
 		}
 		if ( is_numeric( $str ) ) {
+			// A BARE 8-DIGIT STRING IS A COMPACT CALENDAR DATE, NOT A UNIX TIMESTAMP.
+			//
+			// `20271201` is_numeric() and reached normalize_timestamp_candidate(), which
+			// read it as 20,271,201 seconds after the epoch — 1970-08-23. A booking for
+			// 2027-12-01 was therefore validated, counted and stored against a date in
+			// 1970, which is in the past and consequently never blocks anything: the
+			// capacity check silently passed for every such request.
+			//
+			// The ambiguity is real — 20271201 is both a plausible YYYYMMDD and a valid
+			// (absurd) epoch — but only one reading can be a booking date a customer
+			// meant. A 1970 timestamp is not a bookable appointment, so YYYYMMDD wins
+			// whenever the value is exactly eight digits AND parses to a real calendar
+			// date. If it does not parse (e.g. 20271301), we fall through to the
+			// timestamp path and let normalisation decide.
+			if ( 8 === strlen( $str ) && ctype_digit( $str ) ) {
+				$compact = DrPlus_Child_Capacity_Repository::normalize_date( $str, false );
+				if ( '' !== $compact ) {
+					return $compact;
+				}
+			}
 			return self::normalize_timestamp_candidate( $str );
 		}
 		return DrPlus_Child_Capacity_Repository::normalize_date( $str );

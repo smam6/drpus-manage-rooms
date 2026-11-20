@@ -73,6 +73,29 @@ function drplus_child_capacity_wire_hooks() {
 	// Date check first (fail fast), then capacity (spec 3.1, conflict resolution #1).
 	add_action( 'woocommerce_checkout_process', array( 'DrPlus_Child_Capacity_Validator', 'check_missing_date' ), 4 );
 	add_action( 'woocommerce_checkout_process', array( 'DrPlus_Child_Capacity_Validator', 'validate_capacity' ), 5 );
+
+	// KEEP THE COPIED `order_status` COLUMN IN STEP WITH THE ORDER.
+	//
+	// The parent writes `drplus_booking.order_status` once, when it INSERTs the row, and
+	// then never updates it. The only other writer is the parent's five-minute cron, and
+	// that cron only touches rows already sitting at pending/on-hold — so an order that
+	// moves forwards (pending -> processing on payment) never reaches the row at all.
+	//
+	// That single stale column caused three separate field reports:
+	//
+	//   * the capacity module's own abandoned-checkout TTL released PAID appointments
+	//     (it read the row, which still said `pending`);
+	//   * the parent's appointments list, its dashboard counters and its per-specialist
+	//     counts all filter on the column, so a cancelled appointment kept appearing and
+	//     a live one kept being counted under the wrong heading;
+	//   * the parent's cron then resurrected operator-cancelled orders as `completed`,
+	//     because it selects past appointments by that same stale column.
+	//
+	// Writing the column whenever the order's status changes fixes all three at the
+	// source, and costs one UPDATE on a transition that happens at most a handful of
+	// times per order. The capacity predicates still ask the order directly (they must
+	// not depend on this hook having fired), so this is a repair, not a new dependency.
+	add_action( 'woocommerce_order_status_changed', array( 'DrPlus_Child_Capacity_Repository', 'sync_row_status_from_order' ), 10, 4 );
 }
 add_action( 'init', 'drplus_child_capacity_wire_hooks', 20 );
 
